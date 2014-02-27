@@ -4,12 +4,14 @@ This engine reads alarms from Kafka and then notifies the customer using their c
 
 # Architecture
 There are four processing steps separated by queues implemented with python multiprocessing. The steps are:
+
 1. Reads Alarms from Kafka. - KafkaConsumer class
 2. Determine notification type for an alarm. Done by reading from mysql. - AlarmProcessor class
 3. Send Notification. - NotificationProcessor class
 4. Update Vertica and Kafka that the notifications were sent. SentNotificationProcessor class
 
 There are three internal queues:
+
 1. alarms - kafka alarms are added to this queue. Consists of Alarm objects.
 2. notifications - notifications to be sent are added to this queue. Consists of Notification objects.
 3. sent_notifications - notifications that have been sent are added here. Consists of Notification objects.
