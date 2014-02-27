@@ -1,0 +1,3 @@
+
+class Alarm(object):
+    pass

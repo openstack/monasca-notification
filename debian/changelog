@@ -1,0 +1,6 @@
+mon-notification (0.0.1) precise; urgency=low
+
+  * Initial Package creation
+
+ -- Tim Kuhlman <tim.kuhlman@hp.com>  Thu, 27 Feb 2014 04:12:44 -0600
+

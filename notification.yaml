@@ -1,0 +1,12 @@
+log_dir: /var/log/mon
+
+processors:
+    alarm:
+        number: 2
+    notification:
+        number: 8
+
+queues:
+    alarms_size: 1024
+    notifications_size: 1024
+    sent_notifications_size: 1024

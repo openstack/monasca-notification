@@ -1,0 +1,3 @@
+
+class AlarmProcessor(object):
+    pass

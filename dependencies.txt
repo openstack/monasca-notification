@@ -1,0 +1,4 @@
+kafka-python
+pyodbc
+pkg-resources
+yaml
