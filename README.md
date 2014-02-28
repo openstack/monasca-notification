@@ -5,10 +5,10 @@ This engine reads alarms from Kafka and then notifies the customer using their c
 # Architecture
 There are four processing steps separated by queues implemented with python multiprocessing. The steps are:
 
-1. Reads Alarms from Kafka. - KafkaConsumer class
+1. Reads Alarms from Kafka, the pointer of which alarms are processed shouldn't advance. - KafkaConsumer class
 2. Determine notification type for an alarm. Done by reading from mysql. - AlarmProcessor class
 3. Send Notification. - NotificationProcessor class
-4. Update Vertica and Kafka that the notifications were sent. SentNotificationProcessor class
+4. Add sent notifications to Kafka, notification topic, commit the processed alarms. - SentNotificationProcessor class
 
 There are three internal queues:
 
@@ -22,8 +22,10 @@ Notification classes inherit from the notification abstract class and implement 
 HA is handled by utilizing multiple partitions withing kafka. When multiple notification engines are running the partitions
 are spread out among them, as engines die/restart things reshuffle.
 
-The final step of writing back to to Vertica that an alarm was sent then updating the kafka pointer, could fail to run in a catastrophic failure.
-This would result in multiple notifications which is an acceptable failure mode, better to send a notification twice than not at all.
+When reading from the alarm topic no committing is done. The committing is done in sent_notification processor. This allows
+the processing to continue even though some notifications can be slow. In the event of a catastrophic failure some
+notifications could be sent but the alarms not yet acknowledged. This is an acceptable failure mode, better to send a
+notification twice than not at all.
 
 It is assumed the notification engine will be run by a process supervisor which will restart it in case of a failure.
 
