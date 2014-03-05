@@ -1,5 +1,10 @@
 log_dir: /var/log/mon
 
+kafka:
+    url: 192.168.10.10:9092
+    group: mon-notification
+    topic: alarms
+
 processors:
     alarm:
         number: 2
