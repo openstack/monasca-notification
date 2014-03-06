@@ -25,7 +25,7 @@ class KafkaConsumer(object):
         # Todo connect to zookeeper and make a znode where I can track which consumers to consume from.
             # Initially just grab them all, in the future probably should be spread out more, add this to future considerations
 
-        # No autocommit, that is done after sending, see the README.md for more details
+        # No autocommit, it does not work with kafka 0.8.0 - see https://github.com/mumrah/kafka-python/issues/118
         self.consumer = SimpleConsumer(self.kafka, group, topic, auto_commit=False)
         self.queue = queue
 

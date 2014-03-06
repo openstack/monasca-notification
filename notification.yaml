@@ -3,7 +3,8 @@ log_dir: /var/log/mon
 kafka:
     url: 192.168.10.10:9092
     group: mon-notification
-    topic: alarms
+    alarm_topic: alarms
+    notification_topic: notifications
 
 processors:
     alarm:

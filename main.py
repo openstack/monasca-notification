@@ -44,7 +44,9 @@ def main(argv=None):
 
     # Setup logging
     log_path = os.path.join(config['log_dir'], 'notification.log')
-    logging.basicConfig(format='%(asctime)s %(message)s', filename=log_path, level=logging.INFO)
+    #todo restore normal logging
+    logging.basicConfig(level=logging.DEBUG)
+#    logging.basicConfig(format='%(asctime)s %(message)s', filename=log_path, level=logging.INFO)
 
     #Create the queues
     alarms = Queue(config['queues']['alarms_size'])
@@ -53,23 +55,33 @@ def main(argv=None):
 
     ## Define processes
     #start KafkaConsumer
-    kafka = Process(target=KafkaConsumer(config, alarms).run)  # todo don't pass the config object just the bits needed
+    kafka = Process(target=KafkaConsumer(config['kafka']['url'], config['kafka']['group'], config['kafka']['alarm_topic'], alarms).run)
     processors.append(kafka)
 
-    #Define AlarmProcessors
-    alarm_processors = []
-    for i in xrange(config['processors']['alarm']['number']):
-        alarm_processors.append(Process(target=AlarmProcessor(config, alarms, notifications).run))  # todo don't pass the config object just the bits needed
-    processors.extend(alarm_processors)
-
-    #Define NotificationProcessors
-    notification_processors = []
-    for i in xrange(config['processors']['notification']['number']):
-        notification_processors.append(Process(target=NotificationProcessor(config, notifications, sent_notifications).run))  # todo don't pass the config object just the bits needed
-    processors.extend(notification_processors)
-
+#    #Define AlarmProcessors
+#    alarm_processors = []
+#    for i in xrange(config['processors']['alarm']['number']):
+#        alarm_processors.append(Process(target=AlarmProcessor(config, alarms, notifications).run))  # todo don't pass the config object just the bits needed
+#    processors.extend(alarm_processors)
+#
+#    #Define NotificationProcessors
+#    notification_processors = []
+#    for i in xrange(config['processors']['notification']['number']):
+#        notification_processors.append(Process(target=NotificationProcessor(config, notifications, sent_notifications).run))  # todo don't pass the config object just the bits needed
+#    processors.extend(notification_processors)
+#
     #Define SentNotificationProcessor
-    sent_notification_processor = Process(target=SentNotificationProcessor(config, sent_notifications).run)  # todo don't pass the config object just the bits needed
+    # todo temp setup with the wrong queue to just test kafka basics
+    sent_notification_processor = Process(target=SentNotificationProcessor(config['kafka']['url'], config['kafka']['group'], config['kafka']['alarm_topic'], config['kafka']['notification_topic'], alarms).run)
+#    sent_notification_processor = Process(
+#        target=SentNotificationProcessor(
+#            config['kafka']['url'],
+#            config['kafka']['group'],
+#            config['kafka']['alarm_topic'],
+#            config['kafka']['notification_topic'],
+#            sent_notifications
+#        ).run
+#    )
     processors.append(sent_notification_processor)
 
     ## Start
@@ -83,8 +95,6 @@ def main(argv=None):
         for process in processors:
             process.terminate()
 
-
-# todo - I need to make a deb for kafka-python, code currently in ~/working/kafka-python
 
 if __name__ == "__main__":
     sys.exit(main())
