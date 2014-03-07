@@ -16,3 +16,6 @@ queues:
     alarms_size: 1024
     notifications_size: 1024
     sent_notifications_size: 1024
+
+zookeeper:
+    url: localhost:2181

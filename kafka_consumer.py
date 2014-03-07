@@ -3,6 +3,8 @@ import logging
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
 
+from commit_tracker import KafkaCommitTracker
+
 log = logging.getLogger(__name__)
 
 class KafkaConsumer(object):
@@ -15,24 +17,24 @@ class KafkaConsumer(object):
         being consumed from.
         For more information see, https://github.com/mumrah/kafka-python/issues/112
     """
-    def __init__(self, url, group, topic, queue):
+    def __init__(self, kafka_url, group, topic, queue, zookeeper_url):
         """
-            url, group, topic - kafka connection details
+            kafka_url, group, topic - kafka connection details
             queue - a queue to publish log entries to
         """
-        self.kafka = KafkaClient(url)
-
-        # Todo connect to zookeeper and make a znode where I can track which consumers to consume from.
-            # Initially just grab them all, in the future probably should be spread out more, add this to future considerations
+        self.kafka = KafkaClient(kafka_url)
 
         # No autocommit, it does not work with kafka 0.8.0 - see https://github.com/mumrah/kafka-python/issues/118
         self.consumer = SimpleConsumer(self.kafka, group, topic, auto_commit=False)
         self.queue = queue
+        self.tracker = KafkaCommitTracker(zookeeper_url, topic)
 
     def run(self):
         """ Consume from kafka and place alarm objects on the queue
-            This quite intentionally does not ack
         """
+        # Set current offsets to the last known position
+        self.consumer.offsets.update(self.tracker.get_offsets())
+
         for message in self.consumer:
             log.debug("Consuming message from kafka - value = %s" % message.message.value)
             if self.queue.full():

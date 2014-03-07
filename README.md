@@ -18,6 +18,10 @@ There are three internal queues:
 
 Notification classes inherit from the notification abstract class and implement their specific notification method.
 
+There is a special KafkaCommitTracker class that keeps track of the last committed message and ones available for
+commit, it then periodically commits all progress. This allows us to handle the situation where alarms that are not
+acted on are quickly ready for commit but others which are prior to them in the kafka order are still in progress.
+
 ## High Availability
 HA is handled by utilizing multiple partitions withing kafka. When multiple notification engines are running the partitions
 are spread out among them, as engines die/restart things reshuffle.
@@ -33,6 +37,8 @@ It is assumed the notification engine will be run by a process supervisor which 
 Yaml config file by default in '/etc/mon/notification.yaml' process runs via upstart script.
 
 # Future Considerations
+- Currently I lock the topic rather than the partitions. This effectively means there is only one active notification
+  engine at any given time. In the future to share the load among multiple daemons we could lock by partition.
 - How fast is the mysql db? How much load do we put on it. Initially I think it makes most sense to read notification
   details for each alarm but eventually I may want to cache that info.
 - I am starting with a single KafkaConsumer and a single SentNotificationProcessor depending on load this may need
