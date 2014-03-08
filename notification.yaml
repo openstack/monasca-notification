@@ -6,6 +6,12 @@ kafka:
     alarm_topic: alarms
     notification_topic: notifications
 
+mysql:
+    host: 192.168.10.6
+    user: root
+    passwd: password
+    db: mon
+
 processors:
     alarm:
         number: 2
@@ -18,4 +24,4 @@ queues:
     sent_notifications_size: 1024
 
 zookeeper:
-    url: localhost:2181
+    url: 192.168.10.10:2181

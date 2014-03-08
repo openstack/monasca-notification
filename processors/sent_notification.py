@@ -12,12 +12,16 @@ class SentNotificationProcessor(object):
         This involves adding them into a kafka topic for persisting by another process and marking that alarm as finished.
     """
 
-    def __init__(self, url, topic, queue, tracker):
+    def __init__(self, queue, tracker, url, topic):
         """
             url, group - kafka connection details
             topic - kafka topic to publish notifications to
             queue - a queue to read notifications from
         """
+        self.topic = topic
+        self.tracker = tracker
+        self.queue = queue
+
         self.kafka = KafkaClient(url)
         self.producer = SimpleProducer(
             self.kafka,
@@ -26,19 +30,15 @@ class SentNotificationProcessor(object):
             ack_timeout=2000
         )
 
-        self.topic = topic
-        self.tracker = tracker
-        self.queue = queue
-
     def run(self):
         """ Takes messages from the queue, puts them on the notification topic and updates the processed offset
         """
         while True:
-            # todo I expect the message format to change, the .message.value is just for test
-            message = self.queue.get().message.value
-            responses = self.producer.send_messages(self.topic, message)
+            notification = self.queue.get()
+            responses = self.producer.send_messages(self.topic, notification.to_json())
+            log.debug('Published to topic %s, message %s' % (self.topic, notification.to_json()))
             for resp in responses:
                 if resp.error != 0:
-                    log.error('Error publishing to %s topic, error message %s, offset #%d' %
-                              (self.topic, resp.error, resp.offset))
-            self.tracker.finish(message.partition, message.offset)
+                    log.error('Error publishing to %s topic, error message %s' %
+                              (self.topic, resp.error))
+            self.tracker.finish(notification.src_partition, notification.src_offset)

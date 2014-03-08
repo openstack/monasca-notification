@@ -39,22 +39,22 @@ def get_zookeeper_lock(url, topic):
     """ Grab a lock in zookeeper or if not available retry in 30x
         Add a listener to stop processes on
     """
-    topic_path = '/consumers/mon-notification/%s' % topic
+    lock_path = '/locks/mon-notification/%s' % topic
     zookeeper = KazooClient(url)
     zookeeper.start()
 
     while True:
         # The path is ephemeral so if it exists wait then cycle again
-        if zookeeper.exists(topic_path):
+        if zookeeper.exists(lock_path):
             log.info('Another process has the lock for topic %s, waiting then retrying.' % topic)
-            time.sleep(30)
+            time.sleep(15)
             continue
 
         try:
-            zookeeper.create(topic_path, ephemeral=True, makepath=True)
+            zookeeper.create(lock_path, ephemeral=True, makepath=True)
         except KazooException, e:
             # If creating the path fails something beat us to it most likely, try again
-            log.debug('Error creating lock path %s\n%s' % (topic_path, e))
+            log.debug('Error creating lock path %s\n%s' % (lock_path, e))
             continue
         else:
             # Succeeded in grabbing the lock continue
@@ -93,35 +93,53 @@ def main(argv=None):
     notifications = Queue(config['queues']['notifications_size'])
     sent_notifications = Queue(config['queues']['sent_notifications_size'])
 
+    #Used for tracking the progress of fully processed alarms
+    tracker = KafkaCommitTracker(config['zookeeper']['url'], config['kafka']['alarm_topic'])
+
     ## Define processes
     #start KafkaConsumer
-    kafka = Process(target=KafkaConsumer(config['kafka']['url'], config['kafka']['group'], config['kafka']['alarm_topic'], alarms, config['zookeeper']['url']).run)
+    kafka = Process(
+        target=KafkaConsumer(
+            alarms,
+            config['kafka']['url'],
+            config['kafka']['group'],
+            config['kafka']['alarm_topic'],
+            config['zookeeper']['url']
+        ).run
+    )
     processors.append(kafka)
 
-#    #Define AlarmProcessors
-#    alarm_processors = []
-#    for i in xrange(config['processors']['alarm']['number']):
-#        alarm_processors.append(Process(target=AlarmProcessor(config, alarms, notifications).run))  # todo don't pass the config object just the bits needed
-#    processors.extend(alarm_processors)
-#
-#    #Define NotificationProcessors
-#    notification_processors = []
-#    for i in xrange(config['processors']['notification']['number']):
-#        notification_processors.append(Process(target=NotificationProcessor(config, notifications, sent_notifications).run))  # todo don't pass the config object just the bits needed
-#    processors.extend(notification_processors)
-#
+    #Define AlarmProcessors
+    alarm_processors = []
+    for i in xrange(config['processors']['alarm']['number']):
+        alarm_processors.append(Process(
+            target=AlarmProcessor(
+                alarms,
+                notifications,
+                tracker,
+                config['mysql']['host'],
+                config['mysql']['user'],
+                config['mysql']['passwd'],
+                config['mysql']['db']
+            ).run)
+        )
+    processors.extend(alarm_processors)
+
+    #Define NotificationProcessors
+    notification_processors = []
+    for i in xrange(config['processors']['notification']['number']):
+        notification_processors.append(Process(target=NotificationProcessor(notifications, sent_notifications).run))
+    processors.extend(notification_processors)
+
     #Define SentNotificationProcessor
-    tracker = KafkaCommitTracker(config['zookeeper']['url'], config['kafka']['alarm_topic'])
-    # todo temp setup with the wrong queue to just test kafka basics
-    sent_notification_processor = Process(target=SentNotificationProcessor(config['kafka']['url'], config['kafka']['notification_topic'], alarms, tracker).run)
-#    sent_notification_processor = Process(
-#        target=SentNotificationProcessor(
-#            config['kafka']['url'],
-#            config['kafka']['notification_topic'],
-#            sent_notifications,
-#            tracker
-#        ).run
-#    )
+    sent_notification_processor = Process(
+        target=SentNotificationProcessor(
+            sent_notifications,
+            tracker,
+            config['kafka']['url'],
+            config['kafka']['notification_topic']
+        ).run
+    )
     processors.append(sent_notification_processor)
 
     ## Start
@@ -131,6 +149,10 @@ def main(argv=None):
         log.info('Starting processes')
         for process in processors:
             process.start()
+        # Child processes shouldn't normally exit, so this should wait indefinitely
+        # without the join the debugger will end the parent thread.
+        for process in processors:
+            process.join()
     except:
         log.exception('Error exiting!')
         for process in processors:

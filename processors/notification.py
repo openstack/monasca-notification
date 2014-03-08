@@ -1,21 +1,24 @@
-import MySQLdb
-#todo figure out mysqldb library
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class NotificationProcessor(object):
-    pass
+
+    def __init__(self, notification_queue, sent_notification_queue):
+        self.notification_queue = notification_queue
+        self.sent_notification_queue = sent_notification_queue
 
 
-# This seems to be the key table
-#mysql> describe notification_method;
-#+------------+---------------------+------+-----+---------+-------+
-#| Field      | Type                | Null | Key | Default | Extra |
-#+------------+---------------------+------+-----+---------+-------+
-#| id         | varchar(36)         | NO   | PRI | NULL    |       |
-#| tenant_id  | varchar(36)         | NO   |     | NULL    |       |
-#| name       | varchar(250)        | YES  |     | NULL    |       |
-#| type       | enum('EMAIL','SMS') | NO   |     | NULL    |       |
-#| address    | varchar(100)        | YES  |     | NULL    |       |
-#| created_at | datetime            | NO   |     | NULL    |       |
-#| updated_at | datetime            | NO   |     | NULL    |       |
-#+------------+---------------------+------+-----+---------+-------+
+    def run(self):
+        """ Send the notifications
+        """
+        while True:
+            notification = self.notification_queue.get()
+# todo block if the sent_notification queue is full
+#            if self.sent_notification_queue.full():
+#                log.debug('Sent Notifications queue is full, publishing is blocked')
+            notification.send()
+            self.sent_notification_queue.put(notification)
+            log.debug("Put notification on the sent notification queue") # todo make this debug info better
 

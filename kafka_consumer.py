@@ -17,16 +17,16 @@ class KafkaConsumer(object):
         being consumed from.
         For more information see, https://github.com/mumrah/kafka-python/issues/112
     """
-    def __init__(self, kafka_url, group, topic, queue, zookeeper_url):
+    def __init__(self, queue, kafka_url, group, topic, zookeeper_url):
         """
             kafka_url, group, topic - kafka connection details
             queue - a queue to publish log entries to
         """
-        self.kafka = KafkaClient(kafka_url)
+        self.queue = queue
 
+        self.kafka = KafkaClient(kafka_url)
         # No autocommit, it does not work with kafka 0.8.0 - see https://github.com/mumrah/kafka-python/issues/118
         self.consumer = SimpleConsumer(self.kafka, group, topic, auto_commit=False)
-        self.queue = queue
         self.tracker = KafkaCommitTracker(zookeeper_url, topic)
 
     def run(self):
