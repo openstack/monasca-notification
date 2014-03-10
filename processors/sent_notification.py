@@ -1,7 +1,6 @@
 import logging
 
 from kafka.client import KafkaClient
-from kafka.consumer import SimpleConsumer
 from kafka.producer import SimpleProducer
 
 log = logging.getLogger(__name__)
@@ -9,7 +8,8 @@ log = logging.getLogger(__name__)
 
 class SentNotificationProcessor(object):
     """ Processes notifications which have been sent
-        This involves adding them into a kafka topic for persisting by another process and marking that alarm as finished.
+        This involves adding them into a kafka topic for persisting by another process and adding the alarm
+        to the finished queue.
     """
 
     def __init__(self, sent_queue, finished_queue, url, topic):

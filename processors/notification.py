@@ -9,7 +9,6 @@ class NotificationProcessor(object):
         self.notification_queue = notification_queue
         self.sent_notification_queue = sent_notification_queue
 
-
     def run(self):
         """ Send the notifications
         """
@@ -20,5 +19,5 @@ class NotificationProcessor(object):
 #                log.debug('Sent Notifications sent_queue is full, publishing is blocked')
             notification.send()
             self.sent_notification_queue.put(notification)
-            log.debug("Put notification on the sent notification sent_queue") # todo make this debug info better
+            log.debug("Put notification on the sent notification sent_queue")  # todo make this debug info better
 

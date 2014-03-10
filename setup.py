@@ -9,5 +9,5 @@ setup(
             'notification_engine = main'
         ],
     },
-    test_suite='nose.collector'
+    test_suite='nose.collector', requires=['kafka', 'kazoo']
 )

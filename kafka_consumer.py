@@ -5,6 +5,7 @@ from kafka.consumer import SimpleConsumer
 
 log = logging.getLogger(__name__)
 
+
 class KafkaConsumer(object):
     """ Pull from the alarm topic and place alarm objects on the sent_queue.
         No commit is being done until processing is finished and as the processing can take some time it is done in

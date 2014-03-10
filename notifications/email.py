@@ -1,5 +1,6 @@
 from . import Notification
 
+
 class EmailNotification(Notification):
     def send(self):
         """ Email the notification via SMTP

@@ -4,6 +4,8 @@ import time
 from kazoo.client import KazooClient
 from kazoo.exceptions import KazooException
 
+from notification_exceptions import NotificationException
+
 log = logging.getLogger(__name__)
 
 
@@ -43,12 +45,12 @@ class ZookeeperStateTracker(object):
                 offsets = {}
                 for child in self.zookeeper.get_children(self.topic_path):
                     offsets[int(child)] = int(self.zookeeper.get('/'.join((self.topic_path, child)))[0])
-                log.info('Setting initial offsets to %s' % offsets)
+                log.info('Setting initial offsets to %s' % str(offsets))
                 return offsets
             else:
                 self.zookeeper.ensure_path(self.topic_path)
                 return {}
-        except KazooException, e:
+        except KazooException:
             log.exception('Error retrieving the committed offset in zookeeper')
 
     def _update_offsets(self):
@@ -60,7 +62,7 @@ class ZookeeperStateTracker(object):
                 self.zookeeper.ensure_path(partition_path)
                 self.zookeeper.set(partition_path, str(value))
             log.debug('Updated committed offsets at path %s, offsets %s' % (self.topic_path, self._offsets))
-        except KazooException, e:
+        except KazooException:
             log.exception('Error updating the committed offset in zookeeper')
 
     @property
@@ -114,7 +116,7 @@ class ZookeeperStateTracker(object):
             raise NotificationException('Attempt to begin run without Zookeeper Lock')
 
         if self._offsets is None:  # Verify the offsets have been initialized
-            self.offsets
+            self._offsets = self._get_offsets()
 
         while True:
             msg = self.finished_queue.get()
@@ -124,7 +126,7 @@ class ZookeeperStateTracker(object):
             log.debug('Received commit finish for partition %d, offset %d' % (partition, offset))
             # todo these don't come in order but I should only update when there is an unbroken chain
             # from the last offset to the current. I have yet to implement this logic
-            if (not self._offsets.has_key(partition)) or (self._offsets[partition] < offset):
+            if (not partition in self._offsets) or (self._offsets[partition] < offset):
                 self._offsets[partition] = offset
                 self._update_offsets()
             # todo what to do if a single alarm is holding up committing others for a long time?

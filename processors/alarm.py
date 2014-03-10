@@ -23,7 +23,8 @@ class AlarmProcessor(object):
             partition = raw_alarm[0]
             offset = raw_alarm[1].offset
             alarm = raw_alarm[1].message.value
-            log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s" % (partition, offset, alarm))
+            log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
+                      % (partition, offset, alarm))
 
         #todo figure out mysqldb library
         # if notifications configured in mysql

@@ -21,14 +21,10 @@ log = logging.getLogger(__name__)
 processors = []  # global list to facilitate clean signal handling
 
 
-class NotificationException(Exception):
-    pass
-
 def clean_exit(signum, frame=None):
     """ Exit all processes cleanly
         Can be called on an os signal or no zookeeper loosing connection.
     """
-    # todo - Figure out good exiting. For most situations, make sure it all shuts down nicely, finishing up anything in the sent_queue
     for process in processors:
         process.terminate()
 
