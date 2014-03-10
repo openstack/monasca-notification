@@ -10,12 +10,8 @@ from multiprocessing import Process, Queue
 import os
 import signal
 import sys
-import time
 
-from kazoo.client import KazooClient
-from kazoo.exceptions import KazooException
-
-from commit_tracker import KafkaCommitTracker
+from state_tracker import ZookeeperStateTracker
 from kafka_consumer import KafkaConsumer
 from processors.alarm import AlarmProcessor
 from processors.notification import NotificationProcessor
@@ -25,45 +21,18 @@ log = logging.getLogger(__name__)
 processors = []  # global list to facilitate clean signal handling
 
 
+class NotificationException(Exception):
+    pass
+
 def clean_exit(signum, frame=None):
     """ Exit all processes cleanly
         Can be called on an os signal or no zookeeper loosing connection.
     """
-    # todo - Figure out good exiting. For most situations, make sure it all shuts down nicely, finishing up anything in the queue
+    # todo - Figure out good exiting. For most situations, make sure it all shuts down nicely, finishing up anything in the sent_queue
     for process in processors:
         process.terminate()
+
     sys.exit(0)
-
-
-def get_zookeeper_lock(url, topic):
-    """ Grab a lock in zookeeper or if not available retry in 30x
-        Add a listener to stop processes on
-    """
-    lock_path = '/locks/mon-notification/%s' % topic
-    zookeeper = KazooClient(url)
-    zookeeper.start()
-
-    while True:
-        # The path is ephemeral so if it exists wait then cycle again
-        if zookeeper.exists(lock_path):
-            log.info('Another process has the lock for topic %s, waiting then retrying.' % topic)
-            time.sleep(15)
-            continue
-
-        try:
-            zookeeper.create(lock_path, ephemeral=True, makepath=True)
-        except KazooException, e:
-            # If creating the path fails something beat us to it most likely, try again
-            log.debug('Error creating lock path %s\n%s' % (lock_path, e))
-            continue
-        else:
-            # Succeeded in grabbing the lock continue
-            log.info('Grabbed lock for topic %s' % topic)
-            break
-
-    # Set up a listener to exit if we loose connection, this always exits even if the zookeeper connection is only
-    # suspended, the process should be supervised so it starts right back up again.
-    zookeeper.add_listener(clean_exit)
 
 
 def main(argv=None):
@@ -85,38 +54,42 @@ def main(argv=None):
     #todo restore normal logging
     logging.basicConfig(level=logging.DEBUG)
 #    logging.basicConfig(format='%(asctime)s %(message)s', filename=log_path, level=logging.INFO)
-
-    # Todo review the code structure, is there a better design I could use?
+    kazoo_logger = logging.getLogger('kazoo')
+    kazoo_logger.setLevel(logging.WARN)
+    kafka_logger = logging.getLogger('kafka')
+    kafka_logger.setLevel(logging.WARN)
 
     #Create the queues
     alarms = Queue(config['queues']['alarms_size'])
     notifications = Queue(config['queues']['notifications_size'])
     sent_notifications = Queue(config['queues']['sent_notifications_size'])
+    finished = Queue(config['queues']['finished_size'])  # Data added here should be of the form (partition, offset)
 
-    #Used for tracking the progress of fully processed alarms
-    tracker = KafkaCommitTracker(config['zookeeper']['url'], config['kafka']['alarm_topic'])
+    #State Tracker - Used for tracking the progress of fully processed alarms and the zookeeper lock
+    tracker = ZookeeperStateTracker(config['zookeeper']['url'], config['kafka']['alarm_topic'], finished)
+    tracker.lock(clean_exit)  # Only begin if we have the processing lock
 
-    ## Define processes
-    #start KafkaConsumer
+    ## Define processors
+    #KafkaConsumer
     kafka = Process(
         target=KafkaConsumer(
             alarms,
             config['kafka']['url'],
             config['kafka']['group'],
             config['kafka']['alarm_topic'],
-            config['zookeeper']['url']
+            tracker.get_offsets()
         ).run
     )
     processors.append(kafka)
 
-    #Define AlarmProcessors
+    #AlarmProcessors
     alarm_processors = []
     for i in xrange(config['processors']['alarm']['number']):
         alarm_processors.append(Process(
             target=AlarmProcessor(
                 alarms,
                 notifications,
-                tracker,
+                finished,
                 config['mysql']['host'],
                 config['mysql']['user'],
                 config['mysql']['passwd'],
@@ -125,17 +98,17 @@ def main(argv=None):
         )
     processors.extend(alarm_processors)
 
-    #Define NotificationProcessors
+    #NotificationProcessors
     notification_processors = []
     for i in xrange(config['processors']['notification']['number']):
         notification_processors.append(Process(target=NotificationProcessor(notifications, sent_notifications).run))
     processors.extend(notification_processors)
 
-    #Define SentNotificationProcessor
+    #SentNotificationProcessor
     sent_notification_processor = Process(
         target=SentNotificationProcessor(
             sent_notifications,
-            tracker,
+            finished,
             config['kafka']['url'],
             config['kafka']['notification_topic']
         ).run
@@ -144,15 +117,11 @@ def main(argv=None):
 
     ## Start
     signal.signal(signal.SIGTERM, clean_exit)
-    get_zookeeper_lock(config['zookeeper']['url'], config['kafka']['alarm_topic'])
     try:
         log.info('Starting processes')
         for process in processors:
             process.start()
-        # Child processes shouldn't normally exit, so this should wait indefinitely
-        # without the join the debugger will end the parent thread.
-        for process in processors:
-            process.join()
+        tracker.run()  # Runs in the main class
     except:
         log.exception('Error exiting!')
         for process in processors:

@@ -8,7 +8,7 @@ kafka:
 
 mysql:
     host: 192.168.10.6
-    user: root
+    user: notification
     passwd: password
     db: mon
 
@@ -20,6 +20,7 @@ processors:
 
 queues:
     alarms_size: 1024
+    finished_size: 1024
     notifications_size: 1024
     sent_notifications_size: 1024
 
