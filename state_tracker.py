@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import time
 
@@ -29,10 +30,13 @@ class ZookeeperStateTracker(object):
         self.zookeeper.start()
         self.topic_path = '/consumers/mon-notification/%s' % topic
 
-        self._offsets = None
-
         self.lock_retry_time = 15  # number of seconds to wait for retrying for the lock
         self.lock_path = '/locks/mon-notification/%s' % topic
+
+        self._offsets = None
+        # This is a dictionary of sets used for tracking finished offsets when there is a gap and the committed offset
+        # can not yet be advanced
+        self._uncommitted_offsets = defaultdict(set)
 
     def _get_offsets(self):
         """ Read the initial offsets from zookeeper or set defaults
@@ -53,7 +57,7 @@ class ZookeeperStateTracker(object):
         except KazooException:
             log.exception('Error retrieving the committed offset in zookeeper')
 
-    def _update_offsets(self):
+    def _update_zk_offsets(self):
         """ Update zookeepers stored offset numbers to the values in self.offsets
         """
         try:
@@ -118,15 +122,38 @@ class ZookeeperStateTracker(object):
         if self._offsets is None:  # Verify the offsets have been initialized
             self._offsets = self._get_offsets()
 
+        # todo what to do if a single alarm is holding up committing others for a long time?
+
         while True:
             msg = self.finished_queue.get()
             partition = int(msg[0])
             offset = int(msg[1])
 
             log.debug('Received commit finish for partition %d, offset %d' % (partition, offset))
-            # todo these don't come in order but I should only update when there is an unbroken chain
-            # from the last offset to the current. I have yet to implement this logic
-            if (not partition in self._offsets) or (self._offsets[partition] < offset):
+            # Update immediately if the partition is not yet tracked or the offset is 1 above current offset
+            if partition not in self._offsets:
+                log.debug('Updating offset for partition %d, offset %d' % (partition, offset))
                 self._offsets[partition] = offset
-                self._update_offsets()
-            # todo what to do if a single alarm is holding up committing others for a long time?
+                self._update_zk_offsets()
+            elif self._offsets[partition] == offset - 1:
+
+                new_offset = offset
+                for x in xrange(offset + 1, offset + 1 + len(self._uncommitted_offsets[partition])):
+                    if x in self._uncommitted_offsets[partition]:
+                        new_offset = x
+                        self._uncommitted_offsets[partition].remove(x)
+                    else:
+                        break
+
+                self._offsets[partition] = new_offset
+                if offset == new_offset:
+                    log.debug('Updating offset for partition %d, offset %d' % (partition, new_offset))
+                else:
+                    log.debug('Updating offset for partition %d, offset %d convering this update and older offsets'
+                              % (partition, new_offset))
+                self._update_zk_offsets()
+            elif self._offsets[partition] > offset:
+                log.error('An offset was received that was lower than the committed offset, this should not happen')
+            else:  # This is skipping offsets so just add to the uncommitted set
+                self._uncommitted_offsets[partition].add(offset)
+                log.debug('Added partition %d, offset %d to uncommited set' % (partition, offset))
