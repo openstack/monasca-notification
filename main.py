@@ -57,9 +57,9 @@ def main(argv=None):
 
     #Create the queues
     alarms = Queue(config['queues']['alarms_size'])
-    notifications = Queue(config['queues']['notifications_size'])
-    sent_notifications = Queue(config['queues']['sent_notifications_size'])
-    finished = Queue(config['queues']['finished_size'])  # Data added here should be of the form (partition, offset)
+    notifications = Queue(config['queues']['notifications_size'])  # data is a list of notification objects here
+    sent_notifications = Queue(config['queues']['sent_notifications_size'])  # data is a list of notification objects
+    finished = Queue(config['queues']['finished_size'])  # Data is of the form (partition, offset)
 
     #State Tracker - Used for tracking the progress of fully processed alarms and the zookeeper lock
     tracker = ZookeeperStateTracker(config['zookeeper']['url'], config['kafka']['alarm_topic'], finished)
@@ -125,5 +125,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
-
-

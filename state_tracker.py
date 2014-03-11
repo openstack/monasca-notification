@@ -114,15 +114,15 @@ class ZookeeperStateTracker(object):
         self.zookeeper.add_listener(exit_method)
 
     def run(self):
-        """ Mark a message as finished.
+        """ Mark a message as finished and where possible commit the new offset to zookeeper.
+            There is no mechanism here to deal with the situation where a single alarm is extremely slow to finish
+            holding up all others behind it. It is assumed the notification job will time out allowing things to finish.
         """
         if not self.has_lock:
             raise NotificationException('Attempt to begin run without Zookeeper Lock')
 
         if self._offsets is None:  # Verify the offsets have been initialized
             self._offsets = self._get_offsets()
-
-        # todo what to do if a single alarm is holding up committing others for a long time?
 
         while True:
             msg = self.finished_queue.get()

@@ -1,5 +1,7 @@
 import logging
 
+from notification_exceptions import NotificationException
+
 log = logging.getLogger(__name__)
 
 
@@ -13,11 +15,15 @@ class NotificationProcessor(object):
         """ Send the notifications
         """
         while True:
-            notification = self.notification_queue.get()
-# todo block if the sent_notification sent_queue is full
-#            if self.sent_notification_queue.full():
-#                log.debug('Sent Notifications sent_queue is full, publishing is blocked')
-            notification.send()
-            self.sent_notification_queue.put(notification)
-            log.debug("Put notification on the sent notification sent_queue")  # todo make this debug info better
+            notifications = self.notification_queue.get()
+            for notification in notifications:
+                try:
+                    notification.send()
+                except NotificationException, e:
+                    log.error("Error sending Notification:%s\nError:%s" % (notification.to_json(), e))
+            if self.sent_notification_queue.full():
+                log.warn('Sent Notifications sent_queue is full, publishing is blocked')
+            self.sent_notification_queue.put(notifications)
+            log.debug("Put notifications from alarm partition %d, offset %d on the notification_sent queue"
+                      % (notification.src_partition, notification.src_offset))
 

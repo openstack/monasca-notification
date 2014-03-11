@@ -1,3 +1,4 @@
+import json
 import logging
 import MySQLdb
 
@@ -18,37 +19,34 @@ class AlarmProcessor(object):
         """ Check the notification setting for this project in mysql then create the appropriate notification or
             add to the finished_queue
         """
+        cur = self.mysql.cursor()
+        notification_types = {
+            'EMAIL': EmailNotification
+        }
+        # todo how to handle a type not implemented? I should log an error but how to make this general
+        # can I use a defaultdict and make the default be the base notification that spits out an unimplemented error?
+        # Should I instead make static method of the base notification class that handles this
         while True:
             raw_alarm = self.alarm_queue.get()
             partition = raw_alarm[0]
             offset = raw_alarm[1].offset
-            alarm = raw_alarm[1].message.value
+            alarm = json.loads(raw_alarm[1].message.value)
+            # todo error handling around the alarm message format
             log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
                       % (partition, offset, alarm))
 
-        #todo figure out mysqldb library
-        # if notifications configured in mysql
-            # todo this object should be made based on the type
-            notification = EmailNotification(partition, offset)
-            if self.notification_queue.full():
-                log.debug('Notifications sent_queue is full, publishing is blocked')
-            self.notification_queue.put(notification)
-            log.debug("Put notification on the notification sent_queue, Partition %d, Offset %d" % (partition, offset))
+            cur.execute("SELECT name, type, address FROM notification_method WHERE tenant_id = ?", alarm.tenant_id)
+            # todo error handling around mysql
+            notifications = [
+                notification_types[row.type](partition, offset, alarm.tenant_id, row.name, row.address) for row in cur
+            ]
 
-        # else
-        #self.finished_queue.put((alarm.partition, alarm.offset))
-
-# This seems to be the key table
-#mysql> describe notification_method;
-#+------------+---------------------+------+-----+---------+-------+
-#| Field      | Type                | Null | Key | Default | Extra |
-#+------------+---------------------+------+-----+---------+-------+
-#| id         | varchar(36)         | NO   | PRI | NULL    |       |
-#| tenant_id  | varchar(36)         | NO   |     | NULL    |       |
-#| name       | varchar(250)        | YES  |     | NULL    |       |
-#| type       | enum('EMAIL','SMS') | NO   |     | NULL    |       |
-#| address    | varchar(100)        | YES  |     | NULL    |       |
-#| created_at | datetime            | NO   |     | NULL    |       |
-#| updated_at | datetime            | NO   |     | NULL    |       |
-#+------------+---------------------+------+-----+---------+-------+
-
+            if len(notifications) == 0:
+                if self.alarm_queue.full():
+                    log.debug('Finished queue is full, publishing is blocked')
+                self.alarm_queue.put((partition, offset))
+            else:
+                if self.notification_queue.full():
+                    log.debug('Notifications sent_queue is full, publishing is blocked')
+                self.notification_queue.put(notifications)
+                log.debug("Put notification on the notification sent_queue, Partition %d, Offset %d" % (partition, offset))

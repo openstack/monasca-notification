@@ -14,7 +14,8 @@ There are five processing steps separated by queues implemented with python mult
 There are 4 internal queues:
 
 1. alarms - kafka alarms are added to this queue.
-2. notifications - notifications to be sent are added to this queue. Consists of Notification objects.
+2. notifications - notifications to be sent, grouped by source alarm are added to this queue.
+   Consists of a list of Notification objects.
 3. sent_notifications - notifications that have been sent are added here. Consists of Notification objects.
 4. finished - alarms that are done with processing, either the notification is sent or there was none.
 

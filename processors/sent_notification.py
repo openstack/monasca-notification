@@ -36,11 +36,12 @@ class SentNotificationProcessor(object):
             partition/offset to the finished queue
         """
         while True:
-            notification = self.sent_queue.get()
-            responses = self.producer.send_messages(self.topic, notification.to_json())
-            log.debug('Published to topic %s, message %s' % (self.topic, notification.to_json()))
-            for resp in responses:
-                if resp.error != 0:
-                    log.error('Error publishing to %s topic, error message %s' %
-                              (self.topic, resp.error))
-            self.finished_queue.put((notification.src_partition, notification.src_offset))
+            notifications = self.sent_queue.get()
+            for notification in notifications:
+                responses = self.producer.send_messages(self.topic, notification.to_json())
+                log.debug('Published to topic %s, message %s' % (self.topic, notification.to_json()))
+                for resp in responses:
+                    if resp.error != 0:
+                        log.error('Error publishing to %s topic, error message %s' %
+                                  (self.topic, resp.error))
+            self.finished_queue.put((notifications[0].src_partition, notifications[0].src_offset))
