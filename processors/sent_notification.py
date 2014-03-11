@@ -44,4 +44,6 @@ class SentNotificationProcessor(object):
                     if resp.error != 0:
                         log.error('Error publishing to %s topic, error message %s' %
                                   (self.topic, resp.error))
+            if self.finished_queue.full():
+                log.warn('Finished queue is full, publishing is blocked')
             self.finished_queue.put((notifications[0].src_partition, notifications[0].src_offset))

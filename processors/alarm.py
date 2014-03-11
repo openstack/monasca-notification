@@ -3,6 +3,7 @@ import logging
 import MySQLdb
 
 from notifications.email import EmailNotification
+from notification_exceptions import AlarmFormatError
 
 log = logging.getLogger(__name__)
 
@@ -15,6 +16,11 @@ class AlarmProcessor(object):
 
         self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_passwd, db=dbname)
 
+    def _add_to_finished_queue(self, partition, offset):
+        if self.finished_queue.full():
+            log.warn('Finished queue is full, publishing is blocked')
+        self.finished_queue.put((partition, offset))
+
     def run(self):
         """ Check the notification setting for this project in mysql then create the appropriate notification or
             add to the finished_queue
@@ -23,30 +29,40 @@ class AlarmProcessor(object):
         notification_types = {
             'EMAIL': EmailNotification
         }
-        # todo how to handle a type not implemented? I should log an error but how to make this general
-        # can I use a defaultdict and make the default be the base notification that spits out an unimplemented error?
-        # Should I instead make static method of the base notification class that handles this
         while True:
             raw_alarm = self.alarm_queue.get()
             partition = raw_alarm[0]
             offset = raw_alarm[1].offset
-            alarm = json.loads(raw_alarm[1].message.value)
-            # todo error handling around the alarm message format
+            try:
+                alarm = json.loads(raw_alarm[1].message.value)
+                if not 'tenant_id' in alarm:
+                    raise AlarmFormatError
+            except Exception, e:  # This is general because of a lack of json exception base class
+                log.error("Invalid Alarm format skipping partition %d, offset %d\nErrror%s" % (partition, offset, e))
+                self._add_to_finished_queue(partition, offset)
+                continue
+
             log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
                       % (partition, offset, alarm))
 
-            cur.execute("SELECT name, type, address FROM notification_method WHERE tenant_id = ?", alarm.tenant_id)
-            # todo error handling around mysql
-            notifications = [
-                notification_types[row.type](partition, offset, alarm.tenant_id, row.name, row.address) for row in cur
-            ]
+            try:
+                cur.execute("SELECT name, type, address FROM notification_method WHERE tenant_id = ?", alarm['tenant_id'])
+            except MySQLdb.Error:
+                log.exception('Error reading from mysql')
+
+            notifications = []
+            for row in cur:
+                if row.type not in notification_types:
+                    log.warn('Notification type %s is not supported. This is defined for tenant_id %s'
+                             % (row.type, alarm['tenant_id']))
+                    continue
+                notifications.append(
+                    notification_types[row.type](partition, offset, alarm['tenant_id'], row.name, row.address))
 
             if len(notifications) == 0:
-                if self.alarm_queue.full():
-                    log.debug('Finished queue is full, publishing is blocked')
-                self.alarm_queue.put((partition, offset))
+                self._add_to_finished_queue(partition, offset)
             else:
                 if self.notification_queue.full():
-                    log.debug('Notifications sent_queue is full, publishing is blocked')
+                    log.warn('Notifications sent_queue is full, publishing is blocked')
                 self.notification_queue.put(notifications)
-                log.debug("Put notification on the notification sent_queue, Partition %d, Offset %d" % (partition, offset))
+                log.debug("Added notifications to sent_queue for alarm Partition %d, Offset %d" % (partition, offset))
