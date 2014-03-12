@@ -12,11 +12,19 @@ mysql:
     passwd: password
     db: mon
 
+email:
+    server: smtp3.hp.com
+    port: 25
+    user:
+    password:
+    timeout: 60
+    from_addr: notifications@localhost.localdomain
+
 processors:
     alarm:
         number: 2
     notification:
-        number: 8
+        number: 4
 
 queues:
     alarms_size: 1024

@@ -1,12 +1,13 @@
 import logging
 
+from . import BaseProcessor
 from kafka.client import KafkaClient
 from kafka.consumer import SimpleConsumer
 
 log = logging.getLogger(__name__)
 
 
-class KafkaConsumer(object):
+class KafkaConsumer(BaseProcessor):
     """ Pull from the alarm topic and place alarm objects on the sent_queue.
         No commit is being done until processing is finished and as the processing can take some time it is done in
         another step.
@@ -37,6 +38,4 @@ class KafkaConsumer(object):
         """
         for message in self.consumer:
             log.debug("Consuming message from kafka, partition %d, offset %d" % (message[0], message[1].offset))
-            if self.queue.full():
-                log.debug('Alarm sent_queue is full, consuming from kafka is blocked')
-            self.queue.put(message)  # The message is decoded in the AlarmProcessor
+            self._add_to_queue(self.queue, 'alarms', message)

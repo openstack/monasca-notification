@@ -1,12 +1,13 @@
 import logging
 
+from . import BaseProcessor
 from kafka.client import KafkaClient
 from kafka.producer import SimpleProducer
 
 log = logging.getLogger(__name__)
 
 
-class SentNotificationProcessor(object):
+class SentNotificationProcessor(BaseProcessor):
     """ Processes notifications which have been sent
         This involves adding them into a kafka topic for persisting by another process and adding the alarm
         to the finished queue.
@@ -44,6 +45,5 @@ class SentNotificationProcessor(object):
                     if resp.error != 0:
                         log.error('Error publishing to %s topic, error message %s' %
                                   (self.topic, resp.error))
-            if self.finished_queue.full():
-                log.warn('Finished queue is full, publishing is blocked')
-            self.finished_queue.put((notifications[0].src_partition, notifications[0].src_offset))
+            self._add_to_queue(
+                self.finished_queue, 'finished', (notifications[0].src_partition, notifications[0].src_offset))

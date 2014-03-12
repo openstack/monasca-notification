@@ -5,17 +5,18 @@
 """
 
 import logging
-import yaml
 from multiprocessing import Process, Queue
 import os
 import signal
 import sys
+import yaml
 
 from state_tracker import ZookeeperStateTracker
-from kafka_consumer import KafkaConsumer
+from processors.kafka_consumer import KafkaConsumer
 from processors.alarm import AlarmProcessor
 from processors.notification import NotificationProcessor
 from processors.sent_notification import SentNotificationProcessor
+
 
 log = logging.getLogger(__name__)
 processors = []  # global list to facilitate clean signal handling
@@ -57,7 +58,7 @@ def main(argv=None):
 
     #Create the queues
     alarms = Queue(config['queues']['alarms_size'])
-    notifications = Queue(config['queues']['notifications_size'])  # data is a list of notification objects here
+    notifications = Queue(config['queues']['notifications_size'])  # data is a list of notification objects
     sent_notifications = Queue(config['queues']['sent_notifications_size'])  # data is a list of notification objects
     finished = Queue(config['queues']['finished_size'])  # Data is of the form (partition, offset)
 
@@ -97,7 +98,14 @@ def main(argv=None):
     #NotificationProcessors
     notification_processors = []
     for i in xrange(config['processors']['notification']['number']):
-        notification_processors.append(Process(target=NotificationProcessor(notifications, sent_notifications).run))
+        notification_processors.append(Process(
+            target=NotificationProcessor(
+                notifications,
+                sent_notifications,
+                finished,
+                config['email']
+            ).run)
+        )
     processors.extend(notification_processors)
 
     #SentNotificationProcessor
