@@ -3,8 +3,8 @@ import logging
 import MySQLdb
 
 from . import BaseProcessor
-from notification_exceptions import AlarmFormatError
-from notification import Notification
+from ..notification_exceptions import AlarmFormatError
+from ..notification import Notification
 
 
 log = logging.getLogger(__name__)
