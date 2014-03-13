@@ -4,7 +4,7 @@ import MySQLdb
 
 from . import BaseProcessor
 from notification_exceptions import AlarmFormatError
-import Notification
+from notification import Notification
 
 
 log = logging.getLogger(__name__)

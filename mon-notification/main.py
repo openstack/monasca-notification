@@ -13,9 +13,9 @@ import yaml
 
 from state_tracker import ZookeeperStateTracker
 from processors.kafka_consumer import KafkaConsumer
-from processors.alarm import AlarmProcessor
-from processors.notification import NotificationProcessor
-from processors.sent_notification import SentNotificationProcessor
+from processors.alarm_processor import AlarmProcessor
+from processors.notification_processor import NotificationProcessor
+from processors.sent_notification_processor import SentNotificationProcessor
 
 
 log = logging.getLogger(__name__)
@@ -48,9 +48,7 @@ def main(argv=None):
 
     # Setup logging
     log_path = os.path.join(config['log_dir'], 'notification.log')
-    #todo restore normal logging
-    logging.basicConfig(level=logging.DEBUG)
-#    logging.basicConfig(format='%(asctime)s %(message)s', filename=log_path, level=logging.INFO)
+    logging.basicConfig(format='%(asctime)s %(message)s', filename=log_path, level=logging.INFO)
     kazoo_logger = logging.getLogger('kazoo')
     kazoo_logger.setLevel(logging.WARN)
     kafka_logger = logging.getLogger('kafka')

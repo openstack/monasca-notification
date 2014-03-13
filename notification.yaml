@@ -1,10 +1,10 @@
-log_dir: /var/log/mon
+log_dir: /var/log/mon-notification
 
 kafka:
     url: 192.168.10.10:9092
     group: mon-notification
-    alarm_topic: alarms
-    notification_topic: notifications
+    alarm_topic: alarm-state-transitions
+    notification_topic: alarm-notifications
 
 mysql:
     host: 192.168.10.6
