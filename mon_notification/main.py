@@ -24,7 +24,7 @@ processors = []  # global list to facilitate clean signal handling
 
 def clean_exit(signum, frame=None):
     """ Exit all processes cleanly
-        Can be called on an os signal or no zookeeper loosing connection.
+        Can be called on an os signal or no zookeeper losing connection.
     """
     for process in processors:
         process.terminate()
@@ -123,7 +123,7 @@ def main(argv=None):
         log.info('Starting processes')
         for process in processors:
             process.start()
-        tracker.run()  # Runs in the main class
+        tracker.run()  # Runs in the main process
     except:
         log.exception('Error exiting!')
         for process in processors:

@@ -109,7 +109,7 @@ class ZookeeperStateTracker(object):
                 self.has_lock = True
                 break
 
-        # Set up a listener to exit if we loose connection, this always exits even if the zookeeper connection is only
+        # Set up a listener to exit if we lose connection, this always exits even if the zookeeper connection is only
         # suspended, the process should be supervised so it starts right back up again.
         self.zookeeper.add_listener(exit_method)
 
@@ -149,7 +149,7 @@ class ZookeeperStateTracker(object):
                 if offset == new_offset:
                     log.debug('Updating offset for partition %d, offset %d' % (partition, new_offset))
                 else:
-                    log.debug('Updating offset for partition %d, offset %d convering this update and older offsets'
+                    log.debug('Updating offset for partition %d, offset %d covering this update and older offsets'
                               % (partition, new_offset))
                 self._update_zk_offsets()
             elif self._offsets[partition] > offset:
