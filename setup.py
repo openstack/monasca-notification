@@ -8,6 +8,5 @@ setup(
         'console_scripts': [
             'mon-notification = mon_notification.main:main'
         ],
-    },
-    test_suite='nose.collector', requires=['kafka', 'kazoo']
+    }
 )
