@@ -37,7 +37,7 @@ class NotificationProcessor(BaseProcessor):
             msg['From'] = self.email_config['from_addr']
             msg['To'] = notification.address
             self.smtp.sendmail(self.email_config['from_addr'], notification.address, msg.as_string())
-
+            log.debug('Sent email to %s, notification %s' % (self.email_config['from_addr'], notification.to_json()))
         except smtplib.SMTPException, e:
             log.error("Error sending Email Notification:%s\nError:%s" % (notification.to_json(), e))
             self._smtp_connect()  # Reconnect in case connection problems caused the failed email
@@ -54,8 +54,6 @@ class NotificationProcessor(BaseProcessor):
         if self.email_config['user'] is not None:
             smtp.login(self.email_config['user'], self.email_config['password'])
 
-        if self.smtp is not None:
-            self.smtp.quit()
         self.smtp = smtp
 
     def run(self):

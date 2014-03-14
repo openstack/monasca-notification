@@ -57,5 +57,5 @@ class Notification(object):
             'state',
             'tenant_id'
         ]
-        notification_data = {name: self.__dict__[name] for name in notification_fields}
+        notification_data = {name: self.name for name in notification_fields}
         return json.dumps(notification_data)

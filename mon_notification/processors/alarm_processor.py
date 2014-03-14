@@ -62,22 +62,23 @@ class AlarmProcessor(BaseProcessor):
                       % (partition, offset, alarm))
 
             try:  # alarm_action.action_id == notification_method.id
-                cur.execute("SELECT action_id FROM alarm_action WHERE alarm_id = ?", alarm['alarmId'])
-                ids = [row.action_id for row in cur]
+                cur.execute("SELECT action_id FROM alarm_action WHERE alarm_id = %s", alarm['alarmId'])
+                ids = [row[0] for row in cur]
                 if len(ids) == 1:
-                    cur.execute("SELECT name, type, address FROM notification_method WHERE id = ?", ids[0])
+                    cur.execute("SELECT name, type, address FROM notification_method WHERE id = %s", ids[0])
                 elif len(ids) > 1:
-                    cur.execute("SELECT name, type, address FROM notification_method WHERE id in (?)", ','.join(ids))
+                    cur.execute("SELECT name, type, address FROM notification_method WHERE id in (%s)", ','.join(ids))
             except MySQLdb.Error:
                 log.exception('Error reading from mysql')
 
+            log.debug('Response from mysql')
             notifications = [
-                Notification(row.type.lower(), partition, offset, row.name, row.address, alarm) for row in cur]
+                Notification(row[1].lower(), partition, offset, row[0], row[2], alarm) for row in cur]
 
             if len(notifications) == 0:
                 log.debug('No notifications found for this alarm, partition %d, offset %d, alarm data %s'
                           % (partition, offset, alarm))
                 self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
             else:
-                self._add_to_queue(self.notification_queue, 'notifications', (partition, offset))
+                self._add_to_queue(self.notification_queue, 'notifications', notifications)
 

@@ -18,7 +18,7 @@ email:
     user:
     password:
     timeout: 60
-    from_addr: notifications@localhost.localdomain
+    from_addr: hpcs.mon@hp.com
 
 processors:
     alarm:

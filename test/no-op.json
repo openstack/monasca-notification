@@ -1,0 +1,3 @@
+{"alarm-transitioned":{"tenantId":"0","alarmId":"4","alarmName":"test Alarm","oldState":"OK","newState":"ALARM","stateChangeReason":"I am alarming!","timestamp":1394641255}}
+{"alarm-transitioned":{"tenantId":"0","alarmId":"4","alarmName":"test Okay","oldState":"ALARM","newState":"OK","stateChangeReason":"Okay, I am not alarming.","timestamp":1394641255}}
+{"alarm-transitioned":{"tenantId":"0","alarmId":"4","alarmName":"test Undetermined","oldState":"OK","newState":"UNDETERMINED","stateChangeReason":"Well, maybe I am alarming.","timestamp":1394641255}}
