@@ -61,8 +61,8 @@ class AlarmProcessor(BaseProcessor):
             log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
                       % (partition, offset, alarm))
 
-            try:  # alarm_action.action_id == notification_method.id
-                cur.execute("SELECT action_id FROM alarm_action WHERE alarm_id = %s", alarm['alarmId'])
+            try:
+                cur.execute("SELECT notification_method_id FROM alarm_action WHERE alarm_id = %s", alarm['alarmId'])
                 ids = [row[0] for row in cur]
                 if len(ids) == 1:
                     cur.execute("SELECT name, type, address FROM notification_method WHERE id = %s", ids[0])
