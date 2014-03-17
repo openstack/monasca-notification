@@ -1,6 +1,7 @@
 
 class NotificationException(Exception):
-    """ Base exception class """
+    """Base exception class.
+    """
     pass
 
 

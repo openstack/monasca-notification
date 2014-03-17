@@ -2,7 +2,7 @@ import json
 
 
 class Notification(object):
-    """ An abstract base class used to define the notification interface and common functions
+    """An abstract base class used to define the notification interface and common functions
     """
     __slots__ = (
         'address',
@@ -20,13 +20,13 @@ class Notification(object):
     )
 
     def __init__(self, ntype, src_partition, src_offset, name, address, alarm):
-        """ Setup the notification object
-            The src_partition and src_offset allow the notification to be linked to the alarm that it came from
-            ntype - The notification type
-            name - Name used in sending
-            address - to send the notification to
-            alarm_data - info that caused the notification
-            notifications that come after this one to remain uncommitted.
+        """Setup the notification object
+             The src_partition and src_offset allow the notification to be linked to the alarm that it came from
+             ntype - The notification type
+             name - Name used in sending
+             address - to send the notification to
+             alarm_data - info that caused the notification
+             notifications that come after this one to remain uncommitted.
         """
         self.address = address
         self.name = name
@@ -44,7 +44,7 @@ class Notification(object):
         self.notification_timestamp = None  # to be updated on actual notification send time
 
     def to_json(self):
-        """ Return json representation
+        """Return json representation
         """
         notification_fields = [
             'address',

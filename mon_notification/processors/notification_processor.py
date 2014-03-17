@@ -1,9 +1,9 @@
-from email.mime.text import MIMEText
+import email.mime.text
 import logging
 import smtplib
 import time
 
-from . import BaseProcessor
+from mon_notification.processors import BaseProcessor
 
 log = logging.getLogger(__name__)
 
@@ -23,36 +23,37 @@ class NotificationProcessor(BaseProcessor):
         self.notification_types = {'email': self._send_email}
 
     def _send_email(self, notification):
-        """ Send the notification via email
-            Returns the notification upon success, None upon failure
+        """Send the notification via email
+             Returns the notification upon success, None upon failure
         """
+        msg = email.mime.text.MIMEText("%s\nAlarm %s transitioned to the %s state at %s\nFull Data:\n%s"
+                                       % (notification.message,
+                                          notification.alarm_name,
+                                          notification.state,
+                                          notification.alarm_timestamp,
+                                          notification.to_json()))
+        msg['Subject'] = '%s: %s' % (notification.state, notification.alarm_name)
+        msg['From'] = self.email_config['from_addr']
+        msg['To'] = notification.address
+
         try:
-            msg = MIMEText("%s\nAlarm %s transitioned to the %s state at %s\nFull Data:\n%s"
-                           % (notification.message,
-                              notification.alarm_name,
-                              notification.state,
-                              notification.alarm_timestamp,
-                              notification.to_json()))
-            msg['Subject'] = '%s: %s' % (notification.state, notification.alarm_name)
-            msg['From'] = self.email_config['from_addr']
-            msg['To'] = notification.address
             self.smtp.sendmail(self.email_config['from_addr'], notification.address, msg.as_string())
-            log.debug('Sent email to %s, notification %s' % (self.email_config['from_addr'], notification.to_json()))
-        except smtplib.SMTPServerDisconnected, e:
+            log.debug('Sent email to %s, notification %s' % (notification.address, notification.to_json()))
+        except smtplib.SMTPServerDisconnected as e:
             log.debug('SMTP server disconnected. Will reconnect and retry message.')
             self._smtp_connect()
             try:
                 self.smtp.sendmail(self.email_config['from_addr'], notification.address, msg.as_string())
-                log.debug('Sent email to %s, notification %s' % (self.email_config['from_addr'], notification.to_json()))
-            except smtplib.SMTPException, e:
+                log.debug('Sent email to %s, notification %s' % (notification.address, notification.to_json()))
+            except smtplib.SMTPException as e:
                 log.error("Error sending Email Notification:%s\nError:%s" % (notification.to_json(), e))
-        except smtplib.SMTPException, e:
+        except smtplib.SMTPException as e:
             log.error("Error sending Email Notification:%s\nError:%s" % (notification.to_json(), e))
         else:
             return notification
 
     def _smtp_connect(self):
-        """ Connect to the smtp server
+        """Connect to the smtp server
         """
         log.info('Connecting to Email Server %s' % self.email_config['server'])
         smtp = smtplib.SMTP(
@@ -64,9 +65,9 @@ class NotificationProcessor(BaseProcessor):
         self.smtp = smtp
 
     def run(self):
-        """ Send the notifications
-            For each notification in a message it is sent according to its type.
-            If all notifications fail the alarm partition/offset are added to the the finished queue
+        """Send the notifications
+             For each notification in a message it is sent according to its type.
+             If all notifications fail the alarm partition/offset are added to the the finished queue
         """
         while True:
             notifications = self.notification_queue.get()

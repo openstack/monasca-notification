@@ -6,32 +6,31 @@
 
 import logging
 import logging.config
-from multiprocessing import Process, Queue
+import multiprocessing
 import signal
+from state_tracker import ZookeeperStateTracker
 import sys
 import yaml
 
-from state_tracker import ZookeeperStateTracker
-from processors.kafka_consumer import KafkaConsumer
 from processors.alarm_processor import AlarmProcessor
+from processors.kafka_consumer import KafkaConsumer
 from processors.notification_processor import NotificationProcessor
 from processors.sent_notification_processor import SentNotificationProcessor
-
 
 log = logging.getLogger(__name__)
 processors = []  # global list to facilitate clean signal handling
 
 
 def clean_exit(signum, frame=None):
-    """ Exit all processes cleanly
-        Can be called on an os signal or no zookeeper losing connection.
+    """Exit all processes cleanly
+         Can be called on an os signal or no zookeeper losing connection.
     """
     for process in processors:
         # Since this is set up as a handler for SIGCHLD when this kills one child it gets another signal, the result
         # everything comes crashing down with some exceptions thrown for already dead processes
         try:
             process.terminate()
-        except:
+        except Exception:
             pass
 
     sys.exit(0)
@@ -43,8 +42,8 @@ def main(argv=None):
     if len(argv) == 2:
         config_file = argv[1]
     elif len(argv) > 2:
-        print "Usage: " + argv[0] + " <config_file>"
-        print "Config file defaults to /etc/mon/notification.yaml"
+        print("Usage: " + argv[0] + " <config_file>")
+        print("Config file defaults to /etc/mon/notification.yaml")
         return 1
     else:
         config_file = '/etc/mon/notification.yaml'
@@ -55,10 +54,10 @@ def main(argv=None):
     logging.config.dictConfig(config['logging'])
 
     #Create the queues
-    alarms = Queue(config['queues']['alarms_size'])
-    notifications = Queue(config['queues']['notifications_size'])  # data is a list of notification objects
-    sent_notifications = Queue(config['queues']['sent_notifications_size'])  # data is a list of notification objects
-    finished = Queue(config['queues']['finished_size'])  # Data is of the form (partition, offset)
+    alarms = multiprocessing.Queue(config['queues']['alarms_size'])
+    notifications = multiprocessing.Queue(config['queues']['notifications_size'])  # [notification_object, ]
+    sent_notifications = multiprocessing.Queue(config['queues']['sent_notifications_size'])  # [notification_object, ]
+    finished = multiprocessing.Queue(config['queues']['finished_size'])  # Data is of the form (partition, offset)
 
     #State Tracker - Used for tracking the progress of fully processed alarms and the zookeeper lock
     tracker = ZookeeperStateTracker(config['zookeeper']['url'], config['kafka']['alarm_topic'], finished)
@@ -66,7 +65,7 @@ def main(argv=None):
 
     ## Define processors
     #KafkaConsumer
-    kafka = Process(
+    kafka = multiprocessing.Process(
         target=KafkaConsumer(
             alarms,
             config['kafka']['url'],
@@ -79,8 +78,8 @@ def main(argv=None):
 
     #AlarmProcessors
     alarm_processors = []
-    for i in xrange(config['processors']['alarm']['number']):
-        alarm_processors.append(Process(
+    for i in range(config['processors']['alarm']['number']):
+        alarm_processors.append(multiprocessing.Process(
             target=AlarmProcessor(
                 alarms,
                 notifications,
@@ -95,8 +94,8 @@ def main(argv=None):
 
     #NotificationProcessors
     notification_processors = []
-    for i in xrange(config['processors']['notification']['number']):
-        notification_processors.append(Process(
+    for i in range(config['processors']['notification']['number']):
+        notification_processors.append(multiprocessing.Process(
             target=NotificationProcessor(
                 notifications,
                 sent_notifications,
@@ -107,7 +106,7 @@ def main(argv=None):
     processors.extend(notification_processors)
 
     #SentNotificationProcessor
-    sent_notification_processor = Process(
+    sent_notification_processor = multiprocessing.Process(
         target=SentNotificationProcessor(
             sent_notifications,
             finished,
@@ -125,7 +124,7 @@ def main(argv=None):
         for process in processors:
             process.start()
         tracker.run()  # Runs in the main process
-    except:
+    except Exception:
         log.exception('Error exiting!')
         for process in processors:
             process.terminate()

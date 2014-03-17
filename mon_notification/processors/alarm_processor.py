@@ -2,9 +2,9 @@ import json
 import logging
 import MySQLdb
 
-from . import BaseProcessor
-from ..notification_exceptions import AlarmFormatError
-from ..notification import Notification
+from mon_notification.processors import BaseProcessor
+from mon_notification.notification import Notification
+from mon_notification.notification_exceptions import AlarmFormatError
 
 
 log = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class AlarmProcessor(BaseProcessor):
 
     @staticmethod
     def _parse_alarm(alarm_data):
-        """ Parse the alarm message making sure it matches the expected format.
+        """Parse the alarm message making sure it matches the expected format.
         """
         expected_fields = [
             'alarmId',
@@ -43,8 +43,8 @@ class AlarmProcessor(BaseProcessor):
         return alarm
 
     def run(self):
-        """ Check the notification setting for this project in mysql then create the appropriate notification or
-            add to the finished_queue
+        """Check the notification setting for this project in mysql then create the appropriate notification or
+             add to the finished_queue
         """
         cur = self.mysql.cursor()
         while True:
@@ -53,7 +53,7 @@ class AlarmProcessor(BaseProcessor):
             offset = raw_alarm[1].offset
             try:
                 alarm = self._parse_alarm(raw_alarm[1].message.value)
-            except Exception, e:  # This is general because of a lack of json exception base class
+            except Exception as e:  # This is general because of a lack of json exception base class
                 log.error("Invalid Alarm format skipping partition %d, offset %d\nErrror%s" % (partition, offset, e))
                 self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
                 continue
@@ -81,4 +81,3 @@ class AlarmProcessor(BaseProcessor):
                 self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
             else:
                 self._add_to_queue(self.notification_queue, 'notifications', notifications)
-
