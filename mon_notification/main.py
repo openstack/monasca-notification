@@ -27,7 +27,12 @@ def clean_exit(signum, frame=None):
         Can be called on an os signal or no zookeeper losing connection.
     """
     for process in processors:
-        process.terminate()
+        # Since this is set up as a handler for SIGCHLD when this kills one child it gets another signal, the result
+        # everything comes crashing down with some exceptions thrown for already dead processes
+        try:
+            process.terminate()
+        except:
+            pass
 
     sys.exit(0)
 
@@ -114,6 +119,7 @@ def main(argv=None):
 
     ## Start
     signal.signal(signal.SIGTERM, clean_exit)
+    signal.signal(signal.SIGCHLD, clean_exit)
     try:
         log.info('Starting processes')
         for process in processors:
