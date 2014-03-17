@@ -11,11 +11,11 @@ import signal
 import sys
 import yaml
 
-from state_tracker import ZookeeperStateTracker
-from processors.kafka_consumer import KafkaConsumer
-from processors.alarm_processor import AlarmProcessor
-from processors.notification_processor import NotificationProcessor
-from processors.sent_notification_processor import SentNotificationProcessor
+from mon_notification.state_tracker import ZookeeperStateTracker
+from mon_notification.processors.kafka_consumer import KafkaConsumer
+from mon_notification.processors.alarm_processor import AlarmProcessor
+from mon_notification.processors.notification_processor import NotificationProcessor
+from mon_notification.processors.sent_notification_processor import SentNotificationProcessor
 
 
 log = logging.getLogger(__name__)

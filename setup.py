@@ -6,7 +6,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     entry_points={
         'console_scripts': [
-            'mon-notification = mon_notification.main:main'
+            'mon-notification = main:main'
         ],
     }
 )
