@@ -38,9 +38,16 @@ class NotificationProcessor(BaseProcessor):
             msg['To'] = notification.address
             self.smtp.sendmail(self.email_config['from_addr'], notification.address, msg.as_string())
             log.debug('Sent email to %s, notification %s' % (self.email_config['from_addr'], notification.to_json()))
+        except smtplib.SMTPServerDisconnected, e:
+            log.debug('SMTP server disconnected. Will reconnect and retry message.')
+            self._smtp_connect()
+            try:
+                self.smtp.sendmail(self.email_config['from_addr'], notification.address, msg.as_string())
+                log.debug('Sent email to %s, notification %s' % (self.email_config['from_addr'], notification.to_json()))
+            except smtplib.SMTPException, e:
+                log.error("Error sending Email Notification:%s\nError:%s" % (notification.to_json(), e))
         except smtplib.SMTPException, e:
             log.error("Error sending Email Notification:%s\nError:%s" % (notification.to_json(), e))
-            self._smtp_connect()  # Reconnect in case connection problems caused the failed email
         else:
             return notification
 
