@@ -5,8 +5,8 @@
 """
 
 import logging
+import logging.config
 from multiprocessing import Process, Queue
-import os
 import signal
 import sys
 import yaml
@@ -47,12 +47,7 @@ def main(argv=None):
     config = yaml.load(open(config_file, 'r'))
 
     # Setup logging
-    log_path = os.path.join(config['log_dir'], 'notification.log')
-    logging.basicConfig(format='%(asctime)s %(message)s', filename=log_path, level=logging.INFO)
-    kazoo_logger = logging.getLogger('kazoo')
-    kazoo_logger.setLevel(logging.WARN)
-    kafka_logger = logging.getLogger('kafka')
-    kafka_logger.setLevel(logging.WARN)
+    logging.config.dictConfig(config['logging'])
 
     #Create the queues
     alarms = Queue(config['queues']['alarms_size'])
