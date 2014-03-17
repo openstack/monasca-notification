@@ -36,7 +36,7 @@ notification twice than not at all.
 It is assumed the notification engine will be run by a process supervisor which will restart it in case of a failure.
 
 # Operation
-Yaml config file by default is in '/etc/mon/notification.yaml', a sample is in this project.
+Yaml config file by default is in '/etc/mon/notification.yaml'. The daemon runs via an upstart script.
 
 # Future Considerations
 - Currently I lock the topic rather than the partitions. This effectively means there is only one active notification
