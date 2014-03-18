@@ -25,15 +25,30 @@ There are 4 internal queues:
 4. finished - alarms that are done with processing, either the notification is sent or there was none.
 
 ## High Availability
-HA is handled by utilizing multiple partitions withing kafka. When multiple notification engines are running the partitions
-are spread out among them, as engines die/restart things reshuffle.
+HA is handled by running multiple notification engines. Only one at a time is active if it dies another can take
+over and continue from where it left. A zookeeper lock file is used to ensure only one running daemon. If needed
+the code can be modified to use kafka partitions to have multiple active engines working on different alarms.
 
+## Fault Tolerance
 When reading from the alarm topic no committing is done. The committing is done in sent_notification processor. This allows
 the processing to continue even though some notifications can be slow. In the event of a catastrophic failure some
 notifications could be sent but the alarms not yet acknowledged. This is an acceptable failure mode, better to send a
 notification twice than not at all.
 
-It is assumed the notification engine will be run by a process supervisor which will restart it in case of a failure.
+The general process when a major error is encountered is to exit the daemon which should allow another daemon to take
+over according to the HA strategy. It is also assumed the notification engine will be run by a process supervisor which
+will restart it in case of a failure. This way any errors which are not easy to recover from are automatically handled
+by the service restarting and the active daemon switching to another instance.
+
+Though this should cover all errors there is risk that an alarm or set of alarms can be processed and notifications
+sent out multiple times. To minimize this risk a number of techniques are used:
+
+- Timeouts are implemented with all notification types.
+- On a clean shutdown each process finishes active work.
+- An alarm TTL is utilized. Any alarm older than the TTL is not processed.
+- A maximum offset lag time is set. The offset is normally only updated if there is a continuous chain of finished
+  alarms. If there is a new offset that arrives yet still a gap it is normally held in reserve. If the maximum lag
+  time has been set and exceeded when a new finished alarm comes in the offset is updated regardless of gaps.
 
 # Operation
 Yaml config file by default is in '/etc/mon/notification.yaml', a sample is in this project.

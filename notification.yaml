@@ -25,10 +25,10 @@ processors:
         number: 4
 
 queues:
-    alarms_size: 1024
-    finished_size: 1024
-    notifications_size: 1024
-    sent_notifications_size: 1024
+    alarms_size: 256
+    finished_size: 256
+    notifications_size: 256
+    sent_notifications_size: 50  # limiting this size reduces potential # of re-sent notifications after a failure
 
 zookeeper:
     url: 192.168.10.10:2181
