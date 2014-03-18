@@ -56,6 +56,7 @@ are gathered per thread, the thread number is indicated by a -# at the end of th
 - Timers
     - ConfigDBTime
     - SMTPTime
+    - OffsetCommitTime
 
 # Future Considerations
 - Currently I lock the topic rather than the partitions. This effectively means there is only one active notification

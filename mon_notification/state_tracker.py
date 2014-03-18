@@ -126,6 +126,7 @@ class ZookeeperStateTracker(object):
 
         finished_count = statsd.Counter('AlarmsFinished')
         offset_update_count = statsd.Counter('AlarmsOffsetUpdated')
+        zk_timer = statsd.Timer('OffsetCommitTime')
         while True:
             msg = self.finished_queue.get()
             finished_count += 1
@@ -155,7 +156,8 @@ class ZookeeperStateTracker(object):
                 else:
                     log.debug('Updating offset for partition %d, offset %d covering this update and older offsets'
                               % (partition, new_offset))
-                self._update_zk_offsets()
+                with zk_timer.time():
+                    self._update_zk_offsets()
             elif self._offsets[partition] > offset:
                 log.error('An offset was received that was lower than the committed offset, this should not happen')
             else:  # This is skipping offsets so just add to the uncommitted set
