@@ -1,6 +1,0 @@
-kafka-python
-kazoo
-pyodbc
-pkg-resources
-yaml
-mysqldb
