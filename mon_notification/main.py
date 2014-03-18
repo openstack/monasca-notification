@@ -88,7 +88,7 @@ def main(argv=None):
                 config['mysql']['user'],
                 config['mysql']['passwd'],
                 config['mysql']['db']
-            ).run)
+            ).run),
         )
     processors.extend(alarm_processors)
 
@@ -101,7 +101,7 @@ def main(argv=None):
                 sent_notifications,
                 finished,
                 config['email']
-            ).run)
+            ).run),
         )
     processors.extend(notification_processors)
 

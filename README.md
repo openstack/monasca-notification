@@ -38,6 +38,25 @@ It is assumed the notification engine will be run by a process supervisor which 
 # Operation
 Yaml config file by default is in '/etc/mon/notification.yaml', a sample is in this project.
 
+## Monitoring
+statsd is incorporated into the daemon and will send all stats to localhost on udp port 8125. In many cases the stats
+are gathered per thread, the thread number is indicated by a -# at the end of the name.
+
+- Counters
+    - ConsumedFromKafka
+    - AlarmsFailedParse
+    - AlarmsFinished
+    - AlarmsNoNotification
+    - AlarmsOffsetUpdated
+    - NotificationsCreated
+    - NotificationsSentSMTP
+    - NotificationsSentFailed
+    - NotificationsInvalidType
+    - PublishedToKafka
+- Timers
+    - ConfigDBTime
+    - SMTPTime
+
 # Future Considerations
 - Currently I lock the topic rather than the partitions. This effectively means there is only one active notification
   engine at any given time. In the future to share the load among multiple daemons we could lock by partition.

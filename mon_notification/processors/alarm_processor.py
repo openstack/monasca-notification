@@ -1,6 +1,8 @@
 import json
 import logging
 import MySQLdb
+import multiprocessing
+import statsd
 
 from mon_notification.processors import BaseProcessor
 from mon_notification.notification import Notification
@@ -47,6 +49,12 @@ class AlarmProcessor(BaseProcessor):
              add to the finished_queue
         """
         cur = self.mysql.cursor()
+        pname = multiprocessing.current_process().name
+        failed_parse_count = statsd.Counter('AlarmsFailedParse-%s' % pname)
+        no_notification_count = statsd.Counter('AlarmsNoNotification-%s' % pname)
+        notification_count = statsd.Counter('NotificationsCreated-%s' % pname)
+        db_time = statsd.Timer('ConfigDBTime-%s' % pname)
+
         while True:
             raw_alarm = self.alarm_queue.get()
             partition = raw_alarm[0]
@@ -54,6 +62,7 @@ class AlarmProcessor(BaseProcessor):
             try:
                 alarm = self._parse_alarm(raw_alarm[1].message.value)
             except Exception as e:  # This is general because of a lack of json exception base class
+                failed_parse_count += 1
                 log.error("Invalid Alarm format skipping partition %d, offset %d\nErrror%s" % (partition, offset, e))
                 self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
                 continue
@@ -62,12 +71,13 @@ class AlarmProcessor(BaseProcessor):
                       % (partition, offset, alarm))
 
             try:
-                cur.execute("SELECT notification_method_id FROM alarm_action WHERE alarm_id = %s", alarm['alarmId'])
-                ids = [row[0] for row in cur]
-                if len(ids) == 1:
-                    cur.execute("SELECT name, type, address FROM notification_method WHERE id = %s", ids[0])
-                elif len(ids) > 1:
-                    cur.execute("SELECT name, type, address FROM notification_method WHERE id in (%s)", ','.join(ids))
+                with db_time.time():
+                    cur.execute("SELECT notification_method_id FROM alarm_action WHERE alarm_id = %s", alarm['alarmId'])
+                    ids = [row[0] for row in cur]
+                    if len(ids) == 1:
+                        cur.execute("SELECT name, type, address FROM notification_method WHERE id = %s", ids[0])
+                    elif len(ids) > 1:
+                        cur.execute("SELECT name, type, address FROM notification_method WHERE id in (%s)", ','.join(ids))
             except MySQLdb.Error:
                 log.exception('Error reading from mysql')
 
@@ -76,8 +86,10 @@ class AlarmProcessor(BaseProcessor):
                 Notification(row[1].lower(), partition, offset, row[0], row[2], alarm) for row in cur]
 
             if len(notifications) == 0:
+                no_notification_count += 1
                 log.debug('No notifications found for this alarm, partition %d, offset %d, alarm data %s'
                           % (partition, offset, alarm))
                 self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
             else:
+                notification_count += len(notifications)
                 self._add_to_queue(self.notification_queue, 'notifications', notifications)

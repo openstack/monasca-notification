@@ -1,6 +1,7 @@
 import kafka.client
 import kafka.consumer
 import logging
+import statsd
 
 from mon_notification.processors import BaseProcessor
 
@@ -36,6 +37,8 @@ class KafkaConsumer(BaseProcessor):
     def run(self):
         """Consume from kafka and place alarm objects on the sent_queue
         """
+        counter = statsd.Counter('ConsumedFromKafka')
         for message in self.consumer:
+            counter += 1
             log.debug("Consuming message from kafka, partition %d, offset %d" % (message[0], message[1].offset))
             self._add_to_queue(self.queue, 'alarms', message)

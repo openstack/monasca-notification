@@ -1,6 +1,8 @@
 import email.mime.text
 import logging
+import multiprocessing
 import smtplib
+import statsd
 import time
 
 from mon_notification.processors import BaseProcessor
@@ -69,18 +71,33 @@ class NotificationProcessor(BaseProcessor):
              For each notification in a message it is sent according to its type.
              If all notifications fail the alarm partition/offset are added to the the finished queue
         """
+        pname = multiprocessing.current_process().name
+        invalid_count = statsd.Counter('NotificationsInvalidType-%s' % pname)
+        failed_count = statsd.Counter('NotificationsSentFailed-%s' % pname)
+
+        smtp_sent_count = statsd.Counter('NotificationsSentSMTP-%s' % pname)
+        counters = {'email': smtp_sent_count}
+
+        smtp_time = statsd.Timer('SMTPTime-%s' % pname)
+        timers = {'email': smtp_time}
+
         while True:
             notifications = self.notification_queue.get()
             sent_notifications = []
             for notification in notifications:
                 if notification.type not in self.notification_types:
                     log.warn('Notification type %s is not a valid type' % notification.type)
+                    invalid_count += 1
                     continue
                 else:
-                    sent = self.notification_types[notification.type](notification)
-                    if sent is not None:
+                    with timers[notification.type].time():
+                        sent = self.notification_types[notification.type](notification)
+                    if sent is None:
+                        failed_count += 1
+                    else:
                         sent.notification_timestamp = time.time()
                         sent_notifications.append(sent)
+                        counters[notification.type] += 1
 
             if len(sent_notifications) == 0:  # All notifications failed
                 self._add_to_queue(

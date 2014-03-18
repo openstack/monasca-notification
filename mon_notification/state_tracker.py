@@ -3,6 +3,7 @@ import kazoo.client
 import kazoo.exceptions
 import logging
 import time
+import statsd
 
 from mon_notification import notification_exceptions
 
@@ -123,8 +124,11 @@ class ZookeeperStateTracker(object):
         if self._offsets is None:  # Verify the offsets have been initialized
             self._offsets = self._get_offsets()
 
+        finished_count = statsd.Counter('AlarmsFinished')
+        offset_update_count = statsd.Counter('AlarmsOffsetUpdated')
         while True:
             msg = self.finished_queue.get()
+            finished_count += 1
             partition = int(msg[0])
             offset = int(msg[1])
 
@@ -144,6 +148,7 @@ class ZookeeperStateTracker(object):
                     else:
                         break
 
+                offset_update_count += new_offset - self._offsets[partition]
                 self._offsets[partition] = new_offset
                 if offset == new_offset:
                     log.debug('Updating offset for partition %d, offset %d' % (partition, new_offset))

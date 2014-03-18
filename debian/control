@@ -11,6 +11,6 @@ X-Python-Version: >= 2.6
 Package: mon-notification
 Architecture: all
 Section: python
-Depends: ${misc:Depends}, ${python:Depends}, libpython2.7, python-pkg-resources, kafka-python, python-yaml, python-mysqldb, python-kazoo
+Depends: ${misc:Depends}, ${python:Depends}, libpython2.7, python-pkg-resources, kafka-python, python-yaml, python-mysqldb, python-kazoo, python-statsd
 Description: Notification engine for monitoring.
   Consumes alarms from Kafka and sends notifications appropriately.

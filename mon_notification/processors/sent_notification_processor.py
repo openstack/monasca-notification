@@ -1,6 +1,7 @@
 import kafka.client
 import kafka.producer
 import logging
+import statsd
 
 from mon_notification.processors import BaseProcessor
 
@@ -36,10 +37,12 @@ class SentNotificationProcessor(BaseProcessor):
         """Takes messages from the sent_queue, puts them on the kafka notification topic and then adds
              partition/offset to the finished queue
         """
+        published_count = statsd.Counter('PublishedToKafka')
         while True:
             notifications = self.sent_queue.get()
             for notification in notifications:
                 responses = self.producer.send_messages(self.topic, notification.to_json())
+                published_count += 1
                 log.debug('Published to topic %s, message %s' % (self.topic, notification.to_json()))
                 for resp in responses:
                     if resp.error != 0:
