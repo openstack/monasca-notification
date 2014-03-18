@@ -41,7 +41,7 @@ class NotificationProcessor(BaseProcessor):
         try:
             self.smtp.sendmail(self.email_config['from_addr'], notification.address, msg.as_string())
             log.debug('Sent email to %s, notification %s' % (notification.address, notification.to_json()))
-        except smtplib.SMTPServerDisconnected as e:
+        except smtplib.SMTPServerDisconnected:
             log.debug('SMTP server disconnected. Will reconnect and retry message.')
             self._smtp_connect()
             try:

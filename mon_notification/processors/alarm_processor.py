@@ -77,7 +77,8 @@ class AlarmProcessor(BaseProcessor):
                     if len(ids) == 1:
                         cur.execute("SELECT name, type, address FROM notification_method WHERE id = %s", ids[0])
                     elif len(ids) > 1:
-                        cur.execute("SELECT name, type, address FROM notification_method WHERE id in (%s)", ','.join(ids))
+                        cur.execute(
+                            "SELECT name, type, address FROM notification_method WHERE id in (%s)", ','.join(ids))
             except MySQLdb.Error:
                 log.exception('Error reading from mysql')
 
