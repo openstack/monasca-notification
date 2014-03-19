@@ -151,12 +151,13 @@ class ZookeeperStateTracker(object):
                 log.debug('self.stop set and the finished_queue is empty, doing final wait')
                 time.sleep(10)  # Before final exit wait a bit to verify the queue is still empty
                 if self.finished_queue.empty():
-                    # if the max_lag has been hit at this point commit the last received offset
-                    for partition in self._last_commit_time.iterkeys():
-                        if ((time.time() - self._last_commit_time[partition]) > self.max_lag) and\
-                                (len(self._uncommitted_offsets[partition]) > 0):
-                            log.error('Max Lag has been reached! Skipping offsets for partition %s' % partition)
-                            self._update_offset(partition, max(self._uncommitted_offsets[partition]))
+                    if self.max_lag is not None:
+                        # if the max_lag has been hit at this point commit the last received offset
+                        for partition in self._last_commit_time.iterkeys():
+                            if ((time.time() - self._last_commit_time[partition]) > self.max_lag) and\
+                                    (len(self._uncommitted_offsets[partition]) > 0):
+                                log.error('Max Lag has been reached! Skipping offsets for partition %s' % partition)
+                                self._update_offset(partition, max(self._uncommitted_offsets[partition]))
                     break
 
             try:
@@ -195,7 +196,7 @@ class ZookeeperStateTracker(object):
             else:  # This is skipping offsets so add to the uncommitted set unless max_lag has been hit
                 self._uncommitted_offsets[partition].add(offset)
                 log.debug('Added partition %d, offset %d to uncommited set' % (partition, offset))
-                if (time.time() - self._last_commit_time[partition]) > self.max_lag:
+                if (self.max_lag is not None) and ((time.time() - self._last_commit_time[partition]) > self.max_lag):
                     log.error('Max Lag has been reached! Skipping offsets for partition %s' % partition)
                     self._update_offset(partition, max(self._uncommitted_offsets[partition]))
                     self._uncommitted_offsets[partition].clear()

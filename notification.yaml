@@ -21,7 +21,7 @@ email:
 processors:
     alarm:
         number: 2
-        ttl: 1440  # In minutes, Alarms older than this are not processed
+        ttl: 14400  # In seconds, undefined for none. Alarms older than this are not processed
     notification:
         number: 4
 
@@ -33,7 +33,7 @@ queues:
 
 zookeeper:
     url: 192.168.10.10:2181
-    max_offset_lag: 600  # In seconds
+    max_offset_lag: 600  # In seconds, undefined for none
 
 logging: # Used in logging.dictConfig
     version: 1
