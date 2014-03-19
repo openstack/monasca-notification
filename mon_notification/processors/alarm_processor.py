@@ -76,6 +76,7 @@ class AlarmProcessor(BaseProcessor):
 
             alarm_age = time.time() - alarm['timestamp']  # Should all be in seconds since epoch
             if alarm_age/60 > self.alarm_ttl:  # ttl is in minutes not seconds
+                no_notification_count += 1
                 self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
                 log.warn('Received alarm older than the ttl, skipping. Alarm from %s' % time.ctime(alarm['timestamp']))
                 continue
