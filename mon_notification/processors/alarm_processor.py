@@ -1,13 +1,13 @@
 import json
 import logging
-import MySQLdb
 import multiprocessing
+import MySQLdb
 import statsd
 import time
 
-from mon_notification.processors import BaseProcessor
 from mon_notification.notification import Notification
 from mon_notification.notification_exceptions import AlarmFormatError
+from mon_notification.processors import BaseProcessor
 
 
 log = logging.getLogger(__name__)
