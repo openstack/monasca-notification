@@ -163,8 +163,9 @@ def main(argv=None):
         tracker_thread.start()
 
         # The signal handlers must be added after the processes start otherwise they run on all processes
-        signal.signal(signal.SIGTERM, clean_exit)
         signal.signal(signal.SIGCHLD, clean_exit)
+        signal.signal(signal.SIGINT, clean_exit)
+        signal.signal(signal.SIGTERM, clean_exit)
 
         # If the tracker fails exit
         while True:
