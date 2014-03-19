@@ -98,15 +98,6 @@ class ZookeeperStateTracker(object):
 
         return self._offsets
 
-    def get_offsets(self, partitions=None):
-        """Return the offsets for specified partitions or all if partitions is None
-             The return is a dictionary with key name being partition # and value the offset
-        """
-        if partitions is None:
-            return self.offsets
-        else:
-            return {k: self.offsets[k] for k in partitions}
-
     def lock(self, exit_method):
         """Grab a lock within zookeeper, if not available retry.
         """

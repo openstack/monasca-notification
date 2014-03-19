@@ -107,7 +107,7 @@ def main(argv=None):
             config['kafka']['url'],
             config['kafka']['group'],
             config['kafka']['alarm_topic'],
-            tracker.get_offsets()
+            tracker.offsets
         ).run
     )
     processors.append(kafka)
