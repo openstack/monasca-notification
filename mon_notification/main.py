@@ -94,7 +94,8 @@ def main(argv=None):
 
     #State Tracker - Used for tracking the progress of fully processed alarms and the zookeeper lock
     global tracker  # Set to global for use in the cleanup function
-    tracker = ZookeeperStateTracker(config['zookeeper']['url'], config['kafka']['alarm_topic'], finished)
+    tracker = ZookeeperStateTracker(
+        config['zookeeper']['url'], config['kafka']['alarm_topic'], finished, config['zookeeper']['max_offset_lag'])
     tracker.lock(clean_exit)  # Only begin if we have the processing lock
     tracker_thread = threading.Thread(target=tracker.run)
 

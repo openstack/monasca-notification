@@ -33,6 +33,7 @@ queues:
 
 zookeeper:
     url: 192.168.10.10:2181
+    max_offset_lag: 600  # In seconds
 
 logging: # Used in logging.dictConfig
     version: 1
