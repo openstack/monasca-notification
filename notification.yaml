@@ -21,6 +21,7 @@ email:
 processors:
     alarm:
         number: 2
+        ttl: 1440  # In minutes, Alarms older than this are not processed
     notification:
         number: 4
 

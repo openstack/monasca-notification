@@ -3,6 +3,7 @@ import logging
 import MySQLdb
 import multiprocessing
 import statsd
+import time
 
 from mon_notification.processors import BaseProcessor
 from mon_notification.notification import Notification
@@ -13,8 +14,11 @@ log = logging.getLogger(__name__)
 
 
 class AlarmProcessor(BaseProcessor):
-    def __init__(self, alarm_queue, notification_queue, finished_queue, mysql_host, mysql_user, mysql_passwd, dbname):
+    def __init__(
+            self, alarm_queue, notification_queue, finished_queue,
+            alarm_ttl, mysql_host, mysql_user, mysql_passwd, dbname):
         self.alarm_queue = alarm_queue
+        self.alarm_ttl = alarm_ttl
         self.notification_queue = notification_queue
         self.finished_queue = finished_queue
 
@@ -69,6 +73,12 @@ class AlarmProcessor(BaseProcessor):
 
             log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
                       % (partition, offset, alarm))
+
+            alarm_age = time.time() - alarm['timestamp']  # Should all be in seconds since epoch
+            if alarm_age/60 > self.alarm_ttl:  # ttl is in minutes not seconds
+                self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
+                log.warn('Received alarm older than the ttl, skipping. Alarm from %s' % time.ctime(alarm['timestamp']))
+                continue
 
             try:
                 with db_time.time():

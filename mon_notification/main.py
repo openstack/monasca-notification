@@ -119,6 +119,7 @@ def main(argv=None):
                 alarms,
                 notifications,
                 finished,
+                config['processors']['alarm']['ttl'],
                 config['mysql']['host'],
                 config['mysql']['user'],
                 config['mysql']['passwd'],
