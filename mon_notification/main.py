@@ -7,9 +7,12 @@
 import logging
 import logging.config
 import multiprocessing
+import os
 import signal
 from state_tracker import ZookeeperStateTracker
 import sys
+import threading
+import time
 import yaml
 
 from processors.alarm_processor import AlarmProcessor
@@ -19,17 +22,47 @@ from processors.sent_notification_processor import SentNotificationProcessor
 
 log = logging.getLogger(__name__)
 processors = []  # global list to facilitate clean signal handling
+exiting = False
 
 
 def clean_exit(signum, frame=None):
-    """Exit all processes cleanly
+    """Exit all processes attempting to finish uncommited active work before exit.
          Can be called on an os signal or no zookeeper losing connection.
     """
-    for process in processors:
-        # Since this is set up as a handler for SIGCHLD when this kills one child it gets another signal, the result
-        # everything comes crashing down with some exceptions thrown for already dead processes
+    global exiting
+    if exiting:
+        # Since this is set up as a handler for SIGCHLD when this kills one child it gets another signal, the global
+        # exiting avoids this running multiple times.
+        log.debug('Exit in progress clean_exit received additional signal %s' % signum)
+        return
+
+    log.info('Received signal %s, beginning graceful shutdown.' % signum)
+    exiting = True
+
+    # the final processor is the sent_notification processor, skip it and the tracker both of which should
+    # finish processing of any already sent notifications.
+    for process in processors[:-1]:
         try:
-            process.terminate()
+            if process.is_alive():
+                process.terminate()  # Sends sigterm which any processes after a notification is sent attempt to handle
+        except Exception:
+            pass
+
+    tracker.stop = True
+    max_wait_count = 6
+    while tracker.has_lock:
+        if max_wait_count == 0:
+            log.debug('Max wait reached, proceeding to kill processes')
+            break
+        log.debug('Waiting for all active processing to stop.')
+        max_wait_count -= 1
+        time.sleep(20)
+
+    # Kill everything, that didn't already die
+    for child in multiprocessing.active_children():
+        log.debug('Killing pid %s' % child.pid)
+        try:
+            os.kill(child.pid, signal.SIGKILL)
         except Exception:
             pass
 
@@ -60,8 +93,10 @@ def main(argv=None):
     finished = multiprocessing.Queue(config['queues']['finished_size'])  # Data is of the form (partition, offset)
 
     #State Tracker - Used for tracking the progress of fully processed alarms and the zookeeper lock
+    global tracker  # Set to global for use in the cleanup function
     tracker = ZookeeperStateTracker(config['zookeeper']['url'], config['kafka']['alarm_topic'], finished)
     tracker.lock(clean_exit)  # Only begin if we have the processing lock
+    tracker_thread = threading.Thread(target=tracker.run)
 
     ## Define processors
     #KafkaConsumer
@@ -117,13 +152,25 @@ def main(argv=None):
     processors.append(sent_notification_processor)
 
     ## Start
-    signal.signal(signal.SIGTERM, clean_exit)
-    signal.signal(signal.SIGCHLD, clean_exit)
     try:
         log.info('Starting processes')
         for process in processors:
             process.start()
-        tracker.run()  # Runs in the main process
+
+        # The offset tracker runs in a thread so the signal handler can run concurrently and cleanly shutdown
+        tracker_thread.start()
+
+        # The signal handlers must be added after the processes start otherwise they run on all processes
+        signal.signal(signal.SIGTERM, clean_exit)
+        signal.signal(signal.SIGCHLD, clean_exit)
+
+        # If the tracker fails exit
+        while True:
+            if tracker_thread.is_alive():
+                time.sleep(5)
+            else:
+                tracker.has_lock = False
+                clean_exit('tracker died', None)
     except Exception:
         log.exception('Error exiting!')
         for process in processors:

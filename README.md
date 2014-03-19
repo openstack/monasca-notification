@@ -44,7 +44,7 @@ Though this should cover all errors there is risk that an alarm or set of alarms
 sent out multiple times. To minimize this risk a number of techniques are used:
 
 - Timeouts are implemented with all notification types.
-- On a clean shutdown each process finishes active work.
+- On shutdown uncommitted work is finished up.
 - An alarm TTL is utilized. Any alarm older than the TTL is not processed.
 - A maximum offset lag time is set. The offset is normally only updated if there is a continuous chain of finished
   alarms. If there is a new offset that arrives yet still a gap it is normally held in reserve. If the maximum lag

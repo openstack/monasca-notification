@@ -2,8 +2,9 @@ import collections
 import kazoo.client
 import kazoo.exceptions
 import logging
-import time
+import Queue
 import statsd
+import time
 
 from mon_notification import notification_exceptions
 
@@ -25,6 +26,7 @@ class ZookeeperStateTracker(object):
         self.finished_queue = finished_queue
         self.topic = topic
         self.has_lock = False
+        self.stop = False
 
         self.zookeeper = kazoo.client.KazooClient(url)
         self.zookeeper.start()
@@ -37,6 +39,14 @@ class ZookeeperStateTracker(object):
         # This is a dictionary of sets used for tracking finished offsets when there is a gap and the committed offset
         # can not yet be advanced
         self._uncommitted_offsets = collections.defaultdict(set)
+
+    def _drop_lock(self):
+        """Drop the lock file kept in zookeeper
+             This should only ever be run when all processing of the finished queue has completed.
+        """
+        if self.zookeeper.exists(self.lock_path):
+            self.zookeeper.delete(self.lock_path)
+        self.has_lock = False
 
     def _get_offsets(self):
         """Read the initial offsets from zookeeper or set defaults
@@ -128,7 +138,17 @@ class ZookeeperStateTracker(object):
         offset_update_count = statsd.Counter('AlarmsOffsetUpdated')
         zk_timer = statsd.Timer('OffsetCommitTime')
         while True:
-            msg = self.finished_queue.get()
+            # If self.stop is True run the queue until it is empty, don't block after that.
+            if self.stop and self.finished_queue.empty():
+                log.debug('self.stop set and the finished_queue is empty, doing final wait')
+                time.sleep(10)  # Before final exit wait a bit to verify the queue is still empty
+                if self.finished_queue.empty():
+                    break
+            try:
+                msg = self.finished_queue.get(timeout=10)
+            except Queue.Empty:
+                continue  # This is non-blocking so the self.stop signal has a chance to take affect
+
             finished_count += 1
             partition = int(msg[0])
             offset = int(msg[1])
@@ -163,3 +183,5 @@ class ZookeeperStateTracker(object):
             else:  # This is skipping offsets so just add to the uncommitted set
                 self._uncommitted_offsets[partition].add(offset)
                 log.debug('Added partition %d, offset %d to uncommited set' % (partition, offset))
+
+        self._drop_lock()
