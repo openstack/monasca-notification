@@ -8,5 +8,7 @@ setuptools.setup(
         'console_scripts': [
             'mon-notification = mon_notification.main:main'
         ],
-    }
+    },
+    scripts=['tools/mon_notification_offsets.py'],
+    test_suite='nose.collector'
 )
