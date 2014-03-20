@@ -3,6 +3,7 @@
 import json
 from mon_notification import notification
 
+
 def test_json():
     """Test the to_json method to verify it behaves as expected.
     """
@@ -25,4 +26,3 @@ def test_json():
                      u'message': u'stateChangeReason'}
     # Compare as dicts so ordering is not an issue
     assert json.loads(test_notification.to_json()) == expected_dict
-
