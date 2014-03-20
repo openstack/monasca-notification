@@ -61,7 +61,7 @@ class ZookeeperStateTracker(object):
             log.warn('Reading offsets before the tracker has the lock, they could change')
         try:
             if self.zookeeper.exists(self.topic_path):
-                offsets = {}
+                offsets = collections.defaultdict(int)
                 for child in self.zookeeper.get_children(self.topic_path):
                     offsets[int(child)] = int(self.zookeeper.get('/'.join((self.topic_path, child)))[0])
                 log.info('Setting initial offsets to %s' % str(offsets))
