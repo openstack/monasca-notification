@@ -88,12 +88,11 @@ class AlarmProcessor(BaseProcessor):
                                    JOIN notification_method as nm ON aa.action_id = nm.id
                                    WHERE aa.alarm_id = %s and aa.alarm_state = %s""",
                                 [alarm['alarmId'], alarm['newState']])
-            except MySQLdb.Error as e:
-                log.error('Mysql Error, %s' % e)
-                notifications = []
-            else:
-                notifications = [
-                    Notification(row[1].lower(), partition, offset, row[0], row[2], alarm) for row in cur]
+            except MySQLdb.Error:
+                log.exception('Mysql Error')
+
+            notifications = [
+                Notification(row[1].lower(), partition, offset, row[0], row[2], alarm) for row in cur]
 
             if len(notifications) == 0:
                 no_notification_count += 1
