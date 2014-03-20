@@ -47,7 +47,7 @@ logging: # Used in logging.dictConfig
             formatter: default
         file:
             class : logging.handlers.RotatingFileHandler
-            filename: /var/log/mon-notification/notification.log
+            filename: /tmp/notification.log
             formatter: default
             maxBytes: 10485760  # Rotate at file size ~10MB
             backupCount: 5  # Keep 5 older logs around
@@ -60,5 +60,5 @@ logging: # Used in logging.dictConfig
             level: WARN
     root:
         handlers:
-            - file
+            - console
         level: INFO
