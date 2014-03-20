@@ -90,6 +90,7 @@ class AlarmProcessor(BaseProcessor):
                                 [alarm['alarmId'], alarm['newState']])
             except MySQLdb.Error:
                 log.exception('Mysql Error')
+                raise
 
             notifications = [
                 Notification(row[1].lower(), partition, offset, row[0], row[2], alarm) for row in cur]

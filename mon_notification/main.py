@@ -175,7 +175,7 @@ def main(argv=None):
                 tracker.has_lock = False
                 clean_exit('tracker died', None)
     except Exception:
-        log.exception('Error exiting!')
+        log.exception('Error! Exiting.')
         for process in processors:
             process.terminate()
 

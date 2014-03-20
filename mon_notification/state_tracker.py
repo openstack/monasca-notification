@@ -71,6 +71,7 @@ class ZookeeperStateTracker(object):
                 return {}
         except kazoo.exceptions.KazooException:
             log.exception('Error retrieving the committed offset in zookeeper')
+            raise
 
     def _update_offset(self, partition, value):
         """Update the object and zookeepers stored offset number for a partition to value
@@ -86,6 +87,7 @@ class ZookeeperStateTracker(object):
         except kazoo.exceptions.KazooException:
             log.exception('Error updating the committed offset in zookeeper, path %s, value %s'
                           % (partition_path, value))
+            raise
 
         self._last_commit_time[partition] = time.time()
 
