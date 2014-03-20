@@ -5,7 +5,13 @@ INSERT INTO alarm (id, tenant_id, name, state, created_at, updated_at) VALUES ('
 INSERT INTO notification_method (id, tenant_id, name, type, address, created_at, updated_at)
   VALUES ('0', '0', 'test notification', 'EMAIL', 'me@here.com', NOW(), NOW());
 
-INSERT INTO alarm_action (alarm_id, notification_method_id) VALUES ('0', '0');
-INSERT INTO alarm_action (alarm_id, notification_method_id) VALUES ('1', '0');
-INSERT INTO alarm_action (alarm_id, notification_method_id) VALUES ('2', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('0', 'OK', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('0', 'ALARM', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('0', 'UNDETERMINED', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('1', 'OK', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('1', 'ALARM', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('1', 'UNDETERMINED', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('2', 'OK', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('2', 'ALARM', '0');
+INSERT INTO alarm_action (alarm_id, alarm_state, action_id) VALUES ('2', 'UNDETERMINED', '0');
 

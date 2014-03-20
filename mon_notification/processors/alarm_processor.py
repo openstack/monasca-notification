@@ -83,19 +83,17 @@ class AlarmProcessor(BaseProcessor):
 
             try:
                 with db_time.time():
-                    cur.execute("SELECT notification_method_id FROM alarm_action WHERE alarm_id = %s", alarm['alarmId'])
-                    ids = [row[0] for row in cur]
-                    if len(ids) == 1:
-                        cur.execute("SELECT name, type, address FROM notification_method WHERE id = %s", ids[0])
-                    elif len(ids) > 1:
-                        cur.execute(
-                            "SELECT name, type, address FROM notification_method WHERE id in (%s)", ','.join(ids))
-            except MySQLdb.Error:
-                log.exception('Error reading from mysql')
-
-            log.debug('Response from mysql')
-            notifications = [
-                Notification(row[1].lower(), partition, offset, row[0], row[2], alarm) for row in cur]
+                    cur.execute("""SELECT name, type, address
+                                   FROM alarm_action as aa
+                                   JOIN notification_method as nm ON aa.action_id = nm.id
+                                   WHERE aa.alarm_id = %s and aa.alarm_state = %s""",
+                                [alarm['alarmId'], alarm['newState']])
+            except MySQLdb.Error as e:
+                log.error('Mysql Error, %s' % e)
+                notifications = []
+            else:
+                notifications = [
+                    Notification(row[1].lower(), partition, offset, row[0], row[2], alarm) for row in cur]
 
             if len(notifications) == 0:
                 no_notification_count += 1
