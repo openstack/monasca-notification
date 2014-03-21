@@ -63,7 +63,7 @@ class TestAlarmProcessor(unittest.TestCase):
         return queue_msg, log_msg
 
     def test_invalid_alarm(self):
-        """Invalid Alarms, should log and error and push to the finished queue"""
+        """Invalid Alarms, should log and error and push to the finished queue."""
         self.alarm_queue.put(self._create_raw_alarm(0, 1, {'invalid': 'invalid_alarm'}))
         finished, log_msg = self._run_alarm_processor(self.finished_queue, None)
 
@@ -71,7 +71,7 @@ class TestAlarmProcessor(unittest.TestCase):
         self.assertTrue(log_msg.startswith('Invalid Alarm format'))
 
     def test_old_timestamp(self):
-        """Should cause the alarm_ttl to fire log a warning and push to finished queue"""
+        """Should cause the alarm_ttl to fire log a warning and push to finished queue."""
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
                       "stateChangeReason": "I am alarming!", "timestamp": 1375346830}
         self.alarm_queue.put(self._create_raw_alarm(0, 2, alarm_dict))

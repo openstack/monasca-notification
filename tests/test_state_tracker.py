@@ -1,6 +1,5 @@
 """Tests the StateTracker"""
 
-import collections
 import mock
 import multiprocessing
 import threading
@@ -8,9 +7,6 @@ import time
 import unittest
 
 from mon_notification import state_tracker
-
-alarm_tuple = collections.namedtuple('alarm_tuple', ['offset', 'message'])
-message_tuple = collections.namedtuple('message_tuple', ['value'])
 
 
 class TestStateTracker(unittest.TestCase):
