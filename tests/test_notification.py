@@ -26,3 +26,28 @@ def test_json():
                      u'message': u'stateChangeReason'}
     # Compare as dicts so ordering is not an issue
     assert json.loads(test_notification.to_json()) == expected_dict
+
+def test_equal():
+    alarm = {'alarmId': 'alarmId',
+             'alarmName': 'alarmName',
+             'timestamp': 'timestamp',
+             'stateChangeReason': 'stateChangeReason',
+             'newState': 'newState',
+             'tenantId': 'tenantId'}
+    test_notification = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
+    test_notification2 = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
+
+    assert(test_notification == test_notification2)
+
+def test_unequal():
+    alarm = {'alarmId': 'alarmId',
+             'alarmName': 'alarmName',
+             'timestamp': 'timestamp',
+             'stateChangeReason': 'stateChangeReason',
+             'newState': 'newState',
+             'tenantId': 'tenantId'}
+    test_notification = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
+    test_notification2 = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
+    test_notification2.alarm_id = None
+
+    assert(test_notification != test_notification2)
