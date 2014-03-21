@@ -45,19 +45,19 @@ class TestAlarmProcessor(unittest.TestCase):
             mock_mysql.__iter__.return_value = sql_response
 
         processor = alarm_processor.AlarmProcessor(self.alarm_queue, self.notification_queue,
-                                                   self.finished_queue, 10, 'mysql_host', 'mysql_user',
+                                                   self.finished_queue, 600, 'mysql_host', 'mysql_user',
                                                    'mysql_passwd', 'dbname')
 
         p_thread = multiprocessing.Process(target=processor.run)
         p_thread.start()
         try:
-            queue_msg = queue.get(timeout=5)
+            queue_msg = queue.get(timeout=2)
         except Queue.Empty:
             queue_msg = None
         p_thread.terminate()
 
         try:
-            log_msg = self.log_queue.get(timeout=5)
+            log_msg = self.log_queue.get(timeout=1)
         except Queue.Empty:
             log_msg = None
         return queue_msg, log_msg
