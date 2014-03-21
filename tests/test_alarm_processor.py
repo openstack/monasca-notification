@@ -32,7 +32,7 @@ class TestAlarmProcessor(unittest.TestCase):
     @mock.patch('MySQLdb.connect')
     @mock.patch('mon_notification.processors.alarm_processor.log')
     def _run_alarm_processor(self, queue, sql_response, mock_log, mock_mysql):
-        """ Runs a mocked alarm processor reading from queue while running, returns (queue_message, log_message)
+        """Runs a mocked alarm processor reading from queue while running, returns (queue_message, log_message)
         """
         # Since the log runs in another thread I can mock it directly, instead change the methods to put to a queue
         mock_log.warn = self.log_queue.put
