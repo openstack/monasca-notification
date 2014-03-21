@@ -43,6 +43,16 @@ class Notification(object):
 
         self.notification_timestamp = None  # to be updated on actual notification send time
 
+    def __eq__(self, other):
+        if not isinstance(other, Notification):
+            return False
+
+        for attrib in self.__slots__:
+            if not getattr(self, attrib) == getattr(other, attrib):
+                return False
+
+        return True
+
     def to_json(self):
         """Return json representation
         """
