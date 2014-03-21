@@ -51,13 +51,13 @@ class TestAlarmProcessor(unittest.TestCase):
         p_thread = multiprocessing.Process(target=processor.run)
         p_thread.start()
         try:
-            queue_msg = queue.get(timeout=2)
+            queue_msg = queue.get(timeout=5)
         except Queue.Empty:
             queue_msg = None
         p_thread.terminate()
 
         try:
-            log_msg = self.log_queue.get(timeout=1)
+            log_msg = self.log_queue.get(timeout=5)
         except Queue.Empty:
             log_msg = None
         return queue_msg, log_msg
