@@ -28,11 +28,11 @@ class NotificationProcessor(BaseProcessor):
         """Send the notification via email
              Returns the notification upon success, None upon failure
         """
-        msg = email.mime.text.MIMEText("%s\nAlarm %s transitioned to the %s state at %s\nFull Data:\n%s"
+        msg = email.mime.text.MIMEText("%s\nAlarm %s transitioned to the %s state at %s UTC\nFull Data:\n%s"
                                        % (notification.message,
                                           notification.alarm_name,
                                           notification.state,
-                                          notification.alarm_timestamp,
+                                          time.asctime(time.gmtime(notification.alarm_timestamp)),
                                           notification.to_json()))
         msg['Subject'] = '%s: %s' % (notification.state, notification.alarm_name)
         msg['From'] = self.email_config['from_addr']
