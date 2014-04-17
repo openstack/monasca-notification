@@ -73,7 +73,7 @@ class TestAlarmProcessor(unittest.TestCase):
     def test_old_timestamp(self):
         """Should cause the alarm_ttl to fire log a warning and push to finished queue."""
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
-                      "stateChangeReason": "I am alarming!", "timestamp": 1375346830}
+                      "stateChangeReason": "I am alarming!", "timestamp": 1375346830, "actionsEnabled": 1}
         self.alarm_queue.put(self._create_raw_alarm(0, 2, alarm_dict))
         finished, log_msg = self._run_alarm_processor(self.finished_queue, None)
 
@@ -84,7 +84,7 @@ class TestAlarmProcessor(unittest.TestCase):
         """Test an alarm with no defined notifications
         """
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
-                      "stateChangeReason": "I am alarming!", "timestamp": time.time()}
+                      "stateChangeReason": "I am alarming!", "timestamp": time.time(), "actionsEnabled": 1}
         self.alarm_queue.put(self._create_raw_alarm(0, 3, alarm_dict))
         finished, log_msg = self._run_alarm_processor(self.finished_queue, None)
 
@@ -94,7 +94,7 @@ class TestAlarmProcessor(unittest.TestCase):
         """Test a valid notification, being put onto the notification_queue
         """
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
-                      "stateChangeReason": "I am alarming!", "timestamp": time.time()}
+                      "stateChangeReason": "I am alarming!", "timestamp": time.time(), "actionsEnabled": 1}
         self.alarm_queue.put(self._create_raw_alarm(0, 4, alarm_dict))
         sql_response = [['test notification', 'EMAIL', 'me@here.com']]
         finished, log_msg = self._run_alarm_processor(self.notification_queue, sql_response)
@@ -105,7 +105,7 @@ class TestAlarmProcessor(unittest.TestCase):
 
     def test_two_valid_notifications(self):
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
-                      "stateChangeReason": "I am alarming!", "timestamp": time.time()}
+                      "stateChangeReason": "I am alarming!", "timestamp": time.time(), "actionsEnabled": 1}
         self.alarm_queue.put(self._create_raw_alarm(0, 5, alarm_dict))
         sql_response = [['test notification', 'EMAIL', 'me@here.com'], ['test notification2', 'EMAIL', 'me@here.com']]
         finished, log_msg = self._run_alarm_processor(self.notification_queue, sql_response)
