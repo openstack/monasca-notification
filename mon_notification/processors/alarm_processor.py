@@ -29,6 +29,7 @@ class AlarmProcessor(BaseProcessor):
         """Parse the alarm message making sure it matches the expected format.
         """
         expected_fields = [
+            'actionsEnabled',
             'alarmId',
             'alarmName',
             'newState',
@@ -47,6 +48,20 @@ class AlarmProcessor(BaseProcessor):
             raise AlarmFormatError
 
         return alarm
+
+    def _alarm_is_valid(self, alarm):
+        """Check if the alarm is enabled and is within the ttl, return True in that case
+        """
+        if not alarm['actionsEnabled']:
+            log.debug('Actions are disabled for this alarm.')
+            return False
+
+        alarm_age = time.time() - alarm['timestamp']  # Should all be in seconds since epoch
+        if (self.alarm_ttl is not None) and (alarm_age > self.alarm_ttl):
+            log.warn('Received alarm older than the ttl, skipping. Alarm from %s' % time.ctime(alarm['timestamp']))
+            return False
+
+        return True
 
     def run(self):
         """Check the notification setting for this project in mysql then create the appropriate notification or
@@ -74,10 +89,8 @@ class AlarmProcessor(BaseProcessor):
             log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
                       % (partition, offset, alarm))
 
-            alarm_age = time.time() - alarm['timestamp']  # Should all be in seconds since epoch
-            if (self.alarm_ttl is not None) and (alarm_age > self.alarm_ttl):
+            if not self._alarm_is_valid(alarm):
                 no_notification_count += 1
-                log.warn('Received alarm older than the ttl, skipping. Alarm from %s' % time.ctime(alarm['timestamp']))
                 self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
                 continue
 
