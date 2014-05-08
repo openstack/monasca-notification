@@ -35,6 +35,23 @@ the processing to continue even though some notifications can be slow. In the ev
 notifications could be sent but the alarms not yet acknowledged. This is an acceptable failure mode, better to send a
 notification twice than not at all.
 
+# License
+
+Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 The general process when a major error is encountered is to exit the daemon which should allow another daemon to take
 over according to the HA strategy. It is also assumed the notification engine will be run by a process supervisor which
 will restart it in case of a failure. This way any errors which are not easy to recover from are automatically handled
