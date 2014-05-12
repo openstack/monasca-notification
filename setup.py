@@ -19,7 +19,18 @@ import setuptools
 
 setuptools.setup(
     name="mon-notification",
-    version="0.1",
+    version="1.0.0",
+    author="Tim Kuhlman",
+    author_email="tim.kuhlman@hp.com",
+    description="Notification engine used in the monitoring system",
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "License :: OSI Approved :: Apache Software License",
+        "Topic :: System :: Monitoring"
+    ],
+    license="Apache",
+    keywords="openstack monitoring email",
+    url="https://github.com/hpcloud-mon/mon-notification",
     packages=setuptools.find_packages(exclude=['tests']),
     entry_points={
         'console_scripts': [
