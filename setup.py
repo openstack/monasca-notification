@@ -31,6 +31,8 @@ setuptools.setup(
     license="Apache",
     keywords="openstack monitoring email",
     url="https://github.com/hpcloud-mon/mon-notification",
+    # possibly preferable to have the OS precompiled mysql version, python-mysqldb package on Ubuntu
+    install_requires=["kafka-python>=0.9.0", "kazoo>=1.3", "MySQL-python", "python-statsd>=1.6.3", "PyYAML"],
     packages=setuptools.find_packages(exclude=['tests']),
     entry_points={
         'console_scripts': [
