@@ -19,7 +19,7 @@ import setuptools
 
 setuptools.setup(
     name="mon-notification",
-    version="1.0.0",
+    version="1.0.1",
     author="Tim Kuhlman",
     author_email="tim.kuhlman@hp.com",
     description="Notification engine used in the monitoring system",
