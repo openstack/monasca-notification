@@ -1,5 +1,5 @@
 kafka:
-    url: 192.168.10.10:9092
+    url: 192.168.10.10:9092  # or comma seperated list of multiple hosts
     group: mon-notification
     alarm_topic: alarm-state-transitions
     notification_topic: alarm-notifications
@@ -32,7 +32,7 @@ queues:
     sent_notifications_size: 50  # limiting this size reduces potential # of re-sent notifications after a failure
 
 zookeeper:
-    url: 192.168.10.10:2181
+    url: 192.168.10.10:2181  # or comma seperated list of multiple hosts
     max_offset_lag: 600  # In seconds, undefined for none
 
 logging: # Used in logging.dictConfig
