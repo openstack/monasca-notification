@@ -20,7 +20,7 @@ import smtplib
 import statsd
 import time
 
-from mon_notification.processors import BaseProcessor
+from monasca_notification.processors.base import BaseProcessor
 
 log = logging.getLogger(__name__)
 

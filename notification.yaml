@@ -1,6 +1,6 @@
 kafka:
     url: 192.168.10.10:9092  # or comma seperated list of multiple hosts
-    group: mon-notification
+    group: monasca-notification
     alarm_topic: alarm-state-transitions
     notification_topic: alarm-notifications
 

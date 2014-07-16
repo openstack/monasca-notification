@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Used for manually querying/setting offsets associated with the mon_notification daemon.
+"""Used for manually querying/setting offsets associated with the monasca_notification daemon.
     This should only be used in unusual circumstances to force reprocessing or skip alarms.
 """
 
@@ -25,7 +25,7 @@ import logging
 import sys
 import yaml
 
-from mon_notification import state_tracker
+from monasca_notification import state_tracker
 
 
 def listener():
@@ -36,10 +36,10 @@ def listener():
 
 def main():
     # Parse args
-    parser = argparse.ArgumentParser(description="Query and set(DANGEROUS) mon_notification kafka consumer offsets\n")
-    parser.add_argument('--config', '-c', default='/etc/mon/notification.yaml', help='Configuration File')
+    parser = argparse.ArgumentParser(description="Query and set(DANGEROUS) monasca_notification kafka offsets\n")
+    parser.add_argument('--config', '-c', default='/etc/monasca/notification.yaml', help='Configuration File')
 
-    ## Either list or set not both
+    # Either list or set not both
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--list', '-l', action='store_true')
     group.add_argument('--set-offsets', '-s',
@@ -48,7 +48,7 @@ def main():
 
     args = parser.parse_args()
 
-    # Silence most logging from mon_notification
+    # Silence most logging from monasca_notification
     logging.basicConfig(level=logging.CRITICAL)
 
     # Parse config and setup state tracker
@@ -63,9 +63,9 @@ def main():
         offsets = json.loads(args.set_offsets)
         raw_input("Warning setting offset will affect the behavior of the next notification engine to run.\n" +
                   "\tCtrl-C to exit, enter to continue")
-        print("All running mon_notification daemons must be shutdown to allow this process to grab the lock.")
+        print("All running monasca_notification daemons must be shutdown to allow this process to grab the lock.")
 
-        log = logging.getLogger('mon_notification.state_tracker')
+        log = logging.getLogger('monasca_notification.state_tracker')
         log.setLevel(logging.DEBUG)
 
         tracker.lock(listener)

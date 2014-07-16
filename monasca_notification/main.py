@@ -90,31 +90,31 @@ def main(argv=None):
         config_file = argv[1]
     elif len(argv) > 2:
         print("Usage: " + argv[0] + " <config_file>")
-        print("Config file defaults to /etc/mon/notification.yaml")
+        print("Config file defaults to /etc/monasca/notification.yaml")
         return 1
     else:
-        config_file = '/etc/mon/notification.yaml'
+        config_file = '/etc/monasca/notification.yaml'
 
     config = yaml.load(open(config_file, 'r'))
 
     # Setup logging
     logging.config.dictConfig(config['logging'])
 
-    #Create the queues
+    # Create the queues
     alarms = multiprocessing.Queue(config['queues']['alarms_size'])
     notifications = multiprocessing.Queue(config['queues']['notifications_size'])  # [notification_object, ]
     sent_notifications = multiprocessing.Queue(config['queues']['sent_notifications_size'])  # [notification_object, ]
     finished = multiprocessing.Queue(config['queues']['finished_size'])  # Data is of the form (partition, offset)
 
-    #State Tracker - Used for tracking the progress of fully processed alarms and the zookeeper lock
+    # State Tracker - Used for tracking the progress of fully processed alarms and the zookeeper lock
     global tracker  # Set to global for use in the cleanup function
     tracker = ZookeeperStateTracker(
         config['zookeeper']['url'], config['kafka']['alarm_topic'], finished, config['zookeeper']['max_offset_lag'])
     tracker.lock(clean_exit)  # Only begin if we have the processing lock
     tracker_thread = threading.Thread(target=tracker.run)
 
-    ## Define processors
-    #KafkaConsumer
+    # Define processors
+    # KafkaConsumer
     kafka = multiprocessing.Process(
         target=KafkaConsumer(
             alarms,
@@ -126,7 +126,7 @@ def main(argv=None):
     )
     processors.append(kafka)
 
-    #AlarmProcessors
+    # AlarmProcessors
     alarm_processors = []
     for i in range(config['processors']['alarm']['number']):
         alarm_processors.append(multiprocessing.Process(
@@ -143,7 +143,7 @@ def main(argv=None):
         )
     processors.extend(alarm_processors)
 
-    #NotificationProcessors
+    # NotificationProcessors
     notification_processors = []
     for i in range(config['processors']['notification']['number']):
         notification_processors.append(multiprocessing.Process(
@@ -156,7 +156,7 @@ def main(argv=None):
         )
     processors.extend(notification_processors)
 
-    #SentNotificationProcessor
+    # SentNotificationProcessor
     sent_notification_processor = multiprocessing.Process(
         target=SentNotificationProcessor(
             sent_notifications,
@@ -167,7 +167,7 @@ def main(argv=None):
     )
     processors.append(sent_notification_processor)
 
-    ## Start
+    # Start
     try:
         log.info('Starting processes')
         for process in processors:

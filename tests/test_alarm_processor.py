@@ -23,8 +23,8 @@ import Queue
 import time
 import unittest
 
-from mon_notification.notification import Notification
-from mon_notification.processors import alarm_processor
+from monasca_notification.notification import Notification
+from monasca_notification.processors import alarm_processor
 
 alarm_tuple = collections.namedtuple('alarm_tuple', ['offset', 'message'])
 message_tuple = collections.namedtuple('message_tuple', ['value'])
@@ -45,7 +45,7 @@ class TestAlarmProcessor(unittest.TestCase):
         return [partition, alarm_tuple(offset, msg_tuple)]
 
     @mock.patch('MySQLdb.connect')
-    @mock.patch('mon_notification.processors.alarm_processor.log')
+    @mock.patch('monasca_notification.processors.alarm_processor.log')
     def _run_alarm_processor(self, queue, sql_response, mock_log, mock_mysql):
         """Runs a mocked alarm processor reading from queue while running, returns (queue_message, log_message)
         """

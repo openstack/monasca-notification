@@ -51,7 +51,7 @@ sent out multiple times. To minimize this risk a number of techniques are used:
   time has been set and exceeded when a new finished alarm comes in the offset is updated regardless of gaps.
 
 # Operation
-Yaml config file by default is in '/etc/mon/notification.yaml', a sample is in this project.
+Yaml config file by default is in '/etc/monasca/notification.yaml', a sample is in this project.
 
 ## Monitoring
 statsd is incorporated into the daemon and will send all stats to localhost on udp port 8125. In many cases the stats

@@ -18,11 +18,11 @@
 import setuptools
 
 setuptools.setup(
-    name="mon-notification",
-    version="1.0.1",
+    name="monasca-notification",
+    version="1.0.0",
     author="Tim Kuhlman",
     author_email="tim.kuhlman@hp.com",
-    description="Notification engine used in the monitoring system",
+    description="Notification engine used in the monasca monitoring system",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "License :: OSI Approved :: Apache Software License",
@@ -30,15 +30,15 @@ setuptools.setup(
     ],
     license="Apache",
     keywords="openstack monitoring email",
-    url="https://github.com/hpcloud-mon/mon-notification",
+    url="https://github.com/stackforge/monasca-notification",
     # possibly preferable to have the OS precompiled mysql version, python-mysqldb package on Ubuntu
     install_requires=["kafka-python>=0.9.0", "kazoo>=1.3", "MySQL-python", "python-statsd>=1.6.3", "PyYAML"],
     packages=setuptools.find_packages(exclude=['tests']),
     entry_points={
         'console_scripts': [
-            'mon-notification = mon_notification.main:main'
+            'monasca-notification = monasca_notification.main:main'
         ],
     },
-    scripts=['tools/mon_notification_offsets.py'],
+    scripts=['tools/monasca_notification_offsets.py'],
     test_suite='nose.collector'
 )

@@ -20,8 +20,8 @@ import multiprocessing
 import time
 import unittest
 
-from mon_notification.notification import Notification
-from mon_notification.processors import notification_processor
+from monasca_notification.notification import Notification
+from monasca_notification.processors import notification_processor
 
 
 class TestStateTracker(unittest.TestCase):
@@ -38,8 +38,8 @@ class TestStateTracker(unittest.TestCase):
                              'timeout': 60,
                              'from_addr': 'hpcs.mon@hp.com'}
 
-    @mock.patch('mon_notification.processors.notification_processor.smtplib')
-    @mock.patch('mon_notification.processors.notification_processor.log')
+    @mock.patch('monasca_notification.processors.notification_processor.smtplib')
+    @mock.patch('monasca_notification.processors.notification_processor.log')
     def _start_processor(self, mock_log, mock_smtp):
         """Start the processor with the proper mocks
         """

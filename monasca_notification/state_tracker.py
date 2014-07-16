@@ -21,7 +21,7 @@ import Queue
 import statsd
 import time
 
-from mon_notification import notification_exceptions
+from monasca_notification import notification_exceptions
 
 log = logging.getLogger(__name__)
 
@@ -46,10 +46,10 @@ class ZookeeperStateTracker(object):
 
         self.zookeeper = kazoo.client.KazooClient(url)
         self.zookeeper.start()
-        self.topic_path = '/consumers/mon-notification/%s' % topic
+        self.topic_path = '/consumers/monasca-notification/%s' % topic
 
         self.lock_retry_time = 15  # number of seconds to wait for retrying for the lock
-        self.lock_path = '/locks/mon-notification/%s' % topic
+        self.lock_path = '/locks/monasca-notification/%s' % topic
 
         self._offsets = None
         # This is a dictionary of sets used for tracking finished offsets when there is a gap and the committed offset

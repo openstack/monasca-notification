@@ -20,9 +20,9 @@ import MySQLdb
 import statsd
 import time
 
-from mon_notification.notification import Notification
-from mon_notification.notification_exceptions import AlarmFormatError
-from mon_notification.processors import BaseProcessor
+from monasca_notification.notification import Notification
+from monasca_notification.notification_exceptions import AlarmFormatError
+from monasca_notification.processors.base import BaseProcessor
 
 
 log = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class AlarmProcessor(BaseProcessor):
         for field in expected_fields:
             if field not in alarm:
                 raise AlarmFormatError('Alarm data missing field %s' % field)
-        if (not 'tenantId' in alarm) or (not 'alarmId' in alarm):
+        if ('tenantId' not in alarm) or ('alarmId' not in alarm):
             raise AlarmFormatError
 
         return alarm

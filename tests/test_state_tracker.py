@@ -21,7 +21,7 @@ import threading
 import time
 import unittest
 
-from mon_notification import state_tracker
+from monasca_notification import state_tracker
 
 
 class TestStateTracker(unittest.TestCase):

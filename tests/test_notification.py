@@ -16,7 +16,7 @@
 """Tests the notification class."""
 
 import json
-from mon_notification import notification
+from monasca_notification import notification
 
 
 def test_json():
