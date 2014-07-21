@@ -37,8 +37,12 @@ class AlarmProcessor(BaseProcessor):
         self.notification_queue = notification_queue
         self.finished_queue = finished_queue
 
-        self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_passwd, db=dbname)
-        self.mysql.autocommit(True)
+        try:
+            self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_passwd, db=dbname)
+            self.mysql.autocommit(True)
+        except:
+            log.exception('MySQL connect failed')
+            raise
 
     @staticmethod
     def _parse_alarm(alarm_data):
