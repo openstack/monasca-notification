@@ -14,6 +14,8 @@
 # limitations under the License.
 
 import collections
+import kafka.client
+import kafka.common
 import kazoo.client
 import kazoo.exceptions
 import logging
@@ -26,17 +28,18 @@ from monasca_notification import notification_exceptions
 log = logging.getLogger(__name__)
 
 
-class ZookeeperStateTracker(object):
+class KafkaStateTracker(object):
     """Tracks message offsets for a kafka topic and partitions.
-         Uses zookeeper to keep track of the last committed offset.
          As messages are finished with processing the committed offset is updated periodically.
          The messages are not necessarily finished in order, but the committed offset includes
          all previous messages so this object tracks any gaps updating as needed.
+         Uses zookeeper to keep track of the last committed offset.
     """
-    def __init__(self, url, topic, finished_queue, max_lag):
+    def __init__(self, finished_queue, kafka_url, group, topic, max_lag, zookeeper_url):
         """Setup the finished_queue
-             url is the zookeeper hostname:port
-             topic is the kafka topic to track
+             finished_queue - queue containing all processed alarms
+             kafka_url, group, topic - kafka connection details
+             zookeeper_url is the zookeeper hostname:port
         """
         self.finished_queue = finished_queue
         self.max_lag = max_lag
@@ -44,14 +47,20 @@ class ZookeeperStateTracker(object):
         self.has_lock = False
         self.stop = False
 
-        self.zookeeper = kazoo.client.KazooClient(url)
+        # The kafka client is used solely for committing offsets, the consuming is done in the kafka_consumer
+        self.kafka_group = group
+        self.kafka = kafka.client.KafkaClient(kafka_url)
+        # The consumer is not needed but after my pull request is merged using it for get_offsets simplifies this code
+        # import kafka.consumer
+        # self.consumer = kafka.consumer.SimpleConsumer(self.kafka, group, topic, auto_commit=False)
+
+        self.zookeeper = kazoo.client.KazooClient(zookeeper_url)
         self.zookeeper.start()
-        self.topic_path = '/consumers/monasca-notification/%s' % topic
 
         self.lock_retry_time = 15  # number of seconds to wait for retrying for the lock
         self.lock_path = '/locks/monasca-notification/%s' % topic
 
-        self._offsets = None
+        self._offsets = None  # Initialized in the beginning of the run
         # This is a dictionary of sets used for tracking finished offsets when there is a gap and the committed offset
         # can not yet be advanced
         self._uncommitted_offsets = collections.defaultdict(set)
@@ -67,53 +76,6 @@ class ZookeeperStateTracker(object):
         if self.zookeeper.exists(self.lock_path):
             self.zookeeper.delete(self.lock_path)
         self.has_lock = False
-
-    def _get_offsets(self):
-        """Read the initial offsets from zookeeper or set defaults
-             The return is a dictionary with key name being partition # and value the offset
-        """
-        if not self.has_lock:
-            log.warn('Reading offsets before the tracker has the lock, they could change')
-        try:
-            if self.zookeeper.exists(self.topic_path):
-                offsets = collections.defaultdict(int)
-                for child in self.zookeeper.get_children(self.topic_path):
-                    offsets[int(child)] = int(self.zookeeper.get('/'.join((self.topic_path, child)))[0])
-                log.info('Setting initial offsets to %s' % str(offsets))
-                return offsets
-            else:
-                self.zookeeper.ensure_path(self.topic_path)
-                return {}
-        except kazoo.exceptions.KazooException:
-            log.exception('Error retrieving the committed offset in zookeeper')
-            raise
-
-    def _update_offset(self, partition, value):
-        """Update the object and zookeepers stored offset number for a partition to value
-        """
-        self.offset_update_count += value - self._offsets[partition]
-        self._offsets[partition] = value
-        partition_path = '/'.join((self.topic_path, str(partition)))
-        try:
-            with self.zk_timer.time():
-                self.zookeeper.ensure_path(partition_path)
-                self.zookeeper.set(partition_path, str(value))
-            log.debug('Updated committed offset at path %s, offsets %s' % (partition_path, value))
-        except kazoo.exceptions.KazooException:
-            log.exception('Error updating the committed offset in zookeeper, path %s, value %s'
-                          % (partition_path, value))
-            raise
-
-        self._last_commit_time[partition] = time.time()
-
-    @property
-    def offsets(self):
-        """Generally only initialize the offsets after the lock has been pulled
-        """
-        if self._offsets is None:
-            self._offsets = self._get_offsets()
-
-        return self._offsets
 
     def lock(self, exit_method):
         """Grab a lock within zookeeper, if not available retry.
@@ -141,6 +103,35 @@ class ZookeeperStateTracker(object):
         # suspended, the process should be supervised so it starts right back up again.
         self.zookeeper.add_listener(exit_method)
 
+    @property
+    def offsets(self):
+        """Return self._offsets, this is a property because generally only initialize the offsets after the lock has
+            been pulled
+        """
+        if not self.has_lock:
+            log.warn('Reading offsets before the tracker has the lock, they could change')
+
+        if self._offsets is None:
+            # After my pull request is merged I can setup self.consumer as is done in kafka_consumer
+            # then simply use the get_offsets command as below
+            # self._offsets = self.consumer.get_offsets()
+            self._offsets = {}
+
+            def get_or_init_offset_callback(resp):
+                try:
+                    kafka.common.check_error(resp)
+                    return resp.offset
+                except kafka.common.UnknownTopicOrPartitionError:
+                    return 0
+            for partition in self.kafka.topic_partitions[self.topic]:
+                req = kafka.common.OffsetFetchRequest(self.topic, partition)
+                (offset,) = self.kafka.send_offset_fetch_request(self.kafka_group, [req],
+                                                                 callback=get_or_init_offset_callback,
+                                                                 fail_on_error=False)
+                self._offsets[partition] = offset
+
+        return self._offsets
+
     def run(self):
         """Mark a message as finished and where possible commit the new offset to zookeeper.
              There is no mechanism here to deal with the situation where a single alarm is extremely slow to finish
@@ -148,9 +139,6 @@ class ZookeeperStateTracker(object):
         """
         if not self.has_lock:
             raise notification_exceptions.NotificationException('Attempt to begin run without Zookeeper Lock')
-
-        if self._offsets is None:  # Verify the offsets have been initialized
-            self._offsets = self._get_offsets()
 
         finished_count = statsd.Counter('AlarmsFinished')
         while True:
@@ -165,7 +153,7 @@ class ZookeeperStateTracker(object):
                             if ((time.time() - self._last_commit_time[partition]) > self.max_lag) and\
                                     (len(self._uncommitted_offsets[partition]) > 0):
                                 log.error('Max Lag has been reached! Skipping offsets for partition %s' % partition)
-                                self._update_offset(partition, max(self._uncommitted_offsets[partition]))
+                                self.update_offset(partition, max(self._uncommitted_offsets[partition]))
                     break
 
             try:
@@ -178,11 +166,8 @@ class ZookeeperStateTracker(object):
             offset = int(msg[1])
 
             log.debug('Received commit finish for partition %d, offset %d' % (partition, offset))
-            # Update immediately if the partition is not yet tracked or the offset is 1 above current offset
-            if partition not in self._offsets:
-                log.debug('Updating offset for partition %d, offset %d' % (partition, offset))
-                self._update_offset(partition, offset)
-            elif self._offsets[partition] == offset - 1:
+            # Update immediately if the offset is 1 above current offset
+            if self.offsets[partition] == offset - 1:
 
                 new_offset = offset
                 for x in range(offset + 1, offset + 1 + len(self._uncommitted_offsets[partition])):
@@ -192,13 +177,13 @@ class ZookeeperStateTracker(object):
                     else:
                         break
 
-                self._update_offset(partition, new_offset)
+                self.update_offset(partition, new_offset)
                 if offset == new_offset:
                     log.debug('Updating offset for partition %d, offset %d' % (partition, new_offset))
                 else:
                     log.debug('Updating offset for partition %d, offset %d covering this update and older offsets'
                               % (partition, new_offset))
-            elif self._offsets[partition] > offset:
+            elif self.offsets[partition] > offset:
                 log.warn('An offset was received that was lower than the committed offset.' +
                          'Possibly a result of skipping lagging notifications')
             else:  # This is skipping offsets so add to the uncommitted set unless max_lag has been hit
@@ -206,7 +191,27 @@ class ZookeeperStateTracker(object):
                 log.debug('Added partition %d, offset %d to uncommited set' % (partition, offset))
                 if (self.max_lag is not None) and ((time.time() - self._last_commit_time[partition]) > self.max_lag):
                     log.error('Max Lag has been reached! Skipping offsets for partition %s' % partition)
-                    self._update_offset(partition, max(self._uncommitted_offsets[partition]))
+                    self.update_offset(partition, max(self._uncommitted_offsets[partition]))
                     self._uncommitted_offsets[partition].clear()
 
         self._drop_lock()
+
+    def update_offset(self, partition, value):
+        """Update the object and kafka offset number for a partition to value
+        """
+        if self._offsets is None:  # Initialize offsets if needed
+            self.offsets
+
+        self.offset_update_count += value - self._offsets[partition]
+        self._offsets[partition] = value
+
+        req = kafka.common.OffsetCommitRequest(self.topic, partition, value, None)
+        try:
+            responses = self.kafka.send_offset_commit_request(self.kafka_group, [req])
+            kafka.common.check_error(responses[0])
+            log.debug('Updated committed offset for partition %s, offset %s' % (partition, value))
+        except kafka.common.KafkaError:
+            log.exception('Error updating the committed offset in kafka, partition %s, value %s' % (partition, value))
+            raise
+
+        self._last_commit_time[partition] = time.time()

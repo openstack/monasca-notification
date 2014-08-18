@@ -23,7 +23,7 @@ import logging.config
 import multiprocessing
 import os
 import signal
-from state_tracker import ZookeeperStateTracker
+from state_tracker import KafkaStateTracker
 import sys
 import threading
 import time
@@ -108,8 +108,9 @@ def main(argv=None):
 
     # State Tracker - Used for tracking the progress of fully processed alarms and the zookeeper lock
     global tracker  # Set to global for use in the cleanup function
-    tracker = ZookeeperStateTracker(
-        config['zookeeper']['url'], config['kafka']['alarm_topic'], finished, config['zookeeper']['max_offset_lag'])
+    tracker = KafkaStateTracker(finished, config['kafka']['url'], config['kafka']['group'],
+                                config['kafka']['alarm_topic'], config['kafka']['max_offset_lag'],
+                                config['zookeeper']['url'])
     tracker.lock(clean_exit)  # Only begin if we have the processing lock
     tracker_thread = threading.Thread(target=tracker.run)
 
@@ -120,8 +121,7 @@ def main(argv=None):
             alarms,
             config['kafka']['url'],
             config['kafka']['group'],
-            config['kafka']['alarm_topic'],
-            tracker.offsets
+            config['kafka']['alarm_topic']
         ).run
     )
     processors.append(kafka)

@@ -29,7 +29,7 @@ from monasca_notification import state_tracker
 
 
 def listener():
-    """Simple listener for ZookeeperStateTracker
+    """Simple listener for KafkaStateTracker
     """
     sys.exit(1)
 
@@ -53,12 +53,12 @@ def main():
 
     # Parse config and setup state tracker
     config = yaml.load(open(args.config, 'r'))
-    tracker = state_tracker.ZookeeperStateTracker(
-        config['zookeeper']['url'], config['kafka']['alarm_topic'], None, config['zookeeper']['max_offset_lag'])
+    tracker = state_tracker.KafkaStateTracker(None, config['kafka']['url'], config['kafka']['group'],
+                                              config['kafka']['alarm_topic'], config['kafka']['max_offset_lag'],
+                                              config['zookeeper']['url'])
 
-    current_offsests = tracker.offsets
     if args.list:
-        print(json.dumps(current_offsests))
+        print(json.dumps(tracker.offsets))
     else:
         offsets = json.loads(args.set_offsets)
         raw_input("Warning setting offset will affect the behavior of the next notification engine to run.\n" +
@@ -70,7 +70,7 @@ def main():
 
         tracker.lock(listener)
         for partition in offsets.iterkeys():
-            tracker._update_offset(int(partition), int(offsets[partition]))
+            tracker.update_offset(int(partition), int(offsets[partition]))
 
 if __name__ == "__main__":
     sys.exit(main())
