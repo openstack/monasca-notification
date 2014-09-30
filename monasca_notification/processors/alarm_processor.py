@@ -51,6 +51,7 @@ class AlarmProcessor(BaseProcessor):
         expected_fields = [
             'actionsEnabled',
             'alarmId',
+            'alarmDefinitionId',
             'alarmName',
             'newState',
             'oldState',
@@ -120,7 +121,7 @@ class AlarmProcessor(BaseProcessor):
                                    FROM alarm_action as aa
                                    JOIN notification_method as nm ON aa.action_id = nm.id
                                    WHERE aa.alarm_id = %s and aa.alarm_state = %s""",
-                                [alarm['alarmId'], alarm['newState']])
+                                [alarm['alarmDefinitionId'], alarm['newState']])
             except MySQLdb.Error:
                 log.exception('Mysql Error')
                 raise
