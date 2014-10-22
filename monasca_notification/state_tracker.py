@@ -20,10 +20,10 @@ import kazoo.client
 import kazoo.exceptions
 import logging
 import Queue
-import statsd
 import time
 
 from monasca_notification import notification_exceptions
+import monascastatsd as mstatsd
 
 log = logging.getLogger(__name__)
 
@@ -61,13 +61,16 @@ class KafkaStateTracker(object):
         self.lock_path = '/locks/monasca-notification/%s' % topic
 
         self._offsets = None  # Initialized in the beginning of the run
+        self._dimensions = {'service': 'monitoring', 'component': 'monasca-notification'}
         # This is a dictionary of sets used for tracking finished offsets when there is a gap and the committed offset
         # can not yet be advanced
         self._uncommitted_offsets = collections.defaultdict(set)
         self._last_commit_time = collections.defaultdict(time.time)
-
-        self.zk_timer = statsd.Timer('OffsetCommitTime')
-        self.offset_update_count = statsd.Counter('AlarmsOffsetUpdated')
+        monascastatsd = mstatsd.Client(name='monasca',
+                                       dimensions=self._dimensions)
+        self.offset_update_count = monascastatsd.get_counter(name='alarms_offset_update_count')
+        self.finished_count = monascastatsd.get_counter(name='alarms_finished_count')
+        self.kafka_timer = monascastatsd.get_timer()
 
     def _drop_lock(self):
         """Drop the lock file kept in zookeeper
@@ -140,7 +143,6 @@ class KafkaStateTracker(object):
         if not self.has_lock:
             raise notification_exceptions.NotificationException('Attempt to begin run without Zookeeper Lock')
 
-        finished_count = statsd.Counter('AlarmsFinished')
         while True:
             # If self.stop is True run the queue until it is empty, do final commits then exit
             if self.stop and self.finished_queue.empty():
@@ -161,7 +163,8 @@ class KafkaStateTracker(object):
             except Queue.Empty:
                 continue  # This is non-blocking so the self.stop signal has a chance to take affect
 
-            finished_count += 1
+            self.finished_count += 1
+
             partition = int(msg[0])
             offset = int(msg[1])
 
@@ -203,12 +206,15 @@ class KafkaStateTracker(object):
             self.offsets
 
         self.offset_update_count += value - self._offsets[partition]
+
         self._offsets[partition] = value
 
         req = kafka.common.OffsetCommitRequest(self.topic, partition, value, None)
         try:
-            responses = self.kafka.send_offset_commit_request(self.kafka_group, [req])
-            kafka.common.check_error(responses[0])
+            with self.kafka_timer.time('offset_commit_time_sec'):
+                responses = self.kafka.send_offset_commit_request(self.kafka_group, [req])
+                kafka.common.check_error(responses[0])
+
             log.debug('Updated committed offset for partition %s, offset %s' % (partition, value))
         except kafka.common.KafkaError:
             log.exception('Error updating the committed offset in kafka, partition %s, value %s' % (partition, value))

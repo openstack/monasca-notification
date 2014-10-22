@@ -3,3 +3,7 @@
 .tox
 AUTHORS
 ChangeLog
+.*project
+build
+dist
+monasca_notification.egg-info
