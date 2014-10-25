@@ -43,20 +43,57 @@ class NotificationProcessor(BaseProcessor):
         self.monascastatsd = mstatsd.Client(name='monasca',
                                             dimensions=BaseProcessor.dimensions)
 
+    def _create_msg(self, hostname, notification):
+        """Create two kind of messages:
+        1. Notifications that include metrics with a hostname as a dimension. There may be more than one hostname.
+           We will only report the hostname if there is only one.
+        2. Notifications that do not include metrics and therefore no hostname. Example: API initiated changes.
+           * A third notification type which include metrics but do not include a hostname will
+           be treated as type #2.
+        """
+        if len(hostname) == 1:  # Type 1
+            msg = email.mime.text.MIMEText("On host \"%s\" %s\n\nAlarm \"%s\" transitioned to the %s state at %s UTC"
+                                           % (hostname[0],
+                                               notification.message.lower(),
+                                               notification.alarm_name,
+                                               notification.state,
+                                               time.asctime(time.gmtime(notification.alarm_timestamp))) +
+                                           "\nalarm_id: %s" % notification.alarm_id)
+
+            msg['Subject'] = "%s \"%s\" for Host: %s" % (notification.state, notification.alarm_name, hostname[0])
+
+        else:  # Type 2
+            msg = email.mime.text.MIMEText("%s\n\nAlarm \"%s\" transitioned to the %s state at %s UTC\nAlarm_id: %s"
+                                           % (notification.message,
+                                              notification.alarm_name,
+                                              notification.state,
+                                              time.asctime(time.gmtime(notification.alarm_timestamp)),
+                                              notification.alarm_id))
+            msg['Subject'] = "%s \"%s\" " % (notification.state, notification.alarm_name)
+
+        msg['From'] = self.email_config['from_addr']
+        msg['To'] = notification.address
+
+        return msg
+
     def _send_email(self, notification):
         """Send the notification via email
              Returns the notification upon success, None upon failure
         """
-        msg = email.mime.text.MIMEText("%s\nAlarm %s transitioned to the %s state at %s UTC\nFull Data:\n%s"
-                                       % (notification.message,
-                                          notification.alarm_name,
-                                          notification.state,
-                                          time.asctime(time.gmtime(notification.alarm_timestamp)),
-                                          notification.to_json()))
-        msg['Subject'] = '%s: %s' % (notification.state, notification.alarm_name)
-        msg['From'] = self.email_config['from_addr']
-        msg['To'] = notification.address
 
+        # Get the "hostname" from the notification metrics if there is one
+        hostname = []
+
+        for metric in notification.metrics:
+            for dimension in metric['dimensions']:
+                if 'hostname' in dimension:
+                    if not metric['dimensions']['%s' % dimension] in hostname[:]:
+                        hostname.append(metric['dimensions']['%s' % dimension])
+
+        # Generate the message
+        msg = self._create_msg(hostname, notification)
+
+        # email the notification
         try:
             self.smtp.sendmail(self.email_config['from_addr'], notification.address, msg.as_string())
             log.debug('Sent email to %s, notification %s' % (notification.address, notification.to_json()))

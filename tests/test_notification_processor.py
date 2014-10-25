@@ -60,7 +60,7 @@ class TestStateTracker(unittest.TestCase):
         """Verify invalid notification type is rejected.
         """
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
-                      "stateChangeReason": "I am alarming!", "timestamp": time.time()}
+                      "stateChangeReason": "I am alarming!", "timestamp": time.time(), "metrics": "cpu_util"}
         invalid_notification = Notification('invalid', 0, 1, 'test notification', 'me@here.com', alarm_dict)
 
         self.notification_queue.put([invalid_notification])

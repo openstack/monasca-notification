@@ -17,7 +17,8 @@ import json
 
 
 class Notification(object):
-    """An abstract base class used to define the notification interface and common functions
+    """An abstract base class used to define the notification interface
+       and common functions
     """
     __slots__ = (
         'address',
@@ -31,12 +32,14 @@ class Notification(object):
         'src_offset',
         'state',
         'tenant_id',
-        'type'
+        'type',
+        'metrics'
     )
 
     def __init__(self, ntype, src_partition, src_offset, name, address, alarm):
         """Setup the notification object
-             The src_partition and src_offset allow the notification to be linked to the alarm that it came from
+             The src_partition and src_offset allow the notification
+              to be linked to the alarm that it came from.
              ntype - The notification type
              name - Name used in sending
              address - to send the notification to
@@ -55,8 +58,10 @@ class Notification(object):
         self.message = alarm['stateChangeReason']
         self.state = alarm['newState']
         self.tenant_id = alarm['tenantId']
+        self.metrics = alarm['metrics']
 
-        self.notification_timestamp = None  # to be updated on actual notification send time
+        # to be updated on actual notification send time
+        self.notification_timestamp = None
 
     def __eq__(self, other):
         if not isinstance(other, Notification):
@@ -82,5 +87,6 @@ class Notification(object):
             'state',
             'tenant_id'
         ]
-        notification_data = {name: getattr(self, name) for name in notification_fields}
+        notification_data = {name: getattr(self, name)
+                             for name in notification_fields}
         return json.dumps(notification_data)

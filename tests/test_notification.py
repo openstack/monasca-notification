@@ -27,7 +27,8 @@ def test_json():
              'timestamp': 'timestamp',
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
-             'tenantId': 'tenantId'}
+             'tenantId': 'tenantId',
+             'metrics': 'cpu_util'}
     test_notification = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
 
     expected_dict = {u'name': u'name',
@@ -49,7 +50,8 @@ def test_equal():
              'timestamp': 'timestamp',
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
-             'tenantId': 'tenantId'}
+             'tenantId': 'tenantId',
+             'metrics': 'cpu_util'}
     test_notification = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
     test_notification2 = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
 
@@ -62,7 +64,8 @@ def test_unequal():
              'timestamp': 'timestamp',
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
-             'tenantId': 'tenantId'}
+             'tenantId': 'tenantId',
+             'metrics': 'cpu_util'}
     test_notification = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
     test_notification2 = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
     test_notification2.alarm_id = None
