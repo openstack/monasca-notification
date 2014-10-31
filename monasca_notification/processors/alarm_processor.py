@@ -120,7 +120,7 @@ class AlarmProcessor(BaseProcessor):
                     cur.execute("""SELECT name, type, address
                                    FROM alarm_action as aa
                                    JOIN notification_method as nm ON aa.action_id = nm.id
-                                   WHERE aa.alarm_id = %s and aa.alarm_state = %s""",
+                                   WHERE aa.alarm_definition_id = %s and aa.alarm_state = %s""",
                                 [alarm['alarmDefinitionId'], alarm['newState']])
             except MySQLdb.Error:
                 log.exception('Mysql Error')
