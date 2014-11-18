@@ -145,7 +145,7 @@ class KafkaStateTracker(object):
             # If self.stop is True run the queue until it is empty, do final commits then exit
             if self.stop and self.finished_queue.empty():
                 log.debug('self.stop set and the finished_queue is empty, doing final wait')
-                time.sleep(10)  # Before final exit wait a bit to verify the queue is still empty
+                time.sleep(2)  # Before final exit wait a bit to verify the queue is still empty
                 if self.finished_queue.empty():
                     if self.max_lag is not None:
                         # if the max_lag has been hit at this point commit the last received offset

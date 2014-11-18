@@ -63,14 +63,14 @@ def clean_exit(signum, frame=None):
             pass
 
     tracker.stop = True
-    max_wait_count = 6
+    max_wait_count = 5
     while tracker.has_lock:
         if max_wait_count == 0:
             log.debug('Max wait reached, proceeding to kill processes')
             break
         log.debug('Waiting for all active processing to stop.')
         max_wait_count -= 1
-        time.sleep(20)
+        time.sleep(2)
 
     # Kill everything, that didn't already die
     for child in multiprocessing.active_children():
@@ -184,7 +184,7 @@ def main(argv=None):
         # If the tracker fails exit
         while True:
             if tracker_thread.is_alive():
-                time.sleep(5)
+                time.sleep(3)
             else:
                 tracker.has_lock = False
                 clean_exit('tracker died', None)
