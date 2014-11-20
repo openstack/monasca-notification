@@ -16,7 +16,7 @@
 import kafka.client
 import kafka.producer
 import logging
-import statsd
+import monascastatsd as mstatsd
 
 from monasca_notification.processors.base import BaseProcessor
 
@@ -39,6 +39,8 @@ class SentNotificationProcessor(BaseProcessor):
         self.topic = topic
         self.finished_queue = finished_queue
         self.sent_queue = sent_queue
+        self.monascastatsd = mstatsd.Client(name='monasca',
+                                            dimensions=BaseProcessor.dimensions)
 
         self.kafka = kafka.client.KafkaClient(url)
         self.producer = kafka.producer.SimpleProducer(
@@ -52,12 +54,14 @@ class SentNotificationProcessor(BaseProcessor):
         """Takes messages from the sent_queue, puts them on the kafka notification topic and then adds
              partition/offset to the finished queue
         """
-        published_count = statsd.Counter('PublishedToKafka')
+        published_to_kafka = self.monascastatsd.get_counter(name='published_to_kafka')
+
         while True:
             notifications = self.sent_queue.get()
             for notification in notifications:
                 responses = self.producer.send_messages(self.topic, notification.to_json())
-                published_count += 1
+                published_to_kafka += 1
+
                 log.debug('Published to topic %s, message %s' % (self.topic, notification.to_json()))
                 for resp in responses:
                     if resp.error != 0:

@@ -15,9 +15,8 @@
 
 import json
 import logging
-import multiprocessing
+import monascastatsd as mstatsd
 import MySQLdb
-import statsd
 import time
 
 from monasca_notification.notification import Notification
@@ -36,7 +35,8 @@ class AlarmProcessor(BaseProcessor):
         self.alarm_ttl = alarm_ttl
         self.notification_queue = notification_queue
         self.finished_queue = finished_queue
-
+        self.monascastatsd = mstatsd.Client(name='monasca',
+                                            dimensions=BaseProcessor.dimensions)
         try:
             self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_passwd, db=dbname)
             self.mysql.autocommit(True)
@@ -88,12 +88,12 @@ class AlarmProcessor(BaseProcessor):
         """Check the notification setting for this project in mysql then create the appropriate notification or
              add to the finished_queue
         """
+        failed_parse_count = self.monascastatsd.get_counter(name='alarms_failed_parse_count')
+        no_notification_count = self.monascastatsd.get_counter(name='alarms_no_notification_count')
+        notification_count = self.monascastatsd.get_counter(name='created_count')
+        db_time = self.monascastatsd.get_timer()
+
         cur = self.mysql.cursor()
-        pname = multiprocessing.current_process().name
-        failed_parse_count = statsd.Counter('AlarmsFailedParse-%s' % pname)
-        no_notification_count = statsd.Counter('AlarmsNoNotification-%s' % pname)
-        notification_count = statsd.Counter('NotificationsCreated-%s' % pname)
-        db_time = statsd.Timer('ConfigDBTime-%s' % pname)
 
         while True:
             raw_alarm = self.alarm_queue.get()
@@ -116,7 +116,7 @@ class AlarmProcessor(BaseProcessor):
                 continue
 
             try:
-                with db_time.time():
+                with db_time.time('config_db_time'):
                     cur.execute("""SELECT name, type, address
                                    FROM alarm_action as aa
                                    JOIN notification_method as nm ON aa.action_id = nm.id

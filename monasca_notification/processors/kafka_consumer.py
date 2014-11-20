@@ -17,7 +17,7 @@ import kafka.client
 import kafka.common
 import kafka.consumer
 import logging
-import statsd
+import monascastatsd as mstatsd
 
 from monasca_notification.processors.base import BaseProcessor
 
@@ -26,6 +26,7 @@ log = logging.getLogger(__name__)
 
 class KafkaConsumer(BaseProcessor):
     """Pull from the alarm topic and place alarm objects on the sent_queue.
+
          No commit is being done until processing is finished and as the processing can take some time it is done in
          another step.
 
@@ -43,6 +44,8 @@ class KafkaConsumer(BaseProcessor):
         # No auto-commit so that commits only happen after the alarm is processed.
         self.consumer = kafka.consumer.SimpleConsumer(self.kafka, group, topic, auto_commit=False)
         self.consumer.provide_partition_info()  # Without this the partition is not provided in the response
+        self.monascastatsd = mstatsd.Client(name='monasca',
+                                            dimensions=BaseProcessor.dimensions)
 
         self._initialize_offsets(group, topic)
         # After my pull request is merged I can remove _initialize_offsets and use
@@ -84,10 +87,11 @@ class KafkaConsumer(BaseProcessor):
     def run(self):
         """Consume from kafka and place alarm objects on the sent_queue
         """
-        counter = statsd.Counter('ConsumedFromKafka')
+        consumed_from_kafka = self.monascastatsd.get_counter(name='consumed_from_kafka')
+
         try:
             for message in self.consumer:
-                counter += 1
+                consumed_from_kafka += 1
                 log.debug("Consuming message from kafka, partition %d, offset %d" % (message[0], message[1].offset))
                 self._add_to_queue(self.queue, 'alarms', message)
         except Exception:

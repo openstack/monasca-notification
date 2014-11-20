@@ -15,9 +15,8 @@
 
 import email.mime.text
 import logging
-import multiprocessing
+import monascastatsd as mstatsd
 import smtplib
-import statsd
 import time
 
 from monasca_notification.processors.base import BaseProcessor
@@ -38,6 +37,8 @@ class NotificationProcessor(BaseProcessor):
 
         # Types as key, method used to process that type as value
         self.notification_types = {'email': self._send_email}
+        self.monascastatsd = mstatsd.Client(name='monasca',
+                                            dimensions=BaseProcessor.dimensions)
 
     def _send_email(self, notification):
         """Send the notification via email
@@ -86,15 +87,10 @@ class NotificationProcessor(BaseProcessor):
              For each notification in a message it is sent according to its type.
              If all notifications fail the alarm partition/offset are added to the the finished queue
         """
-        pname = multiprocessing.current_process().name
-        invalid_count = statsd.Counter('NotificationsInvalidType-%s' % pname)
-        failed_count = statsd.Counter('NotificationsSentFailed-%s' % pname)
-
-        smtp_sent_count = statsd.Counter('NotificationsSentSMTP-%s' % pname)
-        counters = {'email': smtp_sent_count}
-
-        smtp_time = statsd.Timer('SMTPTime-%s' % pname)
-        timers = {'email': smtp_time}
+        counters = {'email': self.monascastatsd.get_counter(name='sent_smtp_count')}
+        timers = {'email': self.monascastatsd.get_timer()}
+        invalid_type_count = self.monascastatsd.get_counter(name='invalid_type_count')
+        sent_failed_count = self.monascastatsd.get_counter(name='sent_failed_count')
 
         while True:
             notifications = self.notification_queue.get()
@@ -102,13 +98,14 @@ class NotificationProcessor(BaseProcessor):
             for notification in notifications:
                 if notification.type not in self.notification_types:
                     log.warn('Notification type %s is not a valid type' % notification.type)
-                    invalid_count += 1
+                    invalid_type_count += 1
                     continue
                 else:
-                    with timers[notification.type].time():
+                    with timers[notification.type].time('smtp_time'):
                         sent = self.notification_types[notification.type](notification)
+
                     if sent is None:
-                        failed_count += 1
+                        sent_failed_count += 1
                     else:
                         sent.notification_timestamp = time.time()
                         sent_notifications.append(sent)

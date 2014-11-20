@@ -19,6 +19,9 @@ log = logging.getLogger(__name__)
 
 
 class BaseProcessor(object):
+
+    dimensions = {'service': 'monitoring', 'component': 'monasca-notification'}
+
     @staticmethod
     def _add_to_queue(queue, queue_name, msg):
         """Warns on full queue then does a blocking push to the queue.
