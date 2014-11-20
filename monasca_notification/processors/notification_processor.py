@@ -16,7 +16,9 @@
 import email.mime.text
 import logging
 import monascastatsd as mstatsd
+import requests
 import smtplib
+import sys
 import time
 
 from monasca_notification.processors.base import BaseProcessor
@@ -36,7 +38,8 @@ class NotificationProcessor(BaseProcessor):
         self._smtp_connect()
 
         # Types as key, method used to process that type as value
-        self.notification_types = {'email': self._send_email}
+        self.notification_types = {'email': self._send_email,
+                                   'webhook': self._post_webhook}
         self.monascastatsd = mstatsd.Client(name='monasca',
                                             dimensions=BaseProcessor.dimensions)
 
@@ -82,13 +85,41 @@ class NotificationProcessor(BaseProcessor):
 
         self.smtp = smtp
 
+    def _post_webhook(self, notification):
+        """Send the notification via webhook
+            Posts on the given url
+        """
+
+        log.info(
+            "Notifying alarm %(alarm_id)s to %(current)s with action %(action)s" %
+            ({'alarm_id': notification.alarm_name,
+              'current': notification.state,
+              'action': notification.address}))
+        body = '{"alarm_id": "%s"}' % notification.alarm_name
+        headers = {'content-type': 'application/json'}
+
+        url = notification.address
+
+        try:
+            # Posting on the given URL
+            result = requests.post(url=url, data=body, headers=headers)
+            if result.status_code in range(200, 300):
+                log.info("Notification successfully posted.")
+                return notification
+            else:
+                log.error("Received an HTTP code %s when trying to post on URL %s." % (result.status_code, url))
+        except:
+            log.error("Error trying to post on URL %s: %s.") % (url, sys.exc_info()[0])
+
     def run(self):
         """Send the notifications
              For each notification in a message it is sent according to its type.
              If all notifications fail the alarm partition/offset are added to the the finished queue
         """
-        counters = {'email': self.monascastatsd.get_counter(name='sent_smtp_count')}
-        timers = {'email': self.monascastatsd.get_timer()}
+        counters = {'email': self.monascastatsd.get_counter(name='sent_smtp_count'),
+                    'webhook': self.monascastatsd.get_counter(name='sent_webhook_count')}
+        timers = {'email': self.monascastatsd.get_timer(),
+                  'webhook': self.monascastatsd.get_timer()}
         invalid_type_count = self.monascastatsd.get_counter(name='invalid_type_count')
         sent_failed_count = self.monascastatsd.get_counter(name='sent_failed_count')
 
@@ -101,7 +132,8 @@ class NotificationProcessor(BaseProcessor):
                     invalid_type_count += 1
                     continue
                 else:
-                    with timers[notification.type].time('smtp_time'):
+                    timer_name = notification.type + '_time'
+                    with timers[notification.type].time(timer_name):
                         sent = self.notification_types[notification.type](notification)
 
                     if sent is None:
