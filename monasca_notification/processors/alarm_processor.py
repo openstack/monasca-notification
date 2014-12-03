@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 class AlarmProcessor(BaseProcessor):
     def __init__(
             self, alarm_queue, notification_queue, finished_queue,
-            alarm_ttl, mysql_host, mysql_user, mysql_passwd, dbname):
+            alarm_ttl, mysql_host, mysql_user, mysql_passwd, dbname, mysql_ssl=None):
         self.alarm_queue = alarm_queue
         self.alarm_ttl = alarm_ttl
         self.notification_queue = notification_queue
@@ -38,7 +38,8 @@ class AlarmProcessor(BaseProcessor):
         self.monascastatsd = mstatsd.Client(name='monasca',
                                             dimensions=BaseProcessor.dimensions)
         try:
-            self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_passwd, db=dbname)
+            self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_passwd, db=dbname,
+                                         ssl=mysql_ssl)
             self.mysql.autocommit(True)
         except:
             log.exception('MySQL connect failed')

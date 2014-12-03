@@ -128,6 +128,10 @@ def main(argv=None):
 
     # AlarmProcessors
     alarm_processors = []
+    if 'ssl' in config['mysql']:
+        ssl_config = config['mysql']['ssl']
+    else:
+        ssl_config = None
     for i in range(config['processors']['alarm']['number']):
         alarm_processors.append(multiprocessing.Process(
             target=AlarmProcessor(
@@ -138,7 +142,8 @@ def main(argv=None):
                 config['mysql']['host'],
                 config['mysql']['user'],
                 config['mysql']['passwd'],
-                config['mysql']['db']
+                config['mysql']['db'],
+                ssl_config
             ).run),
         )
     processors.extend(alarm_processors)

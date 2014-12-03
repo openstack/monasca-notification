@@ -10,6 +10,8 @@ mysql:
     user: notification
     passwd: password
     db: mon
+# A dictionary set according to the params defined in, http://dev.mysql.com/doc/refman/5.0/en/mysql-ssl-set.html
+#    ssl: {'ca': '/path/to/ca'}
 
 email:
     server: 192.168.10.4
