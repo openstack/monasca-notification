@@ -24,9 +24,23 @@ from monasca_notification.notification import Notification
 from monasca_notification.processors import notification_processor
 
 
+class smtpStub(object):
+    def __init__(self, log_queue):
+        self.queue = log_queue
+
+    def sendmail(self, from_addr, to_addr, msg):
+        self.queue.put("%s %s %s" % (from_addr, to_addr, msg))
+
+
+class requestsResponse(object):
+    def __init__(self, status):
+        self.status_code = status
+
+
 class TestStateTracker(unittest.TestCase):
 
     def setUp(self):
+        self.http_func = self._http_post_200
         self.notification_queue = multiprocessing.Queue(10)
         self.sent_notification_queue = multiprocessing.Queue(10)
         self.finished_queue = multiprocessing.Queue(10)
@@ -38,15 +52,21 @@ class TestStateTracker(unittest.TestCase):
                              'timeout': 60,
                              'from_addr': 'hpcs.mon@hp.com'}
 
+    @mock.patch('monasca_notification.processors.notification_processor.requests')
     @mock.patch('monasca_notification.processors.notification_processor.smtplib')
     @mock.patch('monasca_notification.processors.notification_processor.log')
-    def _start_processor(self, mock_log, mock_smtp):
+    def _start_processor(self, mock_log, mock_smtp, mock_requests):
         """Start the processor with the proper mocks
         """
         # Since the log runs in another thread I can mock it directly, instead change the methods to put to a queue
         mock_log.warn = self.log_queue.put
         mock_log.error = self.log_queue.put
 
+        mock_requests.post = self.http_func
+
+        mock_smtp.SMTP = self._smtpStub
+
+        self.mock_requests = mock_requests
         self.mock_log = mock_log
         self.mock_smtp = mock_smtp
 
@@ -55,6 +75,22 @@ class TestStateTracker(unittest.TestCase):
         )
         self.processor = multiprocessing.Process(target=nprocessor.run)
         self.processor.start()
+
+    def _smtpStub(self, *arg, **kwargs):
+        return smtpStub(self.log_queue)
+
+    def _http_post_200(self, url, data, headers):
+        self.log_queue.put("%s %s %s" % (url, data, headers))
+        r = requestsResponse(200)
+        return r
+
+    def _http_post_404(self, url, data, headers):
+        r = requestsResponse(404)
+        return r
+
+    def _http_post_exception(self, url, data, headers):
+        # generate error
+        foobar
 
     def test_invalid_notification(self):
         """Verify invalid notification type is rejected.
@@ -71,3 +107,176 @@ class TestStateTracker(unittest.TestCase):
 
         self.assertTrue(finished == (0, 1))
         self.assertTrue(log_msg == 'Notification type invalid is not a valid type')
+
+    def test_email_notification_single_host(self):
+        """Email with single host
+        """
+
+        metrics = []
+        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metrics.append(metric_data)
+
+        alarm_dict = {"tenantId": "0",
+                      "alarmId": "0",
+                      "alarmName": "test Alarm",
+                      "oldState": "OK",
+                      "newState": "ALARM",
+                      "stateChangeReason": "I am alarming!",
+                      "timestamp": time.time(),
+                      "metrics": metrics}
+
+        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', alarm_dict)
+
+        self.notification_queue.put([notification])
+        self._start_processor()
+        log_msg = self.log_queue.get(timeout=3)
+        self.processor.terminate()
+
+        self.assertRegexpMatches(log_msg, "From: hpcs.mon@hp.com")
+        self.assertRegexpMatches(log_msg, "To: me@here.com")
+        self.assertRegexpMatches(log_msg, "Content-Type: text/plain")
+        self.assertRegexpMatches(log_msg, "Alarm .test Alarm.")
+        self.assertRegexpMatches(log_msg, "On host .foo1.")
+
+        self.assertTrue(self.log_queue.empty())
+
+    def test_email_notification_multiple_hosts(self):
+        """Email with multiple hosts
+        """
+
+        metrics = []
+        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metrics.append(metric_data)
+        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metrics.append(metric_data)
+
+        alarm_dict = {"tenantId": "0",
+                      "alarmId": "0",
+                      "alarmName": "test Alarm",
+                      "oldState": "OK",
+                      "newState": "ALARM",
+                      "stateChangeReason": "I am alarming!",
+                      "timestamp": time.time(),
+                      "metrics": metrics}
+
+        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', alarm_dict)
+
+        self.notification_queue.put([notification])
+        self._start_processor()
+        log_msg = self.log_queue.get(timeout=3)
+        self.processor.terminate()
+
+        self.assertRegexpMatches(log_msg, "From: hpcs.mon@hp.com")
+        self.assertRegexpMatches(log_msg, "To: me@here.com")
+        self.assertRegexpMatches(log_msg, "Content-Type: text/plain")
+        self.assertRegexpMatches(log_msg, "Alarm .test Alarm.")
+        self.assertNotRegexpMatches(log_msg, "foo1")
+        self.assertNotRegexpMatches(log_msg, "foo2")
+
+        self.assertTrue(self.log_queue.empty())
+
+    def test_webhook_good_http_response(self):
+        """webhook
+        """
+
+        self.http_func = self._http_post_200
+
+        metrics = []
+        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metrics.append(metric_data)
+        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metrics.append(metric_data)
+
+        alarm_dict = {"tenantId": "0",
+                      "alarmId": "0",
+                      "alarmName": "test Alarm",
+                      "oldState": "OK",
+                      "newState": "ALARM",
+                      "stateChangeReason": "I am alarming!",
+                      "timestamp": time.time(),
+                      "metrics": metrics}
+
+        notification = Notification('webhook', 0, 1, 'email notification', 'me@here.com', alarm_dict)
+
+        self.notification_queue.put([notification])
+        self._start_processor()
+        log_msg = self.log_queue.get(timeout=3)
+        self.processor.terminate()
+
+        self.assertRegexpMatches(log_msg, "me@here.com")
+        self.assertRegexpMatches(log_msg, "alarm_id.: .test Alarm")
+        self.assertRegexpMatches(log_msg, "content-type.: .application/json")
+
+        self.assertTrue(self.log_queue.empty())
+
+    def test_webhook_bad_http_response(self):
+        """webhook
+        """
+
+        self.http_func = self._http_post_404
+
+        metrics = []
+        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metrics.append(metric_data)
+        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metrics.append(metric_data)
+
+        alarm_dict = {"tenantId": "0",
+                      "alarmId": "0",
+                      "alarmName": "test Alarm",
+                      "oldState": "OK",
+                      "newState": "ALARM",
+                      "stateChangeReason": "I am alarming!",
+                      "timestamp": time.time(),
+                      "metrics": metrics}
+
+        notification = Notification('webhook', 0, 1, 'email notification', 'me@here.com', alarm_dict)
+
+        self.notification_queue.put([notification])
+        self._start_processor()
+        log_msg = self.log_queue.get(timeout=3)
+        self.processor.terminate()
+
+        self.assertNotRegexpMatches(log_msg, "alarm_id.: .test Alarm")
+        self.assertNotRegexpMatches(log_msg, "content-type.: .application/json")
+
+        self.assertRegexpMatches(log_msg, "HTTP code 404")
+        self.assertRegexpMatches(log_msg, "post on URL me@here.com")
+
+        self.assertTrue(self.log_queue.empty())
+
+    def test_webhook_exception_on_http_response(self):
+        """webhook
+        """
+
+        self.http_func = self._http_post_exception
+
+        metrics = []
+        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metrics.append(metric_data)
+        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metrics.append(metric_data)
+
+        alarm_dict = {"tenantId": "0",
+                      "alarmId": "0",
+                      "alarmName": "test Alarm",
+                      "oldState": "OK",
+                      "newState": "ALARM",
+                      "stateChangeReason": "I am alarming!",
+                      "timestamp": time.time(),
+                      "metrics": metrics}
+
+        notification = Notification('webhook', 0, 1, 'email notification', 'me@here.com', alarm_dict)
+
+        self.notification_queue.put([notification])
+        self._start_processor()
+
+        log_msg = self.log_queue.get(timeout=3)
+        self.processor.terminate()
+
+        self.assertNotRegexpMatches(log_msg, "alarm_id.: .test Alarm")
+        self.assertNotRegexpMatches(log_msg, "content-type.: .application/json")
+
+        self.assertRegexpMatches(log_msg, "Error trying to post on URL me@here.com")
+
+        self.assertTrue(self.log_queue.empty())

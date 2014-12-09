@@ -146,7 +146,7 @@ class NotificationProcessor(BaseProcessor):
             else:
                 log.error("Received an HTTP code %s when trying to post on URL %s." % (result.status_code, url))
         except:
-            log.error("Error trying to post on URL %s: %s.") % (url, sys.exc_info()[0])
+            log.error("Error trying to post on URL %s: %s." % (url, sys.exc_info()[0]))
 
     def run(self):
         """Send the notifications
