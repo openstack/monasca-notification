@@ -21,6 +21,9 @@ email:
     timeout: 60
     from_addr: hpcs.mon@hp.com
 
+webhook:
+    timeout: 5
+
 processors:
     alarm:
         number: 2

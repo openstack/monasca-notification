@@ -28,18 +28,24 @@ log = logging.getLogger(__name__)
 
 class NotificationProcessor(BaseProcessor):
 
-    def __init__(self, notification_queue, sent_notification_queue, finished_queue, email_config):
+    def __init__(self, notification_queue, sent_notification_queue,
+                 finished_queue, email_config, webhook_config):
         self.notification_queue = notification_queue
         self.sent_notification_queue = sent_notification_queue
         self.finished_queue = finished_queue
 
         self.email_config = email_config
+
+        self.webhook_config = {'timeout': 5}
+        self.webhook_config.update(webhook_config)
+
         self.smtp = None
         self._smtp_connect()
 
         # Types as key, method used to process that type as value
         self.notification_types = {'email': self._send_email,
                                    'webhook': self._post_webhook}
+
         self.monascastatsd = mstatsd.Client(name='monasca',
                                             dimensions=BaseProcessor.dimensions)
 
@@ -139,7 +145,10 @@ class NotificationProcessor(BaseProcessor):
 
         try:
             # Posting on the given URL
-            result = requests.post(url=url, data=body, headers=headers)
+            result = requests.post(url=url,
+                                   data=body,
+                                   headers=headers,
+                                   timeout=self.webhook_config['timeout'])
             if result.status_code in range(200, 300):
                 log.info("Notification successfully posted.")
                 return notification

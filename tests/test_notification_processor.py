@@ -17,6 +17,7 @@
 
 import mock
 import multiprocessing
+import requests
 import time
 import unittest
 
@@ -51,6 +52,7 @@ class TestStateTracker(unittest.TestCase):
                              'password': None,
                              'timeout': 60,
                              'from_addr': 'hpcs.mon@hp.com'}
+        self.webhook_config = {'timeout': 50}
 
     @mock.patch('monasca_notification.processors.notification_processor.requests')
     @mock.patch('monasca_notification.processors.notification_processor.smtplib')
@@ -70,27 +72,31 @@ class TestStateTracker(unittest.TestCase):
         self.mock_log = mock_log
         self.mock_smtp = mock_smtp
 
-        nprocessor = notification_processor.NotificationProcessor(
-            self.notification_queue, self.sent_notification_queue, self.finished_queue, self.email_config
-        )
+        nprocessor = (notification_processor.
+                      NotificationProcessor(self.notification_queue,
+                                            self.sent_notification_queue,
+                                            self.finished_queue,
+                                            self.email_config,
+                                            self.webhook_config))
+
         self.processor = multiprocessing.Process(target=nprocessor.run)
         self.processor.start()
 
     def _smtpStub(self, *arg, **kwargs):
         return smtpStub(self.log_queue)
 
-    def _http_post_200(self, url, data, headers):
+    def _http_post_200(self, url, data, headers, **kwargs):
         self.log_queue.put("%s %s %s" % (url, data, headers))
         r = requestsResponse(200)
         return r
 
-    def _http_post_404(self, url, data, headers):
+    def _http_post_404(self, url, data, headers, **kwargs):
         r = requestsResponse(404)
         return r
 
-    def _http_post_exception(self, url, data, headers):
-        # generate error
-        foobar
+    def _http_post_exception(self, url, data, headers, **kwargs):
+        self.log_queue.put("timeout %s" % kwargs["timeout"])
+        raise requests.exceptions.Timeout
 
     def test_invalid_notification(self):
         """Verify invalid notification type is rejected.
@@ -176,7 +182,7 @@ class TestStateTracker(unittest.TestCase):
         self.assertTrue(self.log_queue.empty())
 
     def test_webhook_good_http_response(self):
-        """webhook
+        """webhook good response
         """
 
         self.http_func = self._http_post_200
@@ -210,7 +216,7 @@ class TestStateTracker(unittest.TestCase):
         self.assertTrue(self.log_queue.empty())
 
     def test_webhook_bad_http_response(self):
-        """webhook
+        """webhook bad response
         """
 
         self.http_func = self._http_post_404
@@ -245,8 +251,8 @@ class TestStateTracker(unittest.TestCase):
 
         self.assertTrue(self.log_queue.empty())
 
-    def test_webhook_exception_on_http_response(self):
-        """webhook
+    def test_webhook_timeout_exception_on_http_response(self):
+        """webhook timeout exception
         """
 
         self.http_func = self._http_post_exception
@@ -266,17 +272,29 @@ class TestStateTracker(unittest.TestCase):
                       "timestamp": time.time(),
                       "metrics": metrics}
 
-        notification = Notification('webhook', 0, 1, 'email notification', 'me@here.com', alarm_dict)
+        notification = Notification('webhook',
+                                    0,
+                                    1,
+                                    'webhook notification',
+                                    'http://localhost:21356',
+                                    alarm_dict)
 
-        self.notification_queue.put([notification])
         self._start_processor()
 
+        self.notification_queue.put([notification])
+
         log_msg = self.log_queue.get(timeout=3)
-        self.processor.terminate()
+
+        self.assertEqual(log_msg, "timeout 50")
+
+        log_msg = self.log_queue.get(timeout=3)
 
         self.assertNotRegexpMatches(log_msg, "alarm_id.: .test Alarm")
         self.assertNotRegexpMatches(log_msg, "content-type.: .application/json")
 
-        self.assertRegexpMatches(log_msg, "Error trying to post on URL me@here.com")
+        self.assertRegexpMatches(log_msg, "Error trying to post on URL http://localhost:21356")
+        self.assertRaises(requests.exceptions.Timeout)
 
         self.assertTrue(self.log_queue.empty())
+
+        self.processor.terminate()
