@@ -210,7 +210,7 @@ class TestStateTracker(unittest.TestCase):
         self.processor.terminate()
 
         self.assertRegexpMatches(log_msg, "me@here.com")
-        self.assertRegexpMatches(log_msg, "alarm_id.: .test Alarm")
+        self.assertRegexpMatches(log_msg, "alarm_id.: '0'")
         self.assertRegexpMatches(log_msg, "content-type.: .application/json")
 
         self.assertTrue(self.log_queue.empty())

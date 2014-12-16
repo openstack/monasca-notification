@@ -138,7 +138,7 @@ class NotificationProcessor(BaseProcessor):
             ({'alarm_id': notification.alarm_name,
               'current': notification.state,
               'action': notification.address}))
-        body = '{"alarm_id": "%s"}' % notification.alarm_name
+        body = {'alarm_id': notification.alarm_id}
         headers = {'content-type': 'application/json'}
 
         url = notification.address
