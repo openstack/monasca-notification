@@ -157,7 +157,8 @@ def main(argv=None):
                 sent_notifications,
                 finished,
                 config['email'],
-                config['webhook']
+                config['webhook'],
+                config['pagerduty']
             ).run),
         )
     processors.extend(notification_processors)

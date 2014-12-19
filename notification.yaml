@@ -24,6 +24,10 @@ email:
 webhook:
     timeout: 5
 
+pagerduty:
+    timeout: 5
+    url: "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
+
 processors:
     alarm:
         number: 2

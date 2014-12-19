@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import email.mime.text
+import json
 import logging
 import monascastatsd
 import requests
@@ -28,8 +29,9 @@ log = logging.getLogger(__name__)
 
 class NotificationProcessor(BaseProcessor):
 
-    def __init__(self, notification_queue, sent_notification_queue,
-                 finished_queue, email_config, webhook_config):
+    def __init__(self, notification_queue,
+                 sent_notification_queue, finished_queue,
+                 email_config, webhook_config, pagerduty_config):
         self.notification_queue = notification_queue
         self.sent_notification_queue = sent_notification_queue
         self.finished_queue = finished_queue
@@ -39,12 +41,18 @@ class NotificationProcessor(BaseProcessor):
         self.webhook_config = {'timeout': 5}
         self.webhook_config.update(webhook_config)
 
+        self.pagerduty_config = {
+            'timeout': 5,
+            'url': 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'}
+        self.pagerduty_config.update(pagerduty_config)
+
         self.smtp = None
         self._smtp_connect()
 
         # Types as key, method used to process that type as value
         self.notification_types = {'email': self._send_email,
-                                   'webhook': self._post_webhook}
+                                   'webhook': self._post_webhook,
+                                   'pagerduty': self._post_pagerduty}
 
         self.statsd = monascastatsd.Client(name='monasca', dimensions=BaseProcessor.dimensions)
 
@@ -156,15 +164,49 @@ class NotificationProcessor(BaseProcessor):
         except:
             log.error("Error trying to post on URL %s: %s." % (url, sys.exc_info()[0]))
 
+    def _post_pagerduty(self, notification):
+        """Send pagerduty notification
+        """
+
+        url = self.pagerduty_config['url']
+        headers = {"content-type": "application/json"}
+        body = {"service_key": notification.address,
+                "event_type": "trigger",
+                "description": notification.message,
+                "client": "Monasca",
+                "client_url": "",
+                "details": {"alarm_id": notification.alarm_id,
+                            "alarm_name": notification.alarm_name,
+                            "current": notification.state,
+                            "message": notification.message}}
+
+        try:
+            result = requests.post(url=url,
+                                   data=json.dumps(body),
+                                   headers=headers,
+                                   timeout=self.pagerduty_config['timeout'])
+
+            valid_http_codes = [200, 201, 204]
+            if result.status_code in valid_http_codes:
+                return notification
+
+            log.error("Error with pagerduty request. key=<%s> response=%s"
+                      % (notification.address, result.status_code))
+        except:
+            log.error("Exception on pagerduty request. key=<%s> exception=%s"
+                      % (notification.address, sys.exc_info()[0]))
+
     def run(self):
         """Send the notifications
              For each notification in a message it is sent according to its type.
              If all notifications fail the alarm partition/offset are added to the the finished queue
         """
         counters = {'email': self.statsd.get_counter(name='sent_smtp_count'),
-                    'webhook': self.statsd.get_counter(name='sent_webhook_count')}
+                    'webhook': self.statsd.get_counter(name='sent_webhook_count'),
+                    'pagerduty': self.statsd.get_counter(name='sent_pagerduty_count')}
         timers = {'email': self.statsd.get_timer(),
-                  'webhook': self.statsd.get_timer()}
+                  'webhook': self.statsd.get_timer(),
+                  'pagerduty': self.statsd.get_timer()}
         invalid_type_count = self.statsd.get_counter(name='invalid_type_count')
         sent_failed_count = self.statsd.get_counter(name='sent_failed_count')
 
@@ -187,7 +229,6 @@ class NotificationProcessor(BaseProcessor):
                         sent.notification_timestamp = time.time()
                         sent_notifications.append(sent)
                         counters[notification.type] += 1
-
             if len(sent_notifications) == 0:  # All notifications failed
                 self._add_to_queue(
                     self.finished_queue, 'finished', (notifications[0].src_partition, notifications[0].src_offset))
