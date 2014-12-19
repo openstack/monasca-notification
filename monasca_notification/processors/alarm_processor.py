@@ -15,7 +15,7 @@
 
 import json
 import logging
-import monascastatsd as mstatsd
+import monascastatsd
 import MySQLdb
 import time
 
@@ -35,8 +35,8 @@ class AlarmProcessor(BaseProcessor):
         self.alarm_ttl = alarm_ttl
         self.notification_queue = notification_queue
         self.finished_queue = finished_queue
-        self.monascastatsd = mstatsd.Client(name='monasca',
-                                            dimensions=BaseProcessor.dimensions)
+        self.statsd = monascastatsd.Client(name='monasca',
+                                           dimensions=BaseProcessor.dimensions)
         try:
             self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_passwd, db=dbname,
                                          ssl=mysql_ssl)
@@ -89,10 +89,10 @@ class AlarmProcessor(BaseProcessor):
         """Check the notification setting for this project in mysql then create the appropriate notification or
              add to the finished_queue
         """
-        failed_parse_count = self.monascastatsd.get_counter(name='alarms_failed_parse_count')
-        no_notification_count = self.monascastatsd.get_counter(name='alarms_no_notification_count')
-        notification_count = self.monascastatsd.get_counter(name='created_count')
-        db_time = self.monascastatsd.get_timer()
+        failed_parse_count = self.statsd.get_counter(name='alarms_failed_parse_count')
+        no_notification_count = self.statsd.get_counter(name='alarms_no_notification_count')
+        notification_count = self.statsd.get_counter(name='created_count')
+        db_time = self.statsd.get_timer()
 
         cur = self.mysql.cursor()
 

@@ -23,7 +23,7 @@ import Queue
 import time
 
 from monasca_notification import notification_exceptions
-import monascastatsd as mstatsd
+import monascastatsd
 
 log = logging.getLogger(__name__)
 
@@ -66,11 +66,10 @@ class KafkaStateTracker(object):
         # can not yet be advanced
         self._uncommitted_offsets = collections.defaultdict(set)
         self._last_commit_time = collections.defaultdict(time.time)
-        monascastatsd = mstatsd.Client(name='monasca',
-                                       dimensions=self._dimensions)
-        self.offset_update_count = monascastatsd.get_counter(name='alarms_offset_update_count')
-        self.finished_count = monascastatsd.get_counter(name='alarms_finished_count')
-        self.kafka_timer = monascastatsd.get_timer()
+        statsd = monascastatsd.Client(name='monasca', dimensions=self._dimensions)
+        self.offset_update_count = statsd.get_counter(name='alarms_offset_update_count')
+        self.finished_count = statsd.get_counter(name='alarms_finished_count')
+        self.kafka_timer = statsd.get_timer()
 
     def _drop_lock(self):
         """Drop the lock file kept in zookeeper

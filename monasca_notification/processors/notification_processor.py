@@ -15,7 +15,7 @@
 
 import email.mime.text
 import logging
-import monascastatsd as mstatsd
+import monascastatsd
 import requests
 import smtplib
 import sys
@@ -46,8 +46,7 @@ class NotificationProcessor(BaseProcessor):
         self.notification_types = {'email': self._send_email,
                                    'webhook': self._post_webhook}
 
-        self.monascastatsd = mstatsd.Client(name='monasca',
-                                            dimensions=BaseProcessor.dimensions)
+        self.statsd = monascastatsd.Client(name='monasca', dimensions=BaseProcessor.dimensions)
 
     def _create_msg(self, hostname, notification):
         """Create two kind of messages:
@@ -162,12 +161,12 @@ class NotificationProcessor(BaseProcessor):
              For each notification in a message it is sent according to its type.
              If all notifications fail the alarm partition/offset are added to the the finished queue
         """
-        counters = {'email': self.monascastatsd.get_counter(name='sent_smtp_count'),
-                    'webhook': self.monascastatsd.get_counter(name='sent_webhook_count')}
-        timers = {'email': self.monascastatsd.get_timer(),
-                  'webhook': self.monascastatsd.get_timer()}
-        invalid_type_count = self.monascastatsd.get_counter(name='invalid_type_count')
-        sent_failed_count = self.monascastatsd.get_counter(name='sent_failed_count')
+        counters = {'email': self.statsd.get_counter(name='sent_smtp_count'),
+                    'webhook': self.statsd.get_counter(name='sent_webhook_count')}
+        timers = {'email': self.statsd.get_timer(),
+                  'webhook': self.statsd.get_timer()}
+        invalid_type_count = self.statsd.get_counter(name='invalid_type_count')
+        sent_failed_count = self.statsd.get_counter(name='sent_failed_count')
 
         while True:
             notifications = self.notification_queue.get()
