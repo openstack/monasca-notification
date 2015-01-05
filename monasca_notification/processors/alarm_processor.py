@@ -38,8 +38,8 @@ class AlarmProcessor(BaseProcessor):
         self.statsd = monascastatsd.Client(name='monasca',
                                            dimensions=BaseProcessor.dimensions)
         try:
-            self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user, passwd=mysql_passwd, db=dbname,
-                                         ssl=mysql_ssl)
+            self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user,
+                                         passwd=unicode(mysql_passwd).encode('utf-8'), db=dbname, ssl=mysql_ssl)
             self.mysql.autocommit(True)
         except:
             log.exception('MySQL connect failed')
