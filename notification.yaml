@@ -13,20 +13,21 @@ mysql:
 # A dictionary set according to the params defined in, http://dev.mysql.com/doc/refman/5.0/en/mysql-ssl-set.html
 #    ssl: {'ca': '/path/to/ca'}
 
-email:
-    server: 192.168.10.4
-    port: 25
-    user:
-    password:
-    timeout: 60
-    from_addr: hpcs.mon@hp.com
+notification_types:
+    email:
+        server: 192.168.10.4
+        port: 25
+        user:
+        password:
+        timeout: 60
+        from_addr: hpcs.mon@hp.com
 
-webhook:
-    timeout: 5
+    webhook:
+        timeout: 5
 
-pagerduty:
-    timeout: 5
-    url: "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
+    pagerduty:
+        timeout: 5
+        url: "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
 
 processors:
     alarm:
