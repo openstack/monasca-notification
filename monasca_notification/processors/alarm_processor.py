@@ -29,18 +29,16 @@ log = logging.getLogger(__name__)
 
 class AlarmProcessor(BaseProcessor):
     def __init__(
-            self, alarm_queue, notification_queue, finished_queue,
-            alarm_ttl, mysql_host, mysql_user, mysql_passwd, dbname, mysql_ssl=None):
-        self.alarm_queue = alarm_queue
-        self.alarm_ttl = alarm_ttl
-        self.notification_queue = notification_queue
-        self.finished_queue = finished_queue
-        self.statsd = monascastatsd.Client(name='monasca',
-                                           dimensions=BaseProcessor.dimensions)
+            self, alarm_ttl, mysql_host, mysql_user,
+            mysql_passwd, dbname, mysql_ssl=None):
+        self._alarm_ttl = alarm_ttl
+        self._statsd = monascastatsd.Client(name='monasca',
+                                            dimensions=BaseProcessor.dimensions)
         try:
-            self.mysql = MySQLdb.connect(host=mysql_host, user=mysql_user,
-                                         passwd=unicode(mysql_passwd).encode('utf-8'), db=dbname, ssl=mysql_ssl)
-            self.mysql.autocommit(True)
+            self._mysql = MySQLdb.connect(host=mysql_host, user=mysql_user,
+                                          passwd=unicode(mysql_passwd).encode('utf-8'),
+                                          db=dbname, ssl=mysql_ssl)
+            self._mysql.autocommit(True)
         except:
             log.exception('MySQL connect failed')
             raise
@@ -79,62 +77,61 @@ class AlarmProcessor(BaseProcessor):
             return False
 
         alarm_age = time.time() - alarm['timestamp']  # Should all be in seconds since epoch
-        if (self.alarm_ttl is not None) and (alarm_age > self.alarm_ttl):
+        if (self._alarm_ttl is not None) and (alarm_age > self._alarm_ttl):
             log.warn('Received alarm older than the ttl, skipping. Alarm from %s' % time.ctime(alarm['timestamp']))
             return False
 
         return True
 
-    def run(self):
-        """Check the notification setting for this project in mysql then create the appropriate notification or
-             add to the finished_queue
+    def to_notification(self, raw_alarm):
+        """Check the notification setting for this project in mysql then create the appropriate notification
         """
-        failed_parse_count = self.statsd.get_counter(name='alarms_failed_parse_count')
-        no_notification_count = self.statsd.get_counter(name='alarms_no_notification_count')
-        notification_count = self.statsd.get_counter(name='created_count')
-        db_time = self.statsd.get_timer()
+        failed_parse_count = self._statsd.get_counter(name='alarms_failed_parse_count')
+        no_notification_count = self._statsd.get_counter(name='alarms_no_notification_count')
+        notification_count = self._statsd.get_counter(name='created_count')
+        db_time = self._statsd.get_timer()
 
-        cur = self.mysql.cursor()
+        cur = self._mysql.cursor()
 
-        while True:
-            raw_alarm = self.alarm_queue.get()
-            partition = raw_alarm[0]
-            offset = raw_alarm[1].offset
-            try:
-                alarm = self._parse_alarm(raw_alarm[1].message.value)
-            except Exception as e:  # This is general because of a lack of json exception base class
-                failed_parse_count += 1
-                log.error("Invalid Alarm format skipping partition %d, offset %d\nErrror%s" % (partition, offset, e))
-                self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
-                continue
+        partition = raw_alarm[0]
+        offset = raw_alarm[1].offset
+        try:
+            alarm = self._parse_alarm(raw_alarm[1].message.value)
+        except Exception as e:  # This is general because of a lack of json exception base class
+            failed_parse_count += 1
+            log.exception("Invalid Alarm format skipping partition %d, offset %d\nError%s" % (partition, offset, e))
+            return [], partition, offset
 
-            log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
+        log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
+                  % (partition, offset, alarm))
+
+        if not self._alarm_is_valid(alarm):
+            no_notification_count += 1
+            return [], partition, offset
+
+        try:
+            with db_time.time('config_db_time'):
+                cur.execute("""SELECT name, type, address
+                               FROM alarm_action as aa
+                               JOIN notification_method as nm ON aa.action_id = nm.id
+                               WHERE aa.alarm_definition_id = %s and aa.alarm_state = %s""",
+                            [alarm['alarmDefinitionId'], alarm['newState']])
+        except MySQLdb.Error:
+            log.exception('Mysql Error')
+            raise
+
+        notifications = [Notification(row[1].lower(),
+                                      partition,
+                                      offset,
+                                      row[0],
+                                      row[2],
+                                      alarm) for row in cur]
+
+        if len(notifications) == 0:
+            no_notification_count += 1
+            log.debug('No notifications found for this alarm, partition %d, offset %d, alarm data %s'
                       % (partition, offset, alarm))
-
-            if not self._alarm_is_valid(alarm):
-                no_notification_count += 1
-                self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
-                continue
-
-            try:
-                with db_time.time('config_db_time'):
-                    cur.execute("""SELECT name, type, address
-                                   FROM alarm_action as aa
-                                   JOIN notification_method as nm ON aa.action_id = nm.id
-                                   WHERE aa.alarm_definition_id = %s and aa.alarm_state = %s""",
-                                [alarm['alarmDefinitionId'], alarm['newState']])
-            except MySQLdb.Error:
-                log.exception('Mysql Error')
-                raise
-
-            notifications = [
-                Notification(row[1].lower(), partition, offset, row[0], row[2], alarm) for row in cur]
-
-            if len(notifications) == 0:
-                no_notification_count += 1
-                log.debug('No notifications found for this alarm, partition %d, offset %d, alarm data %s'
-                          % (partition, offset, alarm))
-                self._add_to_queue(self.finished_queue, 'finished', (partition, offset))
-            else:
-                notification_count += len(notifications)
-                self._add_to_queue(self.notification_queue, 'notifications', notifications)
+            return [], partition, offset
+        else:
+            notification_count += len(notifications)
+            return notifications, partition, offset

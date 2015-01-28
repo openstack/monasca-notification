@@ -16,7 +16,6 @@
 """Tests NotificationProcessor"""
 
 import mock
-import multiprocessing
 import time
 import unittest
 
@@ -37,14 +36,10 @@ class requestsResponse(object):
         self.status_code = status
 
 
-class TestStateTracker(unittest.TestCase):
+class TestNotificationProcessor(unittest.TestCase):
 
     def setUp(self):
         self.trap = []
-        self.notification_queue = multiprocessing.Queue(10)
-        self.sent_notification_queue = multiprocessing.Queue(10)
-        self.finished_queue = multiprocessing.Queue(10)
-        self.log_queue = multiprocessing.Queue(10)
         self.email_config = {'server': 'my.smtp.server',
                              'port': 25,
                              'user': None,
@@ -53,40 +48,32 @@ class TestStateTracker(unittest.TestCase):
                              'from_addr': 'hpcs.mon@hp.com'}
 
     def tearDown(self):
-        self.assertTrue(self.log_queue.empty())
-        self.assertTrue(self.sent_notification_queue.empty())
-        self.assertTrue(self.finished_queue.empty())
-        self.processor.terminate()
+        pass
 
     # ------------------------------------------------------------------------
     # Test helper functions
     # ------------------------------------------------------------------------
 
+    @mock.patch('monasca_notification.processors.notification_processor.monascastatsd')
     @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
     @mock.patch('monasca_notification.processors.notification_processor.notifiers.log')
-    def _start_processor(self, mock_log, mock_smtp):
+    def _start_processor(self, notifications, mock_log, mock_smtp, mock_statsd):
         """Start the processor with the proper mocks
         """
         # Since the log runs in another thread I can mock it directly, instead change the methods to put to a queue
-        mock_log.warn = self.log_queue.put
-        mock_log.error = self.log_queue.put
+        mock_log.warn = self.trap.append
+        mock_log.error = self.trap.append
 
         mock_smtp.SMTP = self._smtpStub
 
         config = {}
         config["email"] = self.email_config
 
-        nprocessor = (notification_processor.
-                      NotificationProcessor(self.notification_queue,
-                                            self.sent_notification_queue,
-                                            self.finished_queue,
-                                            config))
-
-        self.processor = multiprocessing.Process(target=nprocessor.run)
-        self.processor.start()
+        processor = (notification_processor.NotificationProcessor(config))
+        processor.send(notifications)
 
     def _smtpStub(self, *arg, **kwargs):
-        return smtpStub(self.log_queue)
+        return smtpStub(self.trap)
 
     def email_setup(self, metric):
         alarm_dict = {"tenantId": "0",
@@ -100,15 +87,7 @@ class TestStateTracker(unittest.TestCase):
 
         notification = Notification('email', 0, 1, 'email notification', 'me@here.com', alarm_dict)
 
-        self.notification_queue.put([notification])
-        self._start_processor()
-
-    def _logQueueToTrap(self):
-        while True:
-            try:
-                self.trap.append(self.log_queue.get(timeout=1))
-            except Exception:
-                return
+        self._start_processor([notification])
 
     # ------------------------------------------------------------------------
     # Unit tests
@@ -121,14 +100,8 @@ class TestStateTracker(unittest.TestCase):
                       "stateChangeReason": "I am alarming!", "timestamp": time.time(), "metrics": "cpu_util"}
         invalid_notification = Notification('invalid', 0, 1, 'test notification', 'me@here.com', alarm_dict)
 
-        self.notification_queue.put([invalid_notification])
-        self._start_processor()
+        self._start_processor([invalid_notification])
 
-        finished = self.finished_queue.get(timeout=2)
-
-        self._logQueueToTrap()
-
-        self.assertTrue(finished == (0, 1))
         self.assertIn('attempting to send unconfigured notification: invalid', self.trap)
 
     def test_email_notification_single_host(self):
@@ -141,8 +114,6 @@ class TestStateTracker(unittest.TestCase):
 
         self.email_setup(metrics)
 
-        self._logQueueToTrap()
-
         for msg in self.trap:
             if "From: hpcs.mon@hp.com" in msg:
                 self.assertRegexpMatches(msg, "From: hpcs.mon@hp.com")
@@ -150,6 +121,3 @@ class TestStateTracker(unittest.TestCase):
                 self.assertRegexpMatches(msg, "Content-Type: text/plain")
                 self.assertRegexpMatches(msg, "Alarm .test Alarm.")
                 self.assertRegexpMatches(msg, "On host .foo1.")
-
-        notification_msg = self.sent_notification_queue.get(timeout=3)
-        self.assertNotEqual(notification_msg, None)

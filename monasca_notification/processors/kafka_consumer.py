@@ -19,80 +19,117 @@ import kafka.consumer
 import logging
 import monascastatsd
 
+from kazoo.client import KazooClient
+from kazoo.recipe.partitioner import SetPartitioner
 from monasca_notification.processors.base import BaseProcessor
 
 log = logging.getLogger(__name__)
 
 
 class KafkaConsumer(BaseProcessor):
-    """Pull from the alarm topic and place alarm objects on the sent_queue.
-
-         No commit is being done until processing is finished and as the processing can take some time it is done in
-         another step.
-
-         Unfortunately at this point the python-kafka client does not handle multiple consumers seamlessly.
-         For more information see, https://github.com/mumrah/kafka-python/issues/112
+    """Read alarm from the alarm topic
+       No commit is being done until processing is finished
     """
-    def __init__(self, queue, kafka_url, group, topic):
+    def __init__(self, kafka_url, zookeeper_url, zookeeper_path, group, topic):
         """Init
              kafka_url, group, topic - kafka connection details
-             sent_queue - a sent_queue to publish log entries to
         """
-        self.queue = queue
 
-        self.kafka = kafka.client.KafkaClient(kafka_url)
+        self._kafka_topic = topic
+
+        self._zookeeper_url = zookeeper_url
+        self._zookeeper_path = zookeeper_path
+
+        self._statsd = monascastatsd.Client(name='monasca', dimensions=BaseProcessor.dimensions)
+
+        self._kafka = kafka.client.KafkaClient(kafka_url)
+
         # No auto-commit so that commits only happen after the alarm is processed.
-        self.consumer = kafka.consumer.SimpleConsumer(self.kafka, group, topic, auto_commit=False)
-        self.consumer.provide_partition_info()  # Without this the partition is not provided in the response
-        self.statsd = monascastatsd.Client(name='monasca', dimensions=BaseProcessor.dimensions)
+        self._consumer = kafka.consumer.SimpleConsumer(self._kafka,
+                                                       group,
+                                                       self._kafka_topic,
+                                                       auto_commit=False,
+                                                       iter_timeout=5)
 
-        self._initialize_offsets(group, topic)
-        # After my pull request is merged I can remove _initialize_offsets and use
-        # self.consumer.offsets = self.consumer.get_offsets()
-        # self.consumer.fetch_offsets = self.consumer.offsets.copy()
-        offsets = self.consumer.offsets.copy()
-        self.consumer.seek(0, 0)
-        if offsets != self.consumer.offsets:
-            log.error('Some messages not yet processed are no longer available in kafka, skipping to first available')
-            log.debug('Intialized offsets %s\nStarting offsets %s' % (offsets, self.consumer.offsets))
+        self._consumer.provide_partition_info()  # Without this the partition is not provided in the response
+        self._consumer.fetch_last_known_offsets()
 
-    def _initialize_offsets(self, group, topic):
-        """Fetch initial offsets from kafka
-            This is largely taken from what the kafka consumer itself does when auto_commit is used
+    def __iter__(self):
+        """Consume messages from kafka using the Kazoo SetPartitioner to
+           allow multiple consumer processes to negotiate access to the kafka
+           partitions
         """
-        def get_or_init_offset_callback(resp):
-            try:
-                kafka.common.check_error(resp)
-                return resp.offset
-            except kafka.common.UnknownTopicOrPartitionError:
-                return 0
 
-        for partition in self.kafka.topic_partitions[topic]:
-            req = kafka.common.OffsetFetchRequest(topic, partition)
-            (offset,) = self.consumer.client.send_offset_fetch_request(group, [req],
-                                                                       callback=get_or_init_offset_callback,
-                                                                       fail_on_error=False)
+        # KazooClient and SetPartitioner objects need to be instantiated after
+        # the consumer process has forked.  Instantiating prior to forking
+        # gives the appearance that things are working but after forking the
+        # connection to zookeeper is lost and no state changes are visible
 
-            # The recorded offset is the last successfully processed, start processing at the next
-            # if no processing has been done the offset is 0
-            if offset == 0:
-                self.consumer.offsets[partition] = offset
-            else:
-                self.consumer.offsets[partition] = offset + 1
+        kazoo_client = KazooClient(hosts=self._zookeeper_url)
+        kazoo_client.start()
 
-        # fetch_offsets are used by the SimpleConsumer
-        self.consumer.fetch_offsets = self.consumer.offsets.copy()
+        set_partitioner = (
+            SetPartitioner(kazoo_client,
+                           path=self._zookeeper_path,
+                           set=self._consumer.fetch_offsets.keys()))
 
-    def run(self):
-        """Consume from kafka and place alarm objects on the sent_queue
-        """
-        consumed_from_kafka = self.statsd.get_counter(name='consumed_from_kafka')
+        consumed_from_kafka = self._statsd.get_counter(name='consumed_from_kafka')
 
         try:
-            for message in self.consumer:
-                consumed_from_kafka += 1
-                log.debug("Consuming message from kafka, partition %d, offset %d" % (message[0], message[1].offset))
-                self._add_to_queue(self.queue, 'alarms', message)
-        except Exception:
-            log.exception('Error running Kafka Consumer')
+            partitions = []
+
+            while 1:
+                if set_partitioner.failed:
+                    raise Exception("Failed to acquire partition")
+
+                elif set_partitioner.release:
+                    log.info("Releasing locks on partition set {} "
+                             "for topic {}".format(partitions,
+                                                   self._kafka_topic))
+                    set_partitioner.release_set()
+
+                    partitions = []
+
+                elif set_partitioner.acquired:
+                    if not partitions:
+                        partitions = [p for p in set_partitioner]
+
+                        log.info("Acquired locks on partition set {} "
+                                 "for topic {}".format(partitions, self._kafka_topic))
+
+                        # Refresh the last known offsets again to make sure
+                        # that they are the latest after having acquired the
+                        # lock. Updates self._consumer.fetch_offsets.
+                        self._consumer.fetch_last_known_offsets()
+
+                        # Modify self._consumer.fetch_offsets to hold only the
+                        # offsets for the set of Kafka partitions acquired
+                        # by this instance of the persister.
+
+                        partitioned_fetch_offsets = {}
+                        for p in partitions:
+                            partitioned_fetch_offsets[p] = (
+                                self._consumer.fetch_offsets[p])
+
+                        self._consumer.fetch_offsets = partitioned_fetch_offsets
+
+                    for message in self._consumer:
+                        if not set_partitioner.acquired:
+                            break
+                        consumed_from_kafka += 1
+                        log.debug("Consuming message from kafka, "
+                                  "partition {}, offset {}".format(message[0],
+                                                                   message[1].offset))
+                        yield message
+
+                elif set_partitioner.allocating:
+                    log.info("Waiting to acquire locks on partition set")
+                    set_partitioner.wait_for_acquire()
+
+        except:
+            log.exception('KafkaConsumer encountered fatal exception '
+                          'processing messages.')
             raise
+
+    def commit(self, partition):
+        self._consumer.commit(partition)

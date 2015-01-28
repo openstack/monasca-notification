@@ -24,44 +24,26 @@ log = logging.getLogger(__name__)
 
 class NotificationProcessor(BaseProcessor):
 
-    def __init__(self, notification_queue,
-                 sent_notification_queue, finished_queue, config):
-
-        self.notification_queue = notification_queue
-        self.sent_notification_queue = sent_notification_queue
-        self.finished_queue = finished_queue
-
+    def __init__(self, config):
         self.statsd = monascastatsd.Client(name='monasca', dimensions=BaseProcessor.dimensions)
+        notifiers.init(self.statsd)
+        notifiers.config(config)
 
-        self.config = config
-
-    def run(self):
+    def send(self, notifications):
         """Send the notifications
              For each notification in a message it is sent according to its type.
              If all notifications fail the alarm partition/offset are added to the the finished queue
         """
 
-        notifiers.init(self.statsd)
-        notifiers.config(self.config)
-
         invalid_type_count = self.statsd.get_counter(name='invalid_type_count')
         sent_failed_count = self.statsd.get_counter(name='sent_failed_count')
 
-        while True:
-            notifications = self.notification_queue.get()
-            sent, failed, invalid = notifiers.send_notifications(notifications)
+        sent, failed, invalid = notifiers.send_notifications(notifications)
 
-            if failed > 0:
-                sent_failed_count.increment(failed)
+        if failed > 0:
+            sent_failed_count.increment(failed)
 
-            if invalid > 0:
-                invalid_type_count.increment(invalid)
+        if invalid > 0:
+            invalid_type_count.increment(invalid)
 
-            if sent:
-                self._add_to_queue(self.sent_notification_queue,
-                                   'sent_notification',
-                                   sent)
-            else:  # All notifications failed
-                self._add_to_queue(self.finished_queue,
-                                   'finished',
-                                   (notifications[0].src_partition, notifications[0].src_offset))
+        return sent, failed

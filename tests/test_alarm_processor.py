@@ -18,8 +18,6 @@
 import collections
 import json
 import mock
-import multiprocessing
-import Queue
 import time
 import unittest
 
@@ -32,10 +30,7 @@ message_tuple = collections.namedtuple('message_tuple', ['value'])
 
 class TestAlarmProcessor(unittest.TestCase):
     def setUp(self):
-        self.alarm_queue = multiprocessing.Queue(10)
-        self.notification_queue = multiprocessing.Queue(10)
-        self.finished_queue = multiprocessing.Queue(10)
-        self.log_queue = multiprocessing.Queue(10)
+        self.trap = []
 
     def _create_raw_alarm(self, partition, offset, message):
         """Create a raw alarm, with the given message dictionary.
@@ -46,12 +41,13 @@ class TestAlarmProcessor(unittest.TestCase):
 
     @mock.patch('MySQLdb.connect')
     @mock.patch('monasca_notification.processors.alarm_processor.log')
-    def _run_alarm_processor(self, queue, sql_response, mock_log, mock_mysql):
+    def _run_alarm_processor(self, alarm, sql_response, mock_log, mock_mysql):
         """Runs a mocked alarm processor reading from queue while running, returns (queue_message, log_message)
         """
         # Since the log runs in another thread I can mock it directly, instead change the methods to put to a queue
-        mock_log.warn = self.log_queue.put
-        mock_log.error = self.log_queue.put
+        mock_log.warn = self.trap.append
+        mock_log.error = self.trap.append
+        mock_log.exception = self.trap.append
 
         # Setup the sql response
         if sql_response is not None:
@@ -59,42 +55,41 @@ class TestAlarmProcessor(unittest.TestCase):
             mock_mysql.cursor.return_value = mock_mysql
             mock_mysql.__iter__.return_value = sql_response
 
-        processor = alarm_processor.AlarmProcessor(self.alarm_queue, self.notification_queue,
-                                                   self.finished_queue, 600, 'mysql_host', 'mysql_user',
+        processor = alarm_processor.AlarmProcessor(600, 'mysql_host', 'mysql_user',
                                                    'mysql_passwd', 'dbname')
 
-        p_thread = multiprocessing.Process(target=processor.run)
-        p_thread.start()
-        try:
-            queue_msg = queue.get(timeout=2)
-        except Queue.Empty:
-            queue_msg = None
-        p_thread.terminate()
-
-        try:
-            log_msg = self.log_queue.get(timeout=1)
-        except Queue.Empty:
-            log_msg = None
-        return queue_msg, log_msg
+        return processor.to_notification(alarm)
 
     def test_invalid_alarm(self):
         """Invalid Alarms, should log and error and push to the finished queue."""
-        self.alarm_queue.put(self._create_raw_alarm(0, 1, {'invalid': 'invalid_alarm'}))
-        finished, log_msg = self._run_alarm_processor(self.finished_queue, None)
+        alarm = self._create_raw_alarm(0, 1, {'invalid': 'invalid_alarm'})
+        notifications, partition, offset = self._run_alarm_processor(alarm, None)
+        self.assertEqual(notifications, [])
+        self.assertEqual(partition, 0)
+        self.assertEqual(offset, 1)
 
-        self.assertTrue(finished == (0, 1))
-        self.assertTrue(log_msg.startswith('Invalid Alarm format'))
+        invalid_msg = ('Invalid Alarm format skipping partition 0, offset 1\n'
+                       'ErrorAlarm data missing field actionsEnabled')
+
+        self.assertIn(invalid_msg, self.trap)
 
     def test_old_timestamp(self):
         """Should cause the alarm_ttl to fire log a warning and push to finished queue."""
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
                       "timestamp": 1375346830, "actionsEnabled": 1, "metrics": "cpu_util"}
-        self.alarm_queue.put(self._create_raw_alarm(0, 2, alarm_dict))
-        finished, log_msg = self._run_alarm_processor(self.finished_queue, None)
+        alarm = self._create_raw_alarm(0, 2, alarm_dict)
 
-        self.assertTrue(finished == (0, 2))
-        self.assertTrue(log_msg.startswith('Received alarm older than the ttl'))
+        notifications, partition, offset = self._run_alarm_processor(alarm, None)
+
+        self.assertEqual(notifications, [])
+        self.assertEqual(partition, 0)
+        self.assertEqual(offset, 2)
+
+        old_msg = ('Received alarm older than the ttl, skipping. '
+                   'Alarm from Thu Aug  1 02:47:10 2013')
+
+        self.assertIn(old_msg, self.trap)
 
     def test_no_notifications(self):
         """Test an alarm with no defined notifications
@@ -102,10 +97,13 @@ class TestAlarmProcessor(unittest.TestCase):
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
                       "timestamp": time.time(), "actionsEnabled": 1, "metrics": "cpu_util"}
-        self.alarm_queue.put(self._create_raw_alarm(0, 3, alarm_dict))
-        finished, log_msg = self._run_alarm_processor(self.finished_queue, None)
+        alarm = self._create_raw_alarm(0, 3, alarm_dict)
 
-        self.assertTrue(finished == (0, 3))
+        notifications, partition, offset = self._run_alarm_processor(alarm, None)
+
+        self.assertEqual(notifications, [])
+        self.assertEqual(partition, 0)
+        self.assertEqual(offset, 3)
 
     def test_valid_notification(self):
         """Test a valid notification, being put onto the notification_queue
@@ -113,23 +111,30 @@ class TestAlarmProcessor(unittest.TestCase):
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
                       "timestamp": time.time(), "actionsEnabled": 1, "metrics": "cpu_util"}
-        self.alarm_queue.put(self._create_raw_alarm(0, 4, alarm_dict))
+        alarm = self._create_raw_alarm(0, 4, alarm_dict)
+
         sql_response = [['test notification', 'EMAIL', 'me@here.com']]
-        finished, log_msg = self._run_alarm_processor(self.notification_queue, sql_response)
+        notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
         test_notification = Notification('email', 0, 4, 'test notification', 'me@here.com', alarm_dict)
 
-        self.assertTrue(finished == [test_notification])
+        self.assertEqual(notifications, [test_notification])
+        self.assertEqual(partition, 0)
+        self.assertEqual(offset, 4)
 
     def test_two_valid_notifications(self):
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
                       "timestamp": time.time(), "actionsEnabled": 1, "metrics": "cpu_util"}
-        self.alarm_queue.put(self._create_raw_alarm(0, 5, alarm_dict))
+
+        alarm = self._create_raw_alarm(0, 5, alarm_dict)
+
         sql_response = [['test notification', 'EMAIL', 'me@here.com'], ['test notification2', 'EMAIL', 'me@here.com']]
-        finished, log_msg = self._run_alarm_processor(self.notification_queue, sql_response)
+        notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
         test_notification = Notification('email', 0, 5, 'test notification', 'me@here.com', alarm_dict)
         test_notification2 = Notification('email', 0, 5, 'test notification2', 'me@here.com', alarm_dict)
 
-        self.assertTrue(finished == [test_notification, test_notification2])
+        self.assertEqual(notifications, [test_notification, test_notification2])
+        self.assertEqual(partition, 0)
+        self.assertEqual(offset, 5)
