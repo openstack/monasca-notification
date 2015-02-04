@@ -64,27 +64,28 @@ def config(config):
 
 def send_notifications(notifications):
     sent = []
-    failed_count = 0
-    invalid_count = 0
+    failed = []
+    invalid = []
 
     for notification in notifications:
         ntype = notification.type
         if ntype not in configured_notifiers:
             log.warn("attempting to send unconfigured notification: {}".format(ntype))
-            invalid_count += 1
+            invalid.append(notification)
             continue
+
+        notification.notification_timestamp = time.time()
 
         with statsd_timer.time(ntype + '_time'):
             result = send_single_notification(notification)
 
         if result:
-            notification.notification_timestamp = time.time()
             sent.append(notification)
             statsd_counter[ntype].increment(1)
         else:
-            failed_count += 1
+            failed.append(notification)
 
-    return (sent, failed_count, invalid_count)
+    return (sent, failed, invalid)
 
 
 def send_single_notification(notification):

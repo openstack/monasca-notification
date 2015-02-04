@@ -85,7 +85,7 @@ class TestNotificationProcessor(unittest.TestCase):
                       "timestamp": time.time(),
                       "metrics": metric}
 
-        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', alarm_dict)
+        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', 0, alarm_dict)
 
         self._start_processor([notification])
 
@@ -98,7 +98,7 @@ class TestNotificationProcessor(unittest.TestCase):
         """
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
                       "stateChangeReason": "I am alarming!", "timestamp": time.time(), "metrics": "cpu_util"}
-        invalid_notification = Notification('invalid', 0, 1, 'test notification', 'me@here.com', alarm_dict)
+        invalid_notification = Notification('invalid', 0, 1, 'test notification', 'me@here.com', 0, alarm_dict)
 
         self._start_processor([invalid_notification])
 

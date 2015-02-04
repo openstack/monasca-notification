@@ -81,7 +81,7 @@ class TestWebhook(unittest.TestCase):
 
         alarm_dict = alarm(metric)
 
-        notification = Notification('webhook', 0, 1, 'webhook notification', 'me@here.com', alarm_dict)
+        notification = Notification('webhook', 0, 1, 'webhook notification', 'me@here.com', 0, alarm_dict)
 
         self.trap.put(webhook.send_notification(notification))
 

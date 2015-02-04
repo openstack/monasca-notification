@@ -17,6 +17,7 @@ import kafka.client
 import kafka.producer
 import logging
 import monascastatsd
+import time
 
 from monasca_notification.processors.base import BaseProcessor
 
@@ -34,10 +35,10 @@ class KafkaProducer(BaseProcessor):
         self._statsd = monascastatsd.Client(name='monasca', dimensions=BaseProcessor.dimensions)
 
         self._kafka = kafka.client.KafkaClient(url)
-        self._producer = kafka.producer.SimpleProducer(
+        self._producer = kafka.producer.KeyedProducer(
             self._kafka,
             async=False,
-            req_acks=kafka.producer.SimpleProducer.ACK_AFTER_LOCAL_WRITE,
+            req_acks=kafka.producer.KeyedProducer.ACK_AFTER_LOCAL_WRITE,
             ack_timeout=2000)
 
     def publish(self, topic, messages):
@@ -46,7 +47,13 @@ class KafkaProducer(BaseProcessor):
         published_to_kafka = self._statsd.get_counter(name='published_to_kafka')
 
         for message in messages:
-            responses = self._producer.send_messages(topic, message.to_json())
+            key = time.time() * 1000
+            try:
+                responses = self._producer.send(topic, key, message.to_json())
+            except Exception:
+                log.exception("error publishing message to kafka")
+                continue
+
             published_to_kafka += 1
 
             log.debug('Published to topic {}, message {}'.format(topic, message.to_json()))

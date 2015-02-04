@@ -146,6 +146,7 @@ class TestWebhook(unittest.TestCase):
                                     1,
                                     'pagerduty notification',
                                     'ABCDEF',
+                                    0,
                                     alarm_dict)
 
         self.trap.put(pagerduty.send_notification(notification))

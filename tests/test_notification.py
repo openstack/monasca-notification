@@ -29,9 +29,12 @@ def test_json():
              'newState': 'newState',
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
-    test_notification = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
+    test_notification = notification.Notification('ntype', 'src_partition',
+                                                  'src_offset', 'name',
+                                                  'address', 0, alarm)
 
     expected_dict = {u'name': u'name',
+                     u'type': u'ntype',
                      u'notification_timestamp': None,
                      u'tenant_id': u'tenantId',
                      u'alarm_name': u'alarmName',
@@ -39,7 +42,17 @@ def test_json():
                      u'state': u'newState',
                      u'alarm_timestamp': u'timestamp',
                      u'address': u'address',
-                     u'message': u'stateChangeReason'}
+                     u'message': u'stateChangeReason',
+                     u'retry_count': 0,
+                     u'raw_alarm': {
+                         u'alarmId': u'alarmId',
+                         u'alarmName': u'alarmName',
+                         u'timestamp': u'timestamp',
+                         u'stateChangeReason': u'stateChangeReason',
+                         u'newState': u'newState',
+                         u'tenantId': u'tenantId',
+                         u'metrics': u'cpu_util'}}
+
     # Compare as dicts so ordering is not an issue
     assert json.loads(test_notification.to_json()) == expected_dict
 
@@ -52,8 +65,12 @@ def test_equal():
              'newState': 'newState',
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
-    test_notification = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
-    test_notification2 = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
+    test_notification = notification.Notification('ntype', 'src_partition',
+                                                  'src_offset', 'name',
+                                                  'address', 0, alarm)
+    test_notification2 = notification.Notification('ntype', 'src_partition',
+                                                   'src_offset', 'name',
+                                                   'address', 0, alarm)
 
     assert(test_notification == test_notification2)
 
@@ -66,8 +83,12 @@ def test_unequal():
              'newState': 'newState',
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
-    test_notification = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
-    test_notification2 = notification.Notification('ntype', 'src_partition', 'src_offset', 'name', 'address', alarm)
+    test_notification = notification.Notification('ntype', 'src_partition',
+                                                  'src_offset', 'name',
+                                                  'address', 0, alarm)
+    test_notification2 = notification.Notification('ntype', 'src_partition',
+                                                   'src_offset', 'name',
+                                                   'address', 0, alarm)
     test_notification2.alarm_id = None
 
     assert(test_notification != test_notification2)

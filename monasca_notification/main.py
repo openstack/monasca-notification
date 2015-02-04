@@ -28,6 +28,7 @@ import time
 import yaml
 
 from notification_engine import NotificationEngine
+from retry_engine import RetryEngine
 
 log = logging.getLogger(__name__)
 processors = []  # global list to facilitate clean signal handling
@@ -67,6 +68,12 @@ def clean_exit(signum, frame=None):
     sys.exit(0)
 
 
+def start_process(proccess_type, config):
+    log.info("start process: {}".format(proccess_type))
+    p = proccess_type(config)
+    p.run()
+
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -84,8 +91,12 @@ def main(argv=None):
     # Setup logging
     logging.config.dictConfig(config['logging'])
 
-    notifier = multiprocessing.Process(target=NotificationEngine(config).run)
-    processors.append(notifier)
+    for proc in range(0, config['processors']['notification']['number']):
+        processors.append(multiprocessing.Process(
+            target=start_process, args=(NotificationEngine, config)))
+
+    processors.append(multiprocessing.Process(
+        target=start_process, args=(RetryEngine, config)))
 
     # Start
     try:

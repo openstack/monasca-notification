@@ -3,6 +3,7 @@ kafka:
     group: monasca-notification
     alarm_topic: alarm-state-transitions
     notification_topic: alarm-notifications
+    notification_retry_topic: retry-notifications
     max_offset_lag: 600  # In seconds, undefined for none
 
 mysql:
@@ -36,6 +37,10 @@ processors:
     notification:
         number: 4
 
+retry:
+    interval: 30
+    max_attempts: 5
+
 queues:
     alarms_size: 256
     finished_size: 256
@@ -44,6 +49,8 @@ queues:
 
 zookeeper:
     url: 192.168.10.4:2181  # or comma seperated list of multiple hosts
+    notification_path: /notification/alarms
+    notification_retry_path: /notification/retry
 
 logging: # Used in logging.dictConfig
     version: 1

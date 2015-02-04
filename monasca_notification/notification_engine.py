@@ -26,13 +26,14 @@ class NotificationEngine(object):
     def __init__(self, config):
         self._topics = {}
         self._topics['notification_topic'] = config['kafka']['notification_topic']
+        self._topics['retry_topic'] = config['kafka']['notification_retry_topic']
 
         self._statsd = monascastatsd.Client(name='monasca',
                                             dimensions=BaseProcessor.dimensions)
 
         self._consumer = KafkaConsumer(config['kafka']['url'],
                                        config['zookeeper']['url'],
-                                       config['zookeeper']['path'],
+                                       config['zookeeper']['notification_path'],
                                        config['kafka']['group'],
                                        config['kafka']['alarm_topic'])
 
@@ -62,6 +63,7 @@ class NotificationEngine(object):
             if notifications:
                 sent, failed = self._notifier.send(notifications)
                 self._producer.publish(self._topics['notification_topic'], sent)
+                self._producer.publish(self._topics['retry_topic'], failed)
 
             self._consumer.commit([partition])
 

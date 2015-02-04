@@ -33,17 +33,21 @@ class Notification(object):
         'state',
         'tenant_id',
         'type',
-        'metrics'
+        'metrics',
+        'retry_count',
+        'raw_alarm'
     )
 
-    def __init__(self, ntype, src_partition, src_offset, name, address, alarm):
+    def __init__(self, ntype, src_partition, src_offset, name, address,
+                 retry_count, alarm):
         """Setup the notification object
              The src_partition and src_offset allow the notification
               to be linked to the alarm that it came from.
              ntype - The notification type
              name - Name used in sending
              address - to send the notification to
-             alarm_data - info that caused the notification
+             retry_count - number of times we've tried to send
+             alarm - info that caused the notification
              notifications that come after this one to remain uncommitted.
         """
         self.address = address
@@ -51,6 +55,9 @@ class Notification(object):
         self.src_partition = src_partition
         self.src_offset = src_offset
         self.type = ntype
+        self.retry_count = retry_count
+
+        self.raw_alarm = alarm
 
         self.alarm_id = alarm['alarmId']
         self.alarm_name = alarm['alarmName']
@@ -77,8 +84,11 @@ class Notification(object):
         """Return json representation
         """
         notification_fields = [
-            'address',
+            'type',
             'name',
+            'address',
+            'retry_count',
+            'raw_alarm',
             'alarm_id',
             'alarm_name',
             'alarm_timestamp',

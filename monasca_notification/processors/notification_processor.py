@@ -40,10 +40,10 @@ class NotificationProcessor(BaseProcessor):
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
-        if failed > 0:
-            sent_failed_count.increment(failed)
+        if failed:
+            sent_failed_count.increment(len(failed))
 
-        if invalid > 0:
-            invalid_type_count.increment(invalid)
+        if invalid:
+            invalid_type_count.increment(len(invalid))
 
         return sent, failed

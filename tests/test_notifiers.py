@@ -224,7 +224,7 @@ class TestInterface(unittest.TestCase):
         notifications = []
         notifications.append(Notification('email', 0, 1,
                                           'email notification',
-                                          'me@here.com', alarm({})))
+                                          'me@here.com', 0, alarm({})))
 
         notifiers.send_notifications(notifications)
 
@@ -250,13 +250,13 @@ class TestInterface(unittest.TestCase):
         notifications = []
         notifications.append(Notification('email', 0, 1,
                                           'email notification',
-                                          'me@here.com', alarm({})))
+                                          'me@here.com', 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
         self.assertEqual(sent, [])
-        self.assertEqual(failed, 1)
-        self.assertEqual(invalid, 0)
+        self.assertEqual(len(failed), 1)
+        self.assertEqual(invalid, [])
 
     @mock.patch('monasca_notification.types.notifiers.email_notifier')
     @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
@@ -279,13 +279,13 @@ class TestInterface(unittest.TestCase):
         notifications = []
         notifications.append(Notification('pagerduty', 0, 1,
                                           'pagerduty notification',
-                                          'me@here.com', alarm({})))
+                                          'me@here.com', 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
         self.assertEqual(sent, [])
-        self.assertEqual(failed, 0)
-        self.assertEqual(invalid, 1)
+        self.assertEqual(failed, [])
+        self.assertEqual(len(invalid), 1)
 
         self.assertIn("attempting to send unconfigured notification: pagerduty", self.trap)
 
@@ -312,19 +312,19 @@ class TestInterface(unittest.TestCase):
         notifications = []
         notifications.append(Notification('email', 0, 1,
                                           'email notification',
-                                          'me@here.com', alarm({})))
+                                          'me@here.com', 0, alarm({})))
         notifications.append(Notification('email', 0, 1,
                                           'email notification',
-                                          'foo@here.com', alarm({})))
+                                          'foo@here.com', 0, alarm({})))
         notifications.append(Notification('email', 0, 1,
                                           'email notification',
-                                          'bar@here.com', alarm({})))
+                                          'bar@here.com', 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
         self.assertEqual(len(sent), 3)
-        self.assertEqual(failed, 0)
-        self.assertEqual(invalid, 0)
+        self.assertEqual(failed, [])
+        self.assertEqual(invalid, [])
 
         for n in sent:
             self.assertEqual(n.notification_timestamp, 42)
@@ -348,13 +348,13 @@ class TestInterface(unittest.TestCase):
         notifications = []
         notifications.append(Notification('email', 0, 1,
                                           'email notification',
-                                          'me@here.com', alarm({})))
+                                          'me@here.com', 0, alarm({})))
         notifications.append(Notification('email', 0, 1,
                                           'email notification',
-                                          'foo@here.com', alarm({})))
+                                          'foo@here.com', 0, alarm({})))
         notifications.append(Notification('email', 0, 1,
                                           'email notification',
-                                          'bar@here.com', alarm({})))
+                                          'bar@here.com', 0, alarm({})))
 
         notifiers.send_notifications(notifications)
 
