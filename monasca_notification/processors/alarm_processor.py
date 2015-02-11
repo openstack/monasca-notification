@@ -125,6 +125,7 @@ class AlarmProcessor(BaseProcessor):
                                       offset,
                                       row[0],
                                       row[2],
+                                      0,
                                       alarm) for row in cur]
 
         if len(notifications) == 0:

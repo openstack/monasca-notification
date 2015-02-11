@@ -116,7 +116,7 @@ class TestAlarmProcessor(unittest.TestCase):
         sql_response = [['test notification', 'EMAIL', 'me@here.com']]
         notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
-        test_notification = Notification('email', 0, 4, 'test notification', 'me@here.com', alarm_dict)
+        test_notification = Notification('email', 0, 4, 'test notification', 'me@here.com', 0, alarm_dict)
 
         self.assertEqual(notifications, [test_notification])
         self.assertEqual(partition, 0)
@@ -132,8 +132,8 @@ class TestAlarmProcessor(unittest.TestCase):
         sql_response = [['test notification', 'EMAIL', 'me@here.com'], ['test notification2', 'EMAIL', 'me@here.com']]
         notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
-        test_notification = Notification('email', 0, 5, 'test notification', 'me@here.com', alarm_dict)
-        test_notification2 = Notification('email', 0, 5, 'test notification2', 'me@here.com', alarm_dict)
+        test_notification = Notification('email', 0, 5, 'test notification', 'me@here.com', 0, alarm_dict)
+        test_notification2 = Notification('email', 0, 5, 'test notification2', 'me@here.com', 0, alarm_dict)
 
         self.assertEqual(notifications, [test_notification, test_notification2])
         self.assertEqual(partition, 0)
