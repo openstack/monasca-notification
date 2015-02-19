@@ -178,6 +178,54 @@ class TestEmail(unittest.TestCase):
         self.assertIn("Unable to connect to email server.", self.trap)
 
     @mock.patch('monasca_notification.types.email_notifier.smtplib')
+    def test_smtp_sendmail_smtp_None(self, mock_smtp):
+        """Email that fails on smtp_connect twice
+        """
+
+        metrics = []
+        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metrics.append(metric_data)
+        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metrics.append(metric_data)
+
+        mock_log = mock.MagicMock()
+        mock_log.warn = self.trap.append
+        mock_log.error = self.trap.append
+        mock_log.debug = self.trap.append
+        mock_log.info = self.trap.append
+        mock_log.exception = self.trap.append
+
+        mock_smtp.SMTP.return_value = None
+        mock_smtp.SMTP.side_effect = [socket.error,
+                                      socket.error,
+                                      socket.error]
+
+        mock_smtp.sendmail.side_effect = [smtplib.SMTPServerDisconnected,
+                                          smtplib.SMTPServerDisconnected]
+
+        # There has to be a better way to preserve exception definitions when
+        # we're mocking access to a library
+        mock_smtp.SMTPServerDisconnected = smtplib.SMTPServerDisconnected
+        mock_smtp.SMTPException = smtplib.SMTPException
+
+        email = email_notifier.EmailNotifier(mock_log)
+
+        email.config(self.email_config)
+
+        del self.trap[:]
+
+        alarm_dict = alarm(metrics)
+
+        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', 0, alarm_dict)
+
+        email_result = email.send_notification(notification)
+
+        self.assertFalse(email_result)
+        self.assertIn("Connecting to Email Server {}"
+                      .format(self.email_config['server']),
+                      self.trap)
+
+    @mock.patch('monasca_notification.types.email_notifier.smtplib')
     def test_smtp_sendmail_failed_connection_once_then_email(self, mock_smtp):
         """Email that fails on smtp_connect once then email
         """
