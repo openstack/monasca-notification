@@ -65,7 +65,7 @@ def clean_exit(signum, frame=None):
         except Exception:
             pass
 
-    sys.exit(0)
+    sys.exit(signum)
 
 
 def start_process(proccess_type, config):
