@@ -32,7 +32,7 @@ def alarm(metrics):
             "oldState": "OK",
             "newState": "ALARM",
             "stateChangeReason": "I am alarming!",
-            "timestamp": 1429023453.632428,
+            "timestamp": 1429023453632,
             "metrics": metrics}
 
 
@@ -97,9 +97,11 @@ class TestWebhook(unittest.TestCase):
         headers = self.trap.get(timeout=1)
 
         self.assertEqual(url, "http://mock:3333/")
+        self.maxDiff = None
+        # timestamp is in milliseconds while alarm_timestamp is in seconds
         self.assertEqual(json.loads(data),
                          {"metrics": [{"dimensions": {"hostname": "foo1", "service": "bar1"}}], "alarm_id": "0",
-                          "state": "ALARM", "alarm_timestamp": 1429023453.632428, "tenant_id": "0",
+                          "state": "ALARM", "alarm_timestamp": 1429023453, "tenant_id": "0",
                           "old_state": "OK", "alarm_description": "test Alarm description",
                           "message": "I am alarming!", "alarm_definition_id": 0, "alarm_name": "test Alarm"})
         self.assertEqual(headers, {'content-type': 'application/json'})

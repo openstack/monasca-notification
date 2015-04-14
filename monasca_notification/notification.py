@@ -61,7 +61,8 @@ class Notification(object):
 
         self.alarm_id = alarm['alarmId']
         self.alarm_name = alarm['alarmName']
-        self.alarm_timestamp = alarm['timestamp']
+        # The event timestamp is in milliseconds
+        self.alarm_timestamp = alarm['timestamp'] / 1000
         self.message = alarm['stateChangeReason']
         self.state = alarm['newState']
         self.tenant_id = alarm['tenantId']

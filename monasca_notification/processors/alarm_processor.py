@@ -76,9 +76,10 @@ class AlarmProcessor(BaseProcessor):
             log.debug('Actions are disabled for this alarm.')
             return False
 
-        alarm_age = time.time() - alarm['timestamp']  # Should all be in seconds since epoch
+        alarm_age = time.time() - alarm['timestamp'] / 1000
         if (self._alarm_ttl is not None) and (alarm_age > self._alarm_ttl):
-            log.warn('Received alarm older than the ttl, skipping. Alarm from %s' % time.ctime(alarm['timestamp']))
+            log.warn('Received alarm older than the ttl, skipping. Alarm from %s' %
+                     time.ctime(alarm['timestamp'] / 1000))
             return False
 
         return True

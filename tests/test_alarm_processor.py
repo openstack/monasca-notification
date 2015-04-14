@@ -77,7 +77,7 @@ class TestAlarmProcessor(unittest.TestCase):
         """Should cause the alarm_ttl to fire log a warning and push to finished queue."""
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": 1375346830, "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": 1375346830042, "actionsEnabled": 1, "metrics": "cpu_util"}
         alarm = self._create_raw_alarm(0, 2, alarm_dict)
 
         notifications, partition, offset = self._run_alarm_processor(alarm, None)
@@ -96,7 +96,7 @@ class TestAlarmProcessor(unittest.TestCase):
         """
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time(), "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util"}
         alarm = self._create_raw_alarm(0, 3, alarm_dict)
 
         notifications, partition, offset = self._run_alarm_processor(alarm, None)
@@ -110,7 +110,7 @@ class TestAlarmProcessor(unittest.TestCase):
         """
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time(), "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util"}
         alarm = self._create_raw_alarm(0, 4, alarm_dict)
 
         sql_response = [['test notification', 'EMAIL', 'me@here.com']]
@@ -125,7 +125,7 @@ class TestAlarmProcessor(unittest.TestCase):
     def test_two_valid_notifications(self):
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time(), "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util"}
 
         alarm = self._create_raw_alarm(0, 5, alarm_dict)
 

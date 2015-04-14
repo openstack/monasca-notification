@@ -22,9 +22,10 @@ from monasca_notification import notification
 def test_json():
     """Test the to_json method to verify it behaves as expected.
     """
+    ts = 1429029121239
     alarm = {'alarmId': 'alarmId',
              'alarmName': 'alarmName',
-             'timestamp': 'timestamp',
+             'timestamp': ts,
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
              'tenantId': 'tenantId',
@@ -40,14 +41,14 @@ def test_json():
                      u'alarm_name': u'alarmName',
                      u'alarm_id': u'alarmId',
                      u'state': u'newState',
-                     u'alarm_timestamp': u'timestamp',
+                     u'alarm_timestamp': ts / 1000,
                      u'address': u'address',
                      u'message': u'stateChangeReason',
                      u'retry_count': 0,
                      u'raw_alarm': {
                          u'alarmId': u'alarmId',
                          u'alarmName': u'alarmName',
-                         u'timestamp': u'timestamp',
+                         u'timestamp': ts,
                          u'stateChangeReason': u'stateChangeReason',
                          u'newState': u'newState',
                          u'tenantId': u'tenantId',
@@ -60,7 +61,7 @@ def test_json():
 def test_equal():
     alarm = {'alarmId': 'alarmId',
              'alarmName': 'alarmName',
-             'timestamp': 'timestamp',
+             'timestamp': 1429029121239,
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
              'tenantId': 'tenantId',
@@ -78,7 +79,7 @@ def test_equal():
 def test_unequal():
     alarm = {'alarmId': 'alarmId',
              'alarmName': 'alarmName',
-             'timestamp': 'timestamp',
+             'timestamp': 1429029121239,
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
              'tenantId': 'tenantId',
