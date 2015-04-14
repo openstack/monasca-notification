@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import mock
 import Queue
 import requests
-import time
 import unittest
 
 from monasca_notification.notification import Notification
@@ -26,11 +26,13 @@ from monasca_notification.types import webhook_notifier
 def alarm(metrics):
     return {"tenantId": "0",
             "alarmId": "0",
+            "alarmDefinitionId": 0,
             "alarmName": "test Alarm",
+            "alarmDescription": "test Alarm description",
             "oldState": "OK",
             "newState": "ALARM",
             "stateChangeReason": "I am alarming!",
-            "timestamp": time.time(),
+            "timestamp": 1429023453.632428,
             "metrics": metrics}
 
 
@@ -81,7 +83,7 @@ class TestWebhook(unittest.TestCase):
 
         alarm_dict = alarm(metric)
 
-        notification = Notification('webhook', 0, 1, 'webhook notification', 'me@here.com', 0, alarm_dict)
+        notification = Notification('webhook', 0, 1, 'webhook notification', 'http://mock:3333/', 0, alarm_dict)
 
         self.trap.put(webhook.send_notification(notification))
 
@@ -94,8 +96,12 @@ class TestWebhook(unittest.TestCase):
         data = self.trap.get(timeout=1)
         headers = self.trap.get(timeout=1)
 
-        self.assertEqual(url, "me@here.com")
-        self.assertEqual(data, {'alarm_id': '0'})
+        self.assertEqual(url, "http://mock:3333/")
+        self.assertEqual(json.loads(data),
+                         {"metrics": [{"dimensions": {"hostname": "foo1", "service": "bar1"}}], "alarm_id": "0",
+                          "state": "ALARM", "alarm_timestamp": 1429023453.632428, "tenant_id": "0",
+                          "old_state": "OK", "alarm_description": "test Alarm description",
+                          "message": "I am alarming!", "alarm_definition_id": 0, "alarm_name": "test Alarm"})
         self.assertEqual(headers, {'content-type': 'application/json'})
 
         return_value = self.trap.get()
@@ -113,7 +119,7 @@ class TestWebhook(unittest.TestCase):
         self.assertNotRegexpMatches(error, "content-type.: .application/json")
 
         self.assertRegexpMatches(error, "HTTP code 404")
-        self.assertRegexpMatches(error, "post on URL me@here.com")
+        self.assertRegexpMatches(error, "post on URL http://mock:3333/")
 
         return_value = self.trap.get()
         self.assertFalse(return_value)
@@ -133,7 +139,7 @@ class TestWebhook(unittest.TestCase):
         self.assertNotRegexpMatches(result, "alarm_id.: .test Alarm")
         self.assertNotRegexpMatches(result, "content-type.: .application/json")
 
-        self.assertRegexpMatches(result, "Error trying to post on URL me@here")
+        self.assertRegexpMatches(result, "Error trying to post on URL http://mock:3333/")
         self.assertRaises(requests.exceptions.Timeout)
 
         return_value = self.trap.get()

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import requests
 
 from abstract_notifier import AbstractNotifier
@@ -44,7 +45,17 @@ class WebhookNotifier(AbstractNotifier):
                                notification.state,
                                notification.address))
 
-        body = {'alarm_id': notification.alarm_id}
+        body = {'alarm_id': notification.alarm_id,
+                'alarm_definition_id': notification.raw_alarm['alarmDefinitionId'],
+                'alarm_name': notification.alarm_name,
+                'alarm_description': notification.raw_alarm['alarmDescription'],
+                'alarm_timestamp': notification.alarm_timestamp,
+                'state': notification.state,
+                'old_state': notification.raw_alarm['oldState'],
+                'message': notification.message,
+                'tenant_id': notification.tenant_id,
+                'metrics': notification.metrics}
+
         headers = {'content-type': 'application/json'}
 
         url = notification.address
@@ -52,7 +63,7 @@ class WebhookNotifier(AbstractNotifier):
         try:
             # Posting on the given URL
             result = requests.post(url=url,
-                                   data=body,
+                                   data=json.dumps(body),
                                    headers=headers,
                                    timeout=self._config['timeout'])
 
