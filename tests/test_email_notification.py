@@ -22,14 +22,17 @@ import unittest
 from monasca_notification.notification import Notification
 from monasca_notification.types import email_notifier
 
+UNICODE_CHAR = unichr(2344)
+UNICODE_CHAR_ENCODED = UNICODE_CHAR.encode("utf-8")
+
 
 def alarm(metrics):
     return {"tenantId": "0",
             "alarmId": "0",
-            "alarmName": "test Alarm",
+            "alarmName": u"test Alarm " + UNICODE_CHAR,
             "oldState": "OK",
             "newState": "ALARM",
-            "stateChangeReason": "I am alarming!",
+            "stateChangeReason": u"I am alarming!" + UNICODE_CHAR,
             "timestamp": time.time(),
             "metrics": metrics}
 
@@ -39,7 +42,7 @@ class smtpStub(object):
         self.trap = trap
 
     def sendmail(self, from_addr, to_addr, msg):
-        self.trap.append("%s %s %s" % (from_addr, to_addr, msg))
+        self.trap.append("{} {} {}".format(from_addr, to_addr, msg))
 
 
 class smtpStubException(object):
@@ -93,7 +96,7 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metric_data = {'dimensions': {'hostname': u'foo1' + UNICODE_CHAR, u'service' + UNICODE_CHAR: 'bar1'}}
         metrics.append(metric_data)
 
         self.notify(self._smtpStub, metrics)
@@ -105,6 +108,7 @@ class TestEmail(unittest.TestCase):
         self.assertRegexpMatches(email, "Content-Type: text/plain")
         self.assertRegexpMatches(email, "Alarm .test Alarm.")
         self.assertRegexpMatches(email, "On host .foo1.")
+        self.assertRegexpMatches(email, UNICODE_CHAR_ENCODED)
 
         return_value = self.trap.pop(0)
         self.assertTrue(return_value)
