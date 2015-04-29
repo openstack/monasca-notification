@@ -5,3 +5,4 @@ pbr>=0.6,<1.0
 monasca-statsd
 requests
 PyYAML
+six
