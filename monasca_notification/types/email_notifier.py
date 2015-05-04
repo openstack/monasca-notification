@@ -76,8 +76,11 @@ class EmailNotifier(AbstractNotifier):
             return False
 
     def _sendmail(self, notification, msg):
-        self._smtp.sendmail(self._config['from_addr'], notification.address, msg.as_string())
-        self._log.debug("Sent email to {}, notification {}".format(notification.address, notification.to_json()))
+        self._smtp.sendmail(self._config['from_addr'],
+                            notification.address,
+                            msg.as_string())
+        self._log.debug("Sent email to {}, notification {}".format(notification.address,
+                                                                   notification.to_json()))
 
     def _email_error(self, notification):
         self._log.exception("Error sending Email Notification")
@@ -113,7 +116,7 @@ class EmailNotifier(AbstractNotifier):
         timestamp = time.asctime(time.gmtime(notification.alarm_timestamp))
 
         if len(hostname) == 1:  # Type 1
-            text = '''On host "{}" {}
+            text = u'''On host "{}" {}
 
                       Alarm "{}" transitioned to the {} state at {} UTC
                       alarm_id: {}'''.format(hostname[0],
@@ -121,26 +124,26 @@ class EmailNotifier(AbstractNotifier):
                                              notification.alarm_name,
                                              notification.state,
                                              timestamp,
-                                             notification.alarm_id)
+                                             notification.alarm_id).encode("utf-8")
 
             msg = email.mime.text.MIMEText(text)
 
-            msg['Subject'] = '{} "{}" for Host: {}'.format(notification.state,
-                                                           notification.alarm_name,
-                                                           hostname[0])
+            msg['Subject'] = u'{} "{}" for Host: {}'.format(notification.state,
+                                                            notification.alarm_name,
+                                                            hostname[0]).encode("utf-8")
 
         else:  # Type 2
-            text = '''{}
+            text = u'''{}
 
                       Alarm "{}" transitioned to the {} state at {} UTC
-                      Alarm_id: {}'''.format(notification.message,
+                      Alarm_id: {}'''.format(notification.message.lower(),
                                              notification.alarm_name,
                                              notification.state,
                                              timestamp,
-                                             notification.alarm_id)
+                                             notification.alarm_id).encode("utf-8")
 
             msg = email.mime.text.MIMEText(text)
-            msg['Subject'] = '{} "{}" '.format(notification.state, notification.alarm_name)
+            msg['Subject'] = u'{} "{}" '.format(notification.state, notification.alarm_name).encode("utf-8")
 
         msg['From'] = self._config['from_addr']
         msg['To'] = notification.address

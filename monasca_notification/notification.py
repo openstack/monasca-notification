@@ -42,13 +42,14 @@ class Notification(object):
                  retry_count, alarm):
         """Setup the notification object
              The src_partition and src_offset allow the notification
-              to be linked to the alarm that it came from.
+              to be linked to the alarm which triggered it.
              ntype - The notification type
              name - Name used in sending
-             address - to send the notification to
+             address - where to send the notification
              retry_count - number of times we've tried to send
              alarm - info that caused the notification
              notifications that come after this one to remain uncommitted.
+             Note that data may include unicode strings.
         """
         self.address = address
         self.name = name
