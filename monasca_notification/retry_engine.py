@@ -84,15 +84,15 @@ class RetryEngine(object):
                 notification.retry_count += 1
                 notification.notification_timestamp = time.time()
                 if notification.retry_count < self._retry_max:
-                    log.error("retry failed for {} with name {} "
-                              "at {}.  "
-                              "Saving for later retry.".format(ntype, name, addr))
+                    log.error(u"retry failed for {} with name {} "
+                              u"at {}.  "
+                              u"Saving for later retry.".format(ntype, name, addr))
                     self._producer.publish(self._topics['retry_topic'],
                                            [notification])
                 else:
-                    log.error("retry failed for {} with name {} "
-                              "at {} after {} retries.  "
-                              "Giving up on retry."
+                    log.error(u"retry failed for {} with name {} "
+                              u"at {} after {} retries.  "
+                              u"Giving up on retry."
                               .format(ntype, name, addr, self._retry_max))
 
             self._consumer.commit([partition])

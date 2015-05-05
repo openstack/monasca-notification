@@ -37,7 +37,8 @@ class AlarmProcessor(BaseProcessor):
         try:
             self._mysql = MySQLdb.connect(host=mysql_host, user=mysql_user,
                                           passwd=unicode(mysql_passwd).encode('utf-8'),
-                                          db=dbname, ssl=mysql_ssl)
+                                          db=dbname, ssl=mysql_ssl,
+                                          use_unicode=True, charset="utf8")
             self._mysql.autocommit(True)
         except:
             log.exception('MySQL connect failed')

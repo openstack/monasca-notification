@@ -40,11 +40,6 @@ class WebhookNotifier(AbstractNotifier):
             Posts on the given url
         """
 
-        self._log.info("Notifying alarm {} to {} with action {}"
-                       .format(notification.alarm_name,
-                               notification.state,
-                               notification.address))
-
         body = {'alarm_id': notification.alarm_id,
                 'alarm_definition_id': notification.raw_alarm['alarmDefinitionId'],
                 'alarm_name': notification.alarm_name,
