@@ -142,7 +142,7 @@ class KafkaConsumer(BaseProcessor):
                     log.info("Waiting to acquire locks on partition set")
                     set_partitioner.wait_for_acquire()
 
-        except:
+        except Exception:
             log.exception('KafkaConsumer encountered fatal exception '
                           'processing messages.')
             raise
