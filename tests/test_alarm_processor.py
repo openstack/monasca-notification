@@ -75,10 +75,12 @@ class TestAlarmProcessor(unittest.TestCase):
 
     def test_old_timestamp(self):
         """Should cause the alarm_ttl to fire log a warning and push to finished queue."""
+        timestamp = 1375346830042
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": 1375346830042, "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": timestamp, "actionsEnabled": 1, "metrics": "cpu_util"}
         alarm = self._create_raw_alarm(0, 2, alarm_dict)
+        expected_datetime = time.ctime(timestamp / 1000)
 
         notifications, partition, offset = self._run_alarm_processor(alarm, None)
 
@@ -87,7 +89,7 @@ class TestAlarmProcessor(unittest.TestCase):
         self.assertEqual(offset, 2)
 
         old_msg = ('Received alarm older than the ttl, skipping. '
-                   'Alarm from Thu Aug  1 02:47:10 2013')
+                   'Alarm from {datetime}'.format(datetime=expected_datetime))
 
         self.assertIn(old_msg, self.trap)
 
