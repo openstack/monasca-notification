@@ -96,7 +96,7 @@ class EmailNotifier(AbstractNotifier):
                                 self._config['port'],
                                 timeout=self._config['timeout'])
 
-            if self._config['user'] is not None:
+            if self._config['user']:
                 smtp.login(self._config['user'], self._config['password'])
 
             self._smtp = smtp
