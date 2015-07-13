@@ -44,15 +44,18 @@ class EmailNotifier(AbstractNotifier):
 
         # Get the "hostname" from the notification metrics if there is one
         hostname = []
+        targethost = []
 
         for metric in notification.metrics:
-            for dimension in metric['dimensions']:
-                if 'hostname' in dimension:
-                    if not metric['dimensions'][dimension] in hostname:
-                        hostname.append(metric['dimensions'][dimension])
+            dimap = metric['dimensions']
+
+            if 'hostname' in dimap and not dimap['hostname'] in hostname:
+                hostname.append(dimap['hostname'])
+            if 'target_host' in dimap and not dimap['target_host'] in targethost:
+                targethost.append(dimap['target_host'])
 
         # Generate the message
-        msg = self._create_msg(hostname, notification)
+        msg = self._create_msg(hostname, notification, targethost)
 
         if not self._smtp and not self._smtp_connect():
             return False
@@ -105,7 +108,7 @@ class EmailNotifier(AbstractNotifier):
             self._log.exception("Unable to connect to email server.")
             return False
 
-    def _create_msg(self, hostname, notification):
+    def _create_msg(self, hostname, notification, targethost=None):
         """Create two kind of messages:
         1. Notifications that include metrics with a hostname as a dimension. There may be more than one hostname.
            We will only report the hostname if there is only one.
@@ -116,22 +119,42 @@ class EmailNotifier(AbstractNotifier):
         timestamp = time.asctime(time.gmtime(notification.alarm_timestamp))
 
         if len(hostname) == 1:  # Type 1
-            text = u'''On host "{}" {}
+            if targethost:
+                text = u'''On host "{}" for target "{}" {}
 
-                      Alarm "{}" transitioned to the {} state at {} UTC
-                      alarm_id: {}'''.format(hostname[0],
-                                             notification.message.lower(),
-                                             notification.alarm_name,
-                                             notification.state,
-                                             timestamp,
-                                             notification.alarm_id).encode("utf-8")
+                          Alarm "{}" transitioned to the {} state at {} UTC
+                          alarm_id: {}'''.format(hostname[0],
+                                                 targethost[0],
+                                                 notification.message.lower(),
+                                                 notification.alarm_name,
+                                                 notification.state,
+                                                 timestamp,
+                                                 notification.alarm_id).encode("utf-8")
 
-            msg = email.mime.text.MIMEText(text)
+                msg = email.mime.text.MIMEText(text)
 
-            msg['Subject'] = u'{} "{}" for Host: {}'.format(notification.state,
-                                                            notification.alarm_name,
-                                                            hostname[0]).encode("utf-8")
+                msg['Subject'] = u'{} "{}" for Host: {} Target: {}'\
+                    .format(notification.state,
+                            notification.alarm_name,
+                            hostname[0],
+                            targethost[0]).encode("utf-8")
 
+            else:
+                text = u'''On host "{}" {}
+
+                          Alarm "{}" transitioned to the {} state at {} UTC
+                          alarm_id: {}'''.format(hostname[0],
+                                                 notification.message.lower(),
+                                                 notification.alarm_name,
+                                                 notification.state,
+                                                 timestamp,
+                                                 notification.alarm_id).encode("utf-8")
+
+                msg = email.mime.text.MIMEText(text)
+
+                msg['Subject'] = u'{} "{}" for Host: {}'.format(notification.state,
+                                                                notification.alarm_name,
+                                                                hostname[0]).encode("utf-8")
         else:  # Type 2
             text = u'''{}
 
