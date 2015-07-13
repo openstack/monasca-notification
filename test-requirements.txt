@@ -3,3 +3,4 @@ pyflakes==0.8.1
 nose
 nosexcover
 mock>=1.0.1
+funcsigs
