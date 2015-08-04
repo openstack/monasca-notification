@@ -1,8 +1,8 @@
 kafka-python>=0.9.1,<0.9.3
 kazoo>=1.3
-MySQL-python
 pbr>=0.6,<2.0
 monasca-statsd
 requests
 PyYAML
 six
+simport

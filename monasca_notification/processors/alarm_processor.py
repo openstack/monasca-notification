@@ -16,9 +16,10 @@
 import json
 import logging
 import monascastatsd
-import MySQLdb
+import simport
 import time
 
+from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.notification import Notification
 from monasca_notification.notification_exceptions import AlarmFormatError
 from monasca_notification.processors.base import BaseProcessor
@@ -28,36 +29,14 @@ log = logging.getLogger(__name__)
 
 
 class AlarmProcessor(BaseProcessor):
-    def __init__(
-            self, alarm_ttl, mysql_host, mysql_user,
-            mysql_passwd, dbname, mysql_ssl=None):
-
-        self._mysql_host = mysql_host
-        self._mysql_user = mysql_user
-        self._mysql_passwd = mysql_passwd
-        self._mysql_dbname = dbname
-        self._mysql_ssl = mysql_ssl
-
+    def __init__(self, alarm_ttl, config):
         self._alarm_ttl = alarm_ttl
         self._statsd = monascastatsd.Client(name='monasca',
                                             dimensions=BaseProcessor.dimensions)
-
-        self._mysql = None
-        self._connect_to_mysql()
-
-    def _connect_to_mysql(self):
-        try:
-            self._mysql = MySQLdb.connect(host=self._mysql_host,
-                                          user=self._mysql_user,
-                                          passwd=unicode(self._mysql_passwd).encode('utf-8'),
-                                          db=self._mysql_dbname,
-                                          ssl=self._mysql_ssl,
-                                          use_unicode=True,
-                                          charset="utf8")
-            self._mysql.autocommit(True)
-        except:
-            log.exception('MySQL connect failed')
-            raise
+        if 'database' in config and 'repo_driver' in config['database']:
+            self._db_repo = simport.load(config['database']['repo_driver'])(config)
+        else:
+            self._db_repo = simport.load('monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo')(config)
 
     @staticmethod
     def _parse_alarm(alarm_data):
@@ -74,7 +53,6 @@ class AlarmProcessor(BaseProcessor):
             'tenantId',
             'timestamp'
         ]
-
         json_alarm = json.loads(alarm_data)
         alarm = json_alarm['alarm-transitioned']
         for field in expected_fields:
@@ -101,26 +79,21 @@ class AlarmProcessor(BaseProcessor):
         return True
 
     def _build_notification(self, partition, offset, alarm):
-        cur = self._mysql.cursor()
         db_time = self._statsd.get_timer()
 
         with db_time.time('config_db_time'):
-            cur.execute("""SELECT name, type, address
-                           FROM alarm_action as aa
-                           JOIN notification_method as nm ON aa.action_id = nm.id
-                           WHERE aa.alarm_definition_id = %s and aa.alarm_state = %s""",
-                        [alarm['alarmDefinitionId'], alarm['newState']])
+            alarms_actions = self._db_repo.fetch_notification(alarm)
 
-        return [Notification(row[1].lower(),
+        return [Notification(alarms_action[0],
                              partition,
                              offset,
-                             row[0],
-                             row[2],
+                             alarms_action[1],
+                             alarms_action[2],
                              0,
-                             alarm) for row in cur]
+                             alarm) for alarms_action in alarms_actions]
 
     def to_notification(self, raw_alarm):
-        """Check the notification setting for this project in mysql then create the appropriate notification
+        """Check the notification setting for this project then create the appropriate notification
         """
         failed_parse_count = self._statsd.get_counter(name='alarms_failed_parse_count')
         no_notification_count = self._statsd.get_counter(name='alarms_no_notification_count')
@@ -144,9 +117,8 @@ class AlarmProcessor(BaseProcessor):
 
         try:
             notifications = self._build_notification(partition, offset, alarm)
-        except MySQLdb.Error:
-            log.debug('MySQL Error.  Attempting reconnect')
-            self._connect_to_mysql()
+        except exc.DatabaseException:
+            log.debug('Database Error.  Attempting reconnect')
             notifications = self._build_notification(partition, offset, alarm)
 
         if len(notifications) == 0:
@@ -155,5 +127,6 @@ class AlarmProcessor(BaseProcessor):
                       % (partition, offset, alarm))
             return [], partition, offset
         else:
+            log.debug('Found %d notifications: [%s]', len(notifications), notifications)
             notification_count += len(notifications)
             return notifications, partition, offset

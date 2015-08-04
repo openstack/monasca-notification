@@ -4,3 +4,4 @@ nose
 nosexcover
 mock>=1.0.1
 funcsigs
+sqlalchemy

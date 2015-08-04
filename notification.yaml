@@ -6,13 +6,27 @@ kafka:
     notification_retry_topic: retry-notifications
     max_offset_lag: 600  # In seconds, undefined for none
 
+database:
+#  repo_driver: monasca_notification.common.repositories.postgres.pgsql_repo:PostgresqlRepo
+#  repo_driver: monasca_notification.common.repositories.orm.orm_repo:OrmRepo
+  repo_driver: monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo
+  orm:
+    url: 'postgres://notification:password@127.0.0.1:5432/mon'
+
 mysql:
-    host: 192.168.10.4
-    user: notification
-    passwd: password
-    db: mon
-# A dictionary set according to the params defined in, http://dev.mysql.com/doc/refman/5.0/en/mysql-ssl-set.html
-#    ssl: {'ca': '/path/to/ca'}
+  host: 192.168.10.4
+  user: notification
+  passwd: password
+  db: mon
+  # A dictionary set according to the params defined in, http://dev.mysql.com/doc/refman/5.0/en/mysql-ssl-set.html
+  #    ssl: {'ca': '/path/to/ca'}
+
+postgresql:
+  user: notification
+  password: password
+  database: mon
+  port: 5432
+  host: 127.0.0.1
 
 notification_types:
     email:
