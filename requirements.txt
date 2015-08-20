@@ -2,7 +2,7 @@ kafka-python>=0.9.1,<0.9.3
 kazoo>=1.3
 pbr>=0.6,<2.0
 monasca-statsd
-requests
-PyYAML
-six
-simport
+requests>=2.7.0,<3.0
+PyYAML>=3.11,<4.0
+six>=1.9.0,<2.0
+simport>=0.1,<1.0
