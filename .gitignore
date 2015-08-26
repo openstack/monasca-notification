@@ -10,3 +10,4 @@ ChangeLog
 build
 dist
 monasca_notification.egg-info
+.*.sw*
