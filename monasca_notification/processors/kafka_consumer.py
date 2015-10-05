@@ -49,7 +49,8 @@ class KafkaConsumer(BaseProcessor):
                                                        group,
                                                        self._kafka_topic,
                                                        auto_commit=False,
-                                                       iter_timeout=5)
+                                                       iter_timeout=5,
+                                                       max_buffer_size=None)
 
         self._consumer.provide_partition_info()  # Without this the partition is not provided in the response
         self._consumer.fetch_last_known_offsets()
