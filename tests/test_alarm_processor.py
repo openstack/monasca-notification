@@ -39,7 +39,7 @@ class TestAlarmProcessor(unittest.TestCase):
         msg_tuple = message_tuple(json_msg)
         return [partition, alarm_tuple(offset, msg_tuple)]
 
-    @mock.patch('MySQLdb.connect')
+    @mock.patch('pymysql.connect')
     @mock.patch('monasca_notification.processors.alarm_processor.log')
     def _run_alarm_processor(self, alarm, sql_response, mock_log, mock_mysql):
         """Runs a mocked alarm processor reading from queue while running, returns (queue_message, log_message)

@@ -38,25 +38,15 @@ class OrmRepo(object):
 
         self._orm = None
 
-    def _connect_to_orm(self):
-        self._orm = None
-        try:
-            self._orm = self._orm_engine.connect()
-        except DatabaseError as e:
-            log.exception('Orm connect failed %s', e)
-            raise
-
     def fetch_notification(self, alarm):
         try:
-            if self._orm is None:
-                self._connect_to_orm()
-            log.debug('Orm query {%s}', str(self._orm_query))
-            notifcations = self._orm.execute(self._orm_query,
-                                             alarm_definition_id=alarm['alarmDefinitionId'],
-                                             alarm_state=alarm['newState'])
+            with self._orm_engine.connect() as conn:
+                log.debug('Orm query {%s}', str(self._orm_query))
+                notifcations = conn.execute(self._orm_query,
+                                            alarm_definition_id=alarm['alarmDefinitionId'],
+                                            alarm_state=alarm['newState'])
 
-            for row in notifcations:
-                yield (row[1].lower(), row[0], row[2])
+                return [(row[1].lower(), row[0], row[2]) for row in notifcations]
         except DatabaseError as e:
             log.exception("Couldn't fetch alarms actions %s", e)
             raise exc.DatabaseException(e)

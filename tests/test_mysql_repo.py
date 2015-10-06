@@ -16,21 +16,21 @@
 import mock
 import unittest
 
-import MySQLdb
+import pymysql
 
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.repositories.mysql import mysql_repo
 
 
 class TestMySqlRepo(unittest.TestCase):
-    @mock.patch('monasca_notification.common.repositories.mysql.mysql_repo.MySQLdb')
+    @mock.patch('monasca_notification.common.repositories.mysql.mysql_repo.pymysql')
     def testReconnect(self, mock_mysql):
         m = mock.MagicMock()
 
-        m.cursor.side_effect = MySQLdb.Error
+        m.cursor.side_effect = pymysql.Error
 
         mock_mysql.connect.return_value = m
-        mock_mysql.Error = MySQLdb.Error
+        mock_mysql.Error = pymysql.Error
 
         config = {'mysql': {'host': 'foo',
                             'user': 'bar',

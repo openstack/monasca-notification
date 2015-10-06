@@ -12,7 +12,7 @@
 # the License.
 
 import logging
-import MySQLdb
+import pymysql
 
 from monasca_notification.common.repositories.base.base_repo import BaseRepo
 from monasca_notification.common.repositories import exceptions as exc
@@ -37,7 +37,7 @@ class MysqlRepo(BaseRepo):
     def _connect_to_mysql(self):
         self._mysql = None
         try:
-            self._mysql = MySQLdb.connect(host=self._mysql_host,
+            self._mysql = pymysql.connect(host=self._mysql_host,
                                           user=self._mysql_user,
                                           passwd=unicode(self._mysql_passwd).encode('utf-8'),
                                           db=self._mysql_dbname,
@@ -45,7 +45,7 @@ class MysqlRepo(BaseRepo):
                                           use_unicode=True,
                                           charset="utf8")
             self._mysql.autocommit(True)
-        except MySQLdb.Error as e:
+        except pymysql.Error as e:
             log.exception('MySQL connect failed %s', e)
             raise
 
@@ -59,7 +59,7 @@ class MysqlRepo(BaseRepo):
 
             for row in cur:
                 yield (row[1].lower(), row[0], row[2])
-        except MySQLdb.Error as e:
+        except pymysql.Error as e:
             self._mysql = None
             log.exception("Couldn't fetch alarms actions %s", e)
             raise exc.DatabaseException(e)
