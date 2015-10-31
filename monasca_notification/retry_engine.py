@@ -18,10 +18,10 @@ import logging
 import monascastatsd
 import time
 
+from monasca_common.kafka.consumer import KafkaConsumer
+from monasca_common.kafka.producer import KafkaProducer
 from notification import Notification
 from processors.base import BaseProcessor
-from processors.kafka_consumer import KafkaConsumer
-from processors.kafka_producer import KafkaProducer
 from processors.notification_processor import NotificationProcessor
 
 log = logging.getLogger(__name__)
@@ -88,11 +88,11 @@ class RetryEngine(object):
                               u"at {}.  "
                               u"Saving for later retry.".format(ntype, name, addr))
                     self._producer.publish(self._topics['retry_topic'],
-                                           [notification])
+                                           [notification.to_json()])
                 else:
                     log.error(u"retry failed for {} with name {} "
                               u"at {} after {} retries.  "
                               u"Giving up on retry."
                               .format(ntype, name, addr, self._retry_max))
 
-            self._consumer.commit([partition])
+            self._consumer.commit()

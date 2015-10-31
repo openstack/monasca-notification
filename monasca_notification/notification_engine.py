@@ -16,10 +16,10 @@
 import logging
 import monascastatsd
 
+from monasca_common.kafka.consumer import KafkaConsumer
+from monasca_common.kafka.producer import KafkaProducer
 from processors.alarm_processor import AlarmProcessor
 from processors.base import BaseProcessor
-from processors.kafka_consumer import KafkaConsumer
-from processors.kafka_producer import KafkaProducer
 from processors.notification_processor import NotificationProcessor
 
 log = logging.getLogger(__name__)
@@ -49,7 +49,9 @@ class NotificationEngine(object):
             notifications, partition, offset = self._alarms.to_notification(alarm)
             if notifications:
                 sent, failed = self._notifier.send(notifications)
-                self._producer.publish(self._topics['notification_topic'], sent)
-                self._producer.publish(self._topics['retry_topic'], failed)
-            self._consumer.commit([partition])
+                self._producer.publish(self._topics['notification_topic'],
+                                       [i.to_json() for i in sent])
+                self._producer.publish(self._topics['retry_topic'],
+                                       [i.to_json() for i in failed])
+            self._consumer.commit()
             finished_count.increment()
