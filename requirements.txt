@@ -5,5 +5,5 @@ monasca-statsd
 requests>=2.7.0,<3.0
 PyYAML>=3.11,<4.0
 six>=1.9.0,<2.0
-simport>=0.1,<1.0
+simport>=0.2.dev16
 monasca-common
