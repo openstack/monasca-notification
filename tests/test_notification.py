@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ def test_json():
              'timestamp': ts,
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
+             'severity': 'LOW',
+             "link": "some-link",
+             "lifecycleState": "OPEN",
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
     test_notification = notification.Notification('ntype', 'src_partition',
@@ -41,6 +44,9 @@ def test_json():
                      u'alarm_name': u'alarmName',
                      u'alarm_id': u'alarmId',
                      u'state': u'newState',
+                     u'severity': u'LOW',
+                     u'link': u'some-link',
+                     u'lifecycle_state': u'OPEN',
                      u'alarm_timestamp': ts / 1000,
                      u'address': u'address',
                      u'message': u'stateChangeReason',
@@ -51,6 +57,9 @@ def test_json():
                          u'timestamp': ts,
                          u'stateChangeReason': u'stateChangeReason',
                          u'newState': u'newState',
+                         u'severity': u'LOW',
+                         u'link': u'some-link',
+                         u'lifecycleState': u'OPEN',
                          u'tenantId': u'tenantId',
                          u'metrics': u'cpu_util'}}
 
@@ -64,6 +73,9 @@ def test_equal():
              'timestamp': 1429029121239,
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
+             'severity': 'LOW',
+             "link": "some-link",
+             "lifecycleState": "OPEN",
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
     test_notification = notification.Notification('ntype', 'src_partition',
@@ -82,6 +94,9 @@ def test_unequal():
              'timestamp': 1429029121239,
              'stateChangeReason': 'stateChangeReason',
              'newState': 'newState',
+             'severity': 'LOW',
+             "link": "some-link",
+             "lifecycleState": "OPEN",
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
     test_notification = notification.Notification('ntype', 'src_partition',

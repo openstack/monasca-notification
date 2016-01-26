@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,6 +81,9 @@ class TestNotificationProcessor(unittest.TestCase):
                       "alarmName": "test Alarm",
                       "oldState": "OK",
                       "newState": "ALARM",
+                      "severity": "LOW",
+                      "link": "some-link",
+                      "lifecycleState": "OPEN",
                       "stateChangeReason": "I am alarming!",
                       "timestamp": time.time(),
                       "metrics": metric}
@@ -97,7 +100,8 @@ class TestNotificationProcessor(unittest.TestCase):
         """Verify invalid notification type is rejected.
         """
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
-                      "stateChangeReason": "I am alarming!", "timestamp": time.time(), "metrics": "cpu_util"}
+                      "stateChangeReason": "I am alarming!", "timestamp": time.time(), "metrics": "cpu_util",
+                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
         invalid_notification = Notification('invalid', 0, 1, 'test notification', 'me@here.com', 0, alarm_dict)
 
         self._start_processor([invalid_notification])

@@ -1,4 +1,4 @@
-# (C) Copyright 2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2015-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,38 @@ import smtplib
 import time
 
 from abstract_notifier import AbstractNotifier
+
+MAX_DIMENSION_SETS = 10
+
+EMAIL_SINGLE_HOST_BASE = u'''On host "{hostname}" for target "{target_host}" {message}
+
+Alarm "{alarm_name}" transitioned to the {state} state at {timestamp} UTC
+alarm_id: {alarm_id}
+Lifecycle state: {lifecycle_state}
+Link: {link}
+
+With dimensions:
+{metric_dimensions}'''
+
+EMAIL_MULTIPLE_HOST_BASE = u'''On host "{hostname}" {message}
+
+Alarm "{alarm_name}" transitioned to the {state} state at {timestamp} UTC
+alarm_id: {alarm_id}
+Lifecycle state: {lifecycle_state}
+Link: {link}
+
+With dimensions:
+{metric_dimensions}'''
+
+EMAIL_NO_HOST_BASE = u'''On multiple hosts {message}
+
+Alarm "{alarm_name}" transitioned to the {state} state at {timestamp} UTC
+Alarm_id: {alarm_id}
+Lifecycle state: {lifecycle_state}
+Link: {link}
+
+With dimensions
+{metric_dimensions}'''
 
 
 class EmailNotifier(AbstractNotifier):
@@ -118,57 +150,93 @@ class EmailNotifier(AbstractNotifier):
         """
         timestamp = time.asctime(time.gmtime(notification.alarm_timestamp))
 
+        dimensions = _format_dimensions(notification)
+
         if len(hostname) == 1:  # Type 1
             if targethost:
-                text = u'''On host "{}" for target "{}" {}
-
-                          Alarm "{}" transitioned to the {} state at {} UTC
-                          alarm_id: {}'''.format(hostname[0],
-                                                 targethost[0],
-                                                 notification.message.lower(),
-                                                 notification.alarm_name,
-                                                 notification.state,
-                                                 timestamp,
-                                                 notification.alarm_id).encode("utf-8")
+                text = EMAIL_SINGLE_HOST_BASE.format(
+                    hostname=hostname[0],
+                    target_host=targethost[0],
+                    message=notification.message.lower(),
+                    alarm_name=notification.alarm_name,
+                    state=notification.state,
+                    timestamp=timestamp,
+                    alarm_id=notification.alarm_id,
+                    metric_dimensions=dimensions,
+                    link=notification.link,
+                    lifecycle_state=notification.lifecycle_state
+                ).encode("utf-8")
 
                 msg = email.mime.text.MIMEText(text)
 
-                msg['Subject'] = u'{} "{}" for Host: {} Target: {}'\
+                msg['Subject'] = u'{} {} "{}" for Host: {} Target: {}'\
                     .format(notification.state,
+                            notification.severity,
                             notification.alarm_name,
                             hostname[0],
                             targethost[0]).encode("utf-8")
 
             else:
-                text = u'''On host "{}" {}
-
-                          Alarm "{}" transitioned to the {} state at {} UTC
-                          alarm_id: {}'''.format(hostname[0],
-                                                 notification.message.lower(),
-                                                 notification.alarm_name,
-                                                 notification.state,
-                                                 timestamp,
-                                                 notification.alarm_id).encode("utf-8")
+                text = EMAIL_MULTIPLE_HOST_BASE.format(
+                    hostname=hostname[0],
+                    message=notification.message.lower(),
+                    alarm_name=notification.alarm_name,
+                    state=notification.state,
+                    timestamp=timestamp,
+                    alarm_id=notification.alarm_id,
+                    metric_dimensions=dimensions,
+                    link=notification.link,
+                    lifecycle_state=notification.lifecycle_state
+                ).encode("utf-8")
 
                 msg = email.mime.text.MIMEText(text)
 
-                msg['Subject'] = u'{} "{}" for Host: {}'.format(notification.state,
-                                                                notification.alarm_name,
-                                                                hostname[0]).encode("utf-8")
+                msg['Subject'] = u'{} {} "{}" for Host: {}'.format(notification.state,
+                                                                   notification.severity,
+                                                                   notification.alarm_name,
+                                                                   hostname[0]).encode("utf-8")
         else:  # Type 2
-            text = u'''{}
-
-                      Alarm "{}" transitioned to the {} state at {} UTC
-                      Alarm_id: {}'''.format(notification.message.lower(),
-                                             notification.alarm_name,
-                                             notification.state,
-                                             timestamp,
-                                             notification.alarm_id).encode("utf-8")
+            text = EMAIL_NO_HOST_BASE.format(
+                message=notification.message.lower(),
+                alarm_name=notification.alarm_name,
+                state=notification.state,
+                timestamp=timestamp,
+                alarm_id=notification.alarm_id,
+                metric_dimensions=dimensions,
+                link=notification.link,
+                lifecycle_state=notification.lifecycle_state
+            ).encode("utf-8")
 
             msg = email.mime.text.MIMEText(text)
-            msg['Subject'] = u'{} "{}" '.format(notification.state, notification.alarm_name).encode("utf-8")
+            msg['Subject'] = u'{} {} "{}" '.format(notification.state,
+                                                   notification.severity,
+                                                   notification.alarm_name).encode("utf-8")
 
         msg['From'] = self._config['from_addr']
         msg['To'] = notification.address
 
         return msg
+
+
+def _format_dimensions(notification):
+    dimension_sets = []
+    for metric in notification.metrics:
+        dimension_sets.append(metric['dimensions'])
+
+    overflow_stmt = ""
+    if len(dimension_sets) > MAX_DIMENSION_SETS:
+        overflow_stmt = u"\n...and {} more".format(len(dimension_sets) - MAX_DIMENSION_SETS)
+        dimension_sets = list(dimension_sets)[:MAX_DIMENSION_SETS]
+
+    dim_set_strings = []
+    for dimension_set in dimension_sets:
+        key_value_pairs = []
+        for key, value in dimension_set.items():
+            key_value_pairs.append(u'    {}: {}'.format(key, value))
+
+        set_string = u'  {\n' + u',\n'.join(key_value_pairs) + u'\n  }'
+        dim_set_strings.append(set_string)
+
+    dimensions = u'[\n' + u',\n'.join(dim_set_strings) + u' \n]'
+
+    return dimensions + overflow_stmt

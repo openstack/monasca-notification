@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ def alarm(metrics):
             "alarmDescription": "test Alarm description",
             "oldState": "OK",
             "newState": "ALARM",
+            "severity": "LOW",
+            "link": "some-link",
+            "lifecycleState": "OPEN",
             "stateChangeReason": "I am alarming!",
             "timestamp": 1429023453632,
             "metrics": metrics}

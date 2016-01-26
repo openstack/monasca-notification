@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,9 +32,26 @@ def alarm(metrics):
             "alarmName": u"test Alarm " + UNICODE_CHAR,
             "oldState": "OK",
             "newState": "ALARM",
+            "severity": "LOW",
+            "link": "some-link",
+            "lifecycleState": "OPEN",
             "stateChangeReason": u"I am alarming!" + UNICODE_CHAR,
             "timestamp": time.time(),
             "metrics": metrics}
+
+
+def _parse_email(email_msg):
+    email = {"raw": email_msg}
+    email_lines = email_msg.splitlines()
+    email['subject'] = email_lines[3]
+    email['from'] = email_lines[4]
+    email['to'] = email_lines[5]
+    email['body'] = "\n".join(email_lines[6:])
+    print(email['from'])
+    print(email['to'])
+    print(email['subject'])
+    print(email['body'])
+    return email
 
 
 class smtpStub(object):
@@ -101,14 +118,42 @@ class TestEmail(unittest.TestCase):
 
         self.notify(self._smtpStub, metrics)
 
-        email = self.trap.pop(0)
+        email = _parse_email(self.trap.pop(0))
 
-        self.assertRegexpMatches(email, "From: hpcs.mon@hp.com")
-        self.assertRegexpMatches(email, "To: me@here.com")
-        self.assertRegexpMatches(email, "Content-Type: text/plain")
-        self.assertRegexpMatches(email, "Alarm .test Alarm.")
-        self.assertRegexpMatches(email, "On host .foo1.")
-        self.assertRegexpMatches(email, UNICODE_CHAR_ENCODED)
+        self.assertRegexpMatches(email['from'], "From: hpcs.mon@hp.com")
+        self.assertRegexpMatches(email['to'], "To: me@here.com")
+        self.assertRegexpMatches(email['raw'], "Content-Type: text/plain")
+        self.assertRegexpMatches(email['subject'], "Subject: ALARM LOW .test Alarm.")
+        self.assertRegexpMatches(email['body'], "Alarm .test Alarm.")
+        self.assertRegexpMatches(email['body'], "On host .foo1.")
+        self.assertRegexpMatches(email['body'], UNICODE_CHAR_ENCODED)
+        self.assertRegexpMatches(email['body'], "Link: some-link")
+        self.assertRegexpMatches(email['body'], "Lifecycle state: OPEN")
+
+        return_value = self.trap.pop(0)
+        self.assertTrue(return_value)
+
+    def test_email_notification_target_host(self):
+        """Email with single host
+        """
+
+        metrics = []
+        metric_data = {'dimensions': {'hostname': u'foo1' + UNICODE_CHAR,
+                                      u'service' + UNICODE_CHAR: 'bar1',
+                                      u'target_host': u'some_where'}}
+        metrics.append(metric_data)
+
+        self.notify(self._smtpStub, metrics)
+
+        email = _parse_email(self.trap.pop(0))
+
+        self.assertRegexpMatches(email['from'], "From: hpcs.mon@hp.com")
+        self.assertRegexpMatches(email['to'], "To: me@here.com")
+        self.assertRegexpMatches(email['raw'], "Content-Type: text/plain")
+        self.assertRegexpMatches(email['subject'], "Subject: ALARM LOW .test Alarm.* Target: some_where")
+        self.assertRegexpMatches(email['body'], "Alarm .test Alarm.")
+        self.assertRegexpMatches(email['body'], "On host .foo1.")
+        self.assertRegexpMatches(email['body'], UNICODE_CHAR_ENCODED)
 
         return_value = self.trap.pop(0)
         self.assertTrue(return_value)
@@ -125,17 +170,47 @@ class TestEmail(unittest.TestCase):
 
         self.notify(self._smtpStub, metrics)
 
-        email = self.trap.pop(0)
+        email = _parse_email(self.trap.pop(0))
 
-        self.assertRegexpMatches(email, "From: hpcs.mon@hp.com")
-        self.assertRegexpMatches(email, "To: me@here.com")
-        self.assertRegexpMatches(email, "Content-Type: text/plain")
-        self.assertRegexpMatches(email, "Alarm .test Alarm.")
-        self.assertNotRegexpMatches(email, "foo1")
-        self.assertNotRegexpMatches(email, "foo2")
+        self.assertRegexpMatches(email['from'], "From: hpcs.mon@hp.com")
+        self.assertRegexpMatches(email['to'], "To: me@here.com")
+        self.assertRegexpMatches(email['raw'], "Content-Type: text/plain")
+        self.assertRegexpMatches(email['subject'], "Subject: ALARM LOW .test Alarm.")
+        self.assertRegexpMatches(email['body'], "Alarm .test Alarm.")
+        self.assertRegexpMatches(email['body'], "foo1")
+        self.assertRegexpMatches(email['body'], "foo2")
+        self.assertRegexpMatches(email['body'], "bar1")
+        self.assertRegexpMatches(email['body'], "bar2")
 
         return_value = self.trap.pop(0)
         self.assertTrue(return_value)
+
+    def test_email_notification_dimensions_overflow(self):
+        metrics = []
+        for i in xrange(11):
+            metric_data = {'dimensions': {'hostname': 'foo' + str(i), 'service': 'bar' + str(i)}}
+            metrics.append(metric_data)
+
+        self.notify(self._smtpStub, metrics)
+
+        email = _parse_email(self.trap.pop(0))
+
+        self.assertEqual(email['from'], "From: hpcs.mon@hp.com")
+        self.assertEqual(email['to'], "To: me@here.com")
+        self.assertRegexpMatches(email['raw'], "Content-Type: text/plain")
+        self.assertRegexpMatches(email['subject'], "Subject: ALARM LOW .test Alarm.")
+        self.assertRegexpMatches(email['body'], "\.\.\.and [0-9]+ more")
+
+        body_lines = email['body'].splitlines()
+        remaining_lines = 0
+        for index, line in enumerate(body_lines):
+            if line == "With dimensions":
+                remaining_lines = len(body_lines) - (index + 1)
+                break
+        sets = 10
+        expected_lines = sets * 4  # two pairs per set, two lines for { and }
+
+        self.assertEqual(expected_lines + 3, remaining_lines)  # three extra lines for [, ], and overflow statement
 
     @mock.patch('monasca_notification.types.email_notifier.smtplib')
     def test_smtp_sendmail_failed_connection_twice(self, mock_smtp):

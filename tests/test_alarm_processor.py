@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -83,7 +83,8 @@ class TestAlarmProcessor(unittest.TestCase):
         timestamp = 1375346830042
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": timestamp, "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": timestamp, "actionsEnabled": 1, "metrics": "cpu_util",
+                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
         alarm = self._create_raw_alarm(0, 2, alarm_dict)
         expected_datetime = time.ctime(timestamp / 1000)
 
@@ -103,7 +104,8 @@ class TestAlarmProcessor(unittest.TestCase):
         """
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util",
+                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
         alarm = self._create_raw_alarm(0, 3, alarm_dict)
 
         notifications, partition, offset = self._run_alarm_processor(alarm, None)
@@ -117,7 +119,8 @@ class TestAlarmProcessor(unittest.TestCase):
         """
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util",
+                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
         alarm = self._create_raw_alarm(0, 4, alarm_dict)
 
         sql_response = [['test notification', 'EMAIL', 'me@here.com']]
@@ -132,7 +135,8 @@ class TestAlarmProcessor(unittest.TestCase):
     def test_two_valid_notifications(self):
         alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
                       "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util"}
+                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util",
+                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
 
         alarm = self._create_raw_alarm(0, 5, alarm_dict)
 

@@ -1,4 +1,4 @@
-# (C) Copyright 2014-2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ class Notification(object):
         'src_partition',
         'src_offset',
         'state',
+        'severity',
+        'link',
+        'lifecycle_state',
         'tenant_id',
         'type',
         'metrics',
@@ -66,6 +69,9 @@ class Notification(object):
         self.alarm_timestamp = alarm['timestamp'] / 1000
         self.message = alarm['stateChangeReason']
         self.state = alarm['newState']
+        self.severity = alarm['severity']
+        self.link = alarm['link']
+        self.lifecycle_state = alarm['lifecycleState']
         self.tenant_id = alarm['tenantId']
         self.metrics = alarm['metrics']
 
@@ -97,6 +103,9 @@ class Notification(object):
             'message',
             'notification_timestamp',
             'state',
+            'severity',
+            'link',
+            'lifecycle_state',
             'tenant_id'
         ]
         notification_data = {name: getattr(self, name)
