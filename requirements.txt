@@ -6,4 +6,4 @@ requests
 PyYAML
 six
 simport>=0.2.dev16
-monasca-common==0.0.2
+monasca-common
