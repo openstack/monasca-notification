@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# (C) Copyright 2014-2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,13 +49,19 @@ def clean_exit(signum, frame=None):
 
     log.info('Received signal %s, beginning graceful shutdown.' % signum)
     exiting = True
+    wait_for_exit = False
 
     for process in processors:
         try:
             if process.is_alive():
                 process.terminate()  # Sends sigterm which any processes after a notification is sent attempt to handle
+                wait_for_exit = True
         except Exception:
             pass
+
+    # wait for a couple seconds to give the subprocesses a chance to shut down correctly.
+    if wait_for_exit:
+        time.sleep(2)
 
     # Kill everything, that didn't already die
     for child in multiprocessing.active_children():
@@ -64,6 +70,9 @@ def clean_exit(signum, frame=None):
             os.kill(child.pid, signal.SIGKILL)
         except Exception:
             pass
+
+    if signum == signal.SIGTERM:
+        sys.exit(0)
 
     sys.exit(signum)
 
@@ -115,8 +124,7 @@ def main(argv=None):
 
     except Exception:
         log.exception('Error! Exiting.')
-        for process in processors:
-            process.terminate()
+        clean_exit(signal.SIGKILL)
 
 if __name__ == "__main__":
     sys.exit(main())
