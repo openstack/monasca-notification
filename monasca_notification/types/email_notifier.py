@@ -19,8 +19,6 @@ import time
 
 from abstract_notifier import AbstractNotifier
 
-MAX_DIMENSION_SETS = 10
-
 EMAIL_SINGLE_HOST_BASE = u'''On host "{hostname}" for target "{target_host}" {message}
 
 Alarm "{alarm_name}" transitioned to the {state} state at {timestamp} UTC
@@ -223,11 +221,6 @@ def _format_dimensions(notification):
     for metric in notification.metrics:
         dimension_sets.append(metric['dimensions'])
 
-    overflow_stmt = ""
-    if len(dimension_sets) > MAX_DIMENSION_SETS:
-        overflow_stmt = u"\n...and {} more".format(len(dimension_sets) - MAX_DIMENSION_SETS)
-        dimension_sets = list(dimension_sets)[:MAX_DIMENSION_SETS]
-
     dim_set_strings = []
     for dimension_set in dimension_sets:
         key_value_pairs = []
@@ -239,4 +232,4 @@ def _format_dimensions(notification):
 
     dimensions = u'[\n' + u',\n'.join(dim_set_strings) + u' \n]'
 
-    return dimensions + overflow_stmt
+    return dimensions

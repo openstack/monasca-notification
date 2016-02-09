@@ -185,33 +185,6 @@ class TestEmail(unittest.TestCase):
         return_value = self.trap.pop(0)
         self.assertTrue(return_value)
 
-    def test_email_notification_dimensions_overflow(self):
-        metrics = []
-        for i in xrange(11):
-            metric_data = {'dimensions': {'hostname': 'foo' + str(i), 'service': 'bar' + str(i)}}
-            metrics.append(metric_data)
-
-        self.notify(self._smtpStub, metrics)
-
-        email = _parse_email(self.trap.pop(0))
-
-        self.assertEqual(email['from'], "From: hpcs.mon@hp.com")
-        self.assertEqual(email['to'], "To: me@here.com")
-        self.assertRegexpMatches(email['raw'], "Content-Type: text/plain")
-        self.assertRegexpMatches(email['subject'], "Subject: ALARM LOW .test Alarm.")
-        self.assertRegexpMatches(email['body'], "\.\.\.and [0-9]+ more")
-
-        body_lines = email['body'].splitlines()
-        remaining_lines = 0
-        for index, line in enumerate(body_lines):
-            if line == "With dimensions":
-                remaining_lines = len(body_lines) - (index + 1)
-                break
-        sets = 10
-        expected_lines = sets * 4  # two pairs per set, two lines for { and }
-
-        self.assertEqual(expected_lines + 3, remaining_lines)  # three extra lines for [, ], and overflow statement
-
     @mock.patch('monasca_notification.types.email_notifier.smtplib')
     def test_smtp_sendmail_failed_connection_twice(self, mock_smtp):
         """Email that fails on smtp_connect twice
