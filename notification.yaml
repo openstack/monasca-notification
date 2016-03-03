@@ -15,6 +15,7 @@ database:
 
 mysql:
   host: 192.168.10.4
+  port: 3306
   user: notification
   passwd: password
   db: mon

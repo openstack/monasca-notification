@@ -33,6 +33,7 @@ class TestMySqlRepo(unittest.TestCase):
         mock_mysql.Error = pymysql.Error
 
         config = {'mysql': {'host': 'foo',
+                            'port': '3306',
                             'user': 'bar',
                             'passwd': '1',
                             'db': '2'}}

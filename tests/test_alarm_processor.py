@@ -57,6 +57,7 @@ class TestAlarmProcessor(unittest.TestCase):
 
         mysql_config = {'mysql': {'ssl': None,
                                   'host': 'mysql_host',
+                                  'port': 'mysql_port',
                                   'user': 'mysql_user',
                                   'db': 'dbname',
                                   'passwd': 'mysql_passwd'}}

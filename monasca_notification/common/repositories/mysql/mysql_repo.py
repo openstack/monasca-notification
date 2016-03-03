@@ -28,6 +28,15 @@ class MysqlRepo(BaseRepo):
         else:
             self._mysql_ssl = None
 
+        if 'port' in config['mysql']:
+            self._mysql_port = config['mysql']['port']
+        else:
+            #
+            # If port isn't specified in the config file,
+            # set it to the default value.
+            #
+            self._mysql_port = 3306
+
         self._mysql_host = config['mysql']['host']
         self._mysql_user = config['mysql']['user']
         self._mysql_passwd = config['mysql']['passwd']
@@ -38,6 +47,7 @@ class MysqlRepo(BaseRepo):
         self._mysql = None
         try:
             self._mysql = pymysql.connect(host=self._mysql_host,
+                                          port=self._mysql_port,
                                           user=self._mysql_user,
                                           passwd=unicode(self._mysql_passwd).encode('utf-8'),
                                           db=self._mysql_dbname,
