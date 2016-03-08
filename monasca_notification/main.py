@@ -77,9 +77,9 @@ def clean_exit(signum, frame=None):
     sys.exit(signum)
 
 
-def start_process(proccess_type, config):
-    log.info("start process: {}".format(proccess_type))
-    p = proccess_type(config)
+def start_process(process_type, config):
+    log.info("start process: {}".format(process_type))
+    p = process_type(config)
     p.run()
 
 
