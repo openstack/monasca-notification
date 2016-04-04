@@ -1,4 +1,4 @@
-# (C) Copyright 2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2015-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ class RetryEngine(object):
             sent, failed = self._notifier.send([notification])
 
             if sent:
-                self._producer.publish(self._topics['notification_topic'], sent)
+                self._producer.publish(self._topics['notification_topic'], [sent.to_json()])
 
             if failed:
                 notification.retry_count += 1
