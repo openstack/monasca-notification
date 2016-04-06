@@ -78,7 +78,8 @@ class RetryEngine(object):
             sent, failed = self._notifier.send([notification])
 
             if sent:
-                self._producer.publish(self._topics['notification_topic'], [sent.to_json()])
+                self._producer.publish(self._topics['notification_topic'],
+                                       [notification.to_json()])
 
             if failed:
                 notification.retry_count += 1
