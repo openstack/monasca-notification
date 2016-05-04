@@ -38,10 +38,12 @@ class Notification(object):
         'type',
         'metrics',
         'retry_count',
-        'raw_alarm'
+        'raw_alarm',
+        'period',
+        'periodic_topic'
     )
 
-    def __init__(self, ntype, src_partition, src_offset, name, address,
+    def __init__(self, ntype, src_partition, src_offset, name, address, period,
                  retry_count, alarm):
         """Setup the notification object
              The src_partition and src_offset allow the notification
@@ -49,6 +51,7 @@ class Notification(object):
              ntype - The notification type
              name - Name used in sending
              address - where to send the notification
+             period - period of sending the notification
              retry_count - number of times we've tried to send
              alarm - info that caused the notification
              notifications that come after this one to remain uncommitted.
@@ -78,6 +81,10 @@ class Notification(object):
         # to be updated on actual notification send time
         self.notification_timestamp = None
 
+        # set periodic topic
+        self.periodic_topic = period
+        self.period = period
+
     def __eq__(self, other):
         if not isinstance(other, Notification):
             return False
@@ -106,7 +113,9 @@ class Notification(object):
             'severity',
             'link',
             'lifecycle_state',
-            'tenant_id'
+            'tenant_id',
+            'period',
+            'periodic_topic'
         ]
         notification_data = {name: getattr(self, name)
                              for name in notification_fields}

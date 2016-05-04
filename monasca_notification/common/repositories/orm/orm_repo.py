@@ -1,4 +1,5 @@
 # Copyright 2015 FUJITSU LIMITED
+# (C) Copyright 2015,2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -30,7 +31,7 @@ class OrmRepo(object):
         aa = models.create_alarm_action_model(metadata).alias('aa')
         nm = models.create_notification_method_model(metadata).alias('nm')
 
-        self._orm_query = select([nm.c.name, nm.c.type, nm.c.address])\
+        self._orm_query = select([nm.c.name, nm.c.type, nm.c.address, nm.c.periodic_interval])\
             .select_from(aa.join(nm, aa.c.action_id == nm.c.id))\
             .where(
                 and_(aa.c.alarm_definition_id == bindparam('alarm_definition_id'),
@@ -42,11 +43,11 @@ class OrmRepo(object):
         try:
             with self._orm_engine.connect() as conn:
                 log.debug('Orm query {%s}', str(self._orm_query))
-                notifcations = conn.execute(self._orm_query,
-                                            alarm_definition_id=alarm['alarmDefinitionId'],
-                                            alarm_state=alarm['newState'])
+                notifications = conn.execute(self._orm_query,
+                                             alarm_definition_id=alarm['alarmDefinitionId'],
+                                             alarm_state=alarm['newState'])
 
-                return [(row[1].lower(), row[0], row[2]) for row in notifcations]
+                return [(row[1].lower(), row[0], row[2], row[3]) for row in notifications]
         except DatabaseError as e:
             log.exception("Couldn't fetch alarms actions %s", e)
             raise exc.DatabaseException(e)

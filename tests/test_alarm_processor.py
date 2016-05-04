@@ -124,10 +124,10 @@ class TestAlarmProcessor(unittest.TestCase):
                       "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
         alarm = self._create_raw_alarm(0, 4, alarm_dict)
 
-        sql_response = [['test notification', 'EMAIL', 'me@here.com']]
+        sql_response = [['test notification', 'EMAIL', 'me@here.com', 0]]
         notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
-        test_notification = Notification('email', 0, 4, 'test notification', 'me@here.com', 0, alarm_dict)
+        test_notification = Notification('email', 0, 4, 'test notification', 'me@here.com', 0, 0, alarm_dict)
 
         self.assertEqual(notifications, [test_notification])
         self.assertEqual(partition, 0)
@@ -141,11 +141,12 @@ class TestAlarmProcessor(unittest.TestCase):
 
         alarm = self._create_raw_alarm(0, 5, alarm_dict)
 
-        sql_response = [['test notification', 'EMAIL', 'me@here.com'], ['test notification2', 'EMAIL', 'me@here.com']]
+        sql_response = [['test notification', 'EMAIL', 'me@here.com', 0],
+                        ['test notification2', 'EMAIL', 'me@here.com', 0]]
         notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
-        test_notification = Notification('email', 0, 5, 'test notification', 'me@here.com', 0, alarm_dict)
-        test_notification2 = Notification('email', 0, 5, 'test notification2', 'me@here.com', 0, alarm_dict)
+        test_notification = Notification('email', 0, 5, 'test notification', 'me@here.com', 0, 0, alarm_dict)
+        test_notification2 = Notification('email', 0, 5, 'test notification2', 'me@here.com', 0, 0, alarm_dict)
 
         self.assertEqual(notifications, [test_notification, test_notification2])
         self.assertEqual(partition, 0)

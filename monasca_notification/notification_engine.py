@@ -1,4 +1,4 @@
-# (C) Copyright 2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2015-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 
 import logging
 import monascastatsd
+import time
 
 from monasca_common.kafka.consumer import KafkaConsumer
 from monasca_common.kafka.producer import KafkaProducer
@@ -42,16 +43,29 @@ class NotificationEngine(object):
         self._alarms = AlarmProcessor(self._alarm_ttl, config)
         self._notifier = NotificationProcessor(config['notification_types'])
 
+        self._config = config
+
+    def _add_periodic_notifications(self, notifications):
+        for notification in notifications:
+            topic = notification.periodic_topic
+            if topic in self._config['kafka']['periodic']:
+                notification.notification_timestamp = time.time()
+                self._producer.publish(self._config['kafka']['periodic'][topic],
+                                       [notification.to_json()])
+
     def run(self):
         finished_count = self._statsd.get_counter(name='alarms_finished_count')
         for alarm in self._consumer:
             log.debug('Received alarm >|%s|<', str(alarm))
             notifications, partition, offset = self._alarms.to_notification(alarm)
             if notifications:
+                self._add_periodic_notifications(notifications)
+
                 sent, failed = self._notifier.send(notifications)
                 self._producer.publish(self._topics['notification_topic'],
                                        [i.to_json() for i in sent])
                 self._producer.publish(self._topics['retry_topic'],
                                        [i.to_json() for i in failed])
+
             self._consumer.commit()
             finished_count.increment()

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +27,7 @@ import time
 import yaml
 
 from notification_engine import NotificationEngine
+from periodic_engine import PeriodicEngine
 from retry_engine import RetryEngine
 
 log = logging.getLogger(__name__)
@@ -77,9 +77,9 @@ def clean_exit(signum, frame=None):
     sys.exit(signum)
 
 
-def start_process(process_type, config):
+def start_process(process_type, config, *args):
     log.info("start process: {}".format(process_type))
-    p = process_type(config)
+    p = process_type(config, *args)
     p.run()
 
 
@@ -107,7 +107,10 @@ def main(argv=None):
     processors.append(multiprocessing.Process(
         target=start_process, args=(RetryEngine, config)))
 
-    # Start
+    if 60 in config['kafka']['periodic']:
+        processors.append(multiprocessing.Process(
+            target=start_process, args=(PeriodicEngine, config, 60)))
+
     try:
         log.info('Starting processes')
         for process in processors:
