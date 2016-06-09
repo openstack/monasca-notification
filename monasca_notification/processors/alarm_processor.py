@@ -16,10 +16,10 @@
 import json
 import logging
 import monascastatsd
-import simport
 import time
 
 from monasca_notification.common.repositories import exceptions as exc
+from monasca_notification.common.utils import get_db_repo
 from monasca_notification.notification import Notification
 from monasca_notification.notification_exceptions import AlarmFormatError
 from monasca_notification.processors.base import BaseProcessor
@@ -33,10 +33,7 @@ class AlarmProcessor(BaseProcessor):
         self._alarm_ttl = alarm_ttl
         self._statsd = monascastatsd.Client(name='monasca',
                                             dimensions=BaseProcessor.dimensions)
-        if 'database' in config and 'repo_driver' in config['database']:
-            self._db_repo = simport.load(config['database']['repo_driver'])(config)
-        else:
-            self._db_repo = simport.load('monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo')(config)
+        self._db_repo = get_db_repo(config)
 
     @staticmethod
     def _parse_alarm(alarm_data):
@@ -92,6 +89,7 @@ class AlarmProcessor(BaseProcessor):
                              offset,
                              alarms_action[1],
                              alarms_action[2],
+                             alarms_action[3],
                              0,
                              alarm) for alarms_action in alarms_actions]
 

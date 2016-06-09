@@ -1,5 +1,5 @@
 # Copyright 2015 FUJITSU LIMITED
-# (C) Copyright 2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2015,2016 Hewlett Packard Enterprise Development Company LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -63,13 +63,26 @@ class MysqlRepo(BaseRepo):
         try:
             if self._mysql is None:
                 self._connect_to_mysql()
-
             cur = self._mysql.cursor()
             cur.execute(self._find_alarm_action_sql, (alarm['alarmDefinitionId'], alarm['newState']))
 
             for row in cur:
-                yield (row[1].lower(), row[0], row[2])
+                yield (row[1].lower(), row[0], row[2], row[3])
         except pymysql.Error as e:
             self._mysql = None
             log.exception("Couldn't fetch alarms actions %s", e)
+            raise exc.DatabaseException(e)
+
+    def get_alarm_current_state(self, alarm_id):
+        try:
+            if self._mysql is None:
+                self._connect_to_mysql()
+            cur = self._mysql.cursor()
+            cur.execute(self._find_alarm_state_sql, alarm_id)
+            row = cur.fetchone()
+            state = row[0] if row is not None else None
+            return state
+        except pymysql.Error as e:
+            self._mysql = None
+            log.exception("Couldn't fetch the current alarm state %s", e)
             raise exc.DatabaseException(e)
