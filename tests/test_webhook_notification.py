@@ -1,4 +1,4 @@
-# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import requests
 import unittest
 
 from monasca_notification.notification import Notification
-from monasca_notification.types import webhook_notifier
+from monasca_notification.plugins import webhook_notifier
 
 
 def alarm(metrics):
@@ -67,7 +67,7 @@ class TestWebhook(unittest.TestCase):
         self.trap.put("timeout %s" % kwargs["timeout"])
         raise requests.exceptions.Timeout
 
-    @mock.patch('monasca_notification.types.webhook_notifier.requests')
+    @mock.patch('monasca_notification.plugins.webhook_notifier.requests')
     def notify(self, http_func, mock_requests):
         mock_log = mock.MagicMock()
         mock_log.warn = self.trap.put

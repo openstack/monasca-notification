@@ -1,5 +1,5 @@
 # Copyright 2015 FUJITSU LIMITED
-# (C) Copyright 2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -58,4 +58,30 @@ class PostgresqlRepo(BaseRepo):
             return state
         except psycopg2.Error as e:
             log.exception("Couldn't fetch current alarm state %s", e)
+            raise exc.DatabaseException(e)
+
+    def fetch_notification_method_types(self):
+        try:
+            if self._pgsql is None:
+                self._connect_to_pgsql()
+            cur = self._pgsql.cursor()
+            cur.execute(self._find_all_notification_types_sql)
+
+            for row in cur:
+                yield (row[0])
+        except psycopg2.Error as e:
+            self._mysql = None
+            log.exception("Couldn't fetch notification types %s", e)
+            raise exc.DatabaseException(e)
+
+    def insert_notification_method_types(self, notification_types):
+        try:
+            if self._pgsql is None:
+                self._connect_to_pgsql()
+            cur = self._pgsql.cursor()
+            cur.executemany(self._insert_notification_types_sql, notification_types)
+
+        except psycopg2.Error as e:
+            self._mysql = None
+            log.exception("Couldn't insert notification types %s", e)
             raise exc.DatabaseException(e)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright 2015 Fujitsu Technology Solutions
-# (C) Copyright 2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,3 +44,8 @@ def create_notification_method_model(metadata=None):
                  Column('period', int),
                  Column('created_at', DateTime, default=lambda: datetime.utcnow()),
                  Column('updated_at', DateTime, onupdate=lambda: datetime.utcnow()))
+
+
+def create_notification_method_type_model(metadata=None):
+    return Table('notification_method_type', metadata,
+                 Column('name', String(20), primary_key=True))

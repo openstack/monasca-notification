@@ -1,4 +1,4 @@
-# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -47,17 +47,24 @@ class TestNotificationProcessor(unittest.TestCase):
                              'timeout': 60,
                              'from_addr': 'hpcs.mon@hp.com'}
 
+        self.mysql_config = {'ssl': None,
+                             'host': 'mysql_host',
+                             'port': 'mysql_port',
+                             'user': 'mysql_user',
+                             'db': 'dbname',
+                             'passwd': 'mysql_passwd'}
+
     def tearDown(self):
         pass
 
     # ------------------------------------------------------------------------
     # Test helper functions
     # ------------------------------------------------------------------------
-
+    @mock.patch('pymysql.connect')
     @mock.patch('monasca_notification.processors.notification_processor.monascastatsd')
     @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
     @mock.patch('monasca_notification.processors.notification_processor.notifiers.log')
-    def _start_processor(self, notifications, mock_log, mock_smtp, mock_statsd):
+    def _start_processor(self, notifications, mock_log, mock_smtp, mock_statsd, mock_pymsql):
         """Start the processor with the proper mocks
         """
         # Since the log runs in another thread I can mock it directly, instead change the methods to put to a queue
@@ -68,6 +75,8 @@ class TestNotificationProcessor(unittest.TestCase):
 
         config = {}
         config["email"] = self.email_config
+        config["mysql"] = self.mysql_config
+        config["notification_types"] = {}
 
         processor = (notification_processor.NotificationProcessor(config))
         processor.send(notifications)

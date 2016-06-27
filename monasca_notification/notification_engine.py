@@ -1,4 +1,4 @@
-# (C) Copyright 2015-2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ class NotificationEngine(object):
         self._producer = KafkaProducer(config['kafka']['url'])
         self._alarm_ttl = config['processors']['alarm']['ttl']
         self._alarms = AlarmProcessor(self._alarm_ttl, config)
-        self._notifier = NotificationProcessor(config['notification_types'])
+        self._notifier = NotificationProcessor(config)
 
         self._config = config
 

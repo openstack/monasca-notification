@@ -1,4 +1,4 @@
-# (C) Copyright 2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2015,2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@
 import logging
 import time
 
-from monasca_notification.types import email_notifier
-from monasca_notification.types import pagerduty_notifier
-from monasca_notification.types import webhook_notifier
+from monasca_common.simport import simport
+from monasca_notification.plugins import email_notifier
+from monasca_notification.plugins import pagerduty_notifier
+from monasca_notification.plugins import webhook_notifier
 
 log = logging.getLogger(__name__)
 
@@ -40,10 +41,18 @@ def init(statsd_obj):
     possible_notifiers.append(pagerduty_notifier.PagerdutyNotifier(log))
 
 
+def load_plugins(config):
+    for plugin_class in config.get("plugins", []):
+        try:
+            possible_notifiers.append(simport.load(plugin_class)(log))
+        except Exception:
+            log.exception("unable to load the class {0} , ignoring it".format(plugin_class))
+
+
 def enabled_notifications():
     results = []
     for key in configured_notifiers:
-        results.append(key)
+        results.append(key.upper())
     return results
 
 

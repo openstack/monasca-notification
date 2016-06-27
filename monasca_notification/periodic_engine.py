@@ -1,4 +1,4 @@
-# (C) Copyright 2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ class PeriodicEngine(object):
 
         self._producer = KafkaProducer(config['kafka']['url'])
 
-        self._notifier = NotificationProcessor(config['notification_types'])
+        self._notifier = NotificationProcessor(config)
         self._db_repo = get_db_repo(config)
 
     def _keep_sending(self, alarm_id, original_state):

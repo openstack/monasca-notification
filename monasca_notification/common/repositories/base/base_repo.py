@@ -1,5 +1,5 @@
 # Copyright 2015 FUJITSU LIMITED
-# (C) Copyright 2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -21,3 +21,5 @@ class BaseRepo(object):
         self._find_alarm_state_sql = """SELECT state
                                          FROM alarm
                                          WHERE alarm.id = %s"""
+        self._insert_notification_types_sql = """INSERT INTO notification_method_type (name) VALUES ( %s)"""
+        self._find_all_notification_types_sql = """SELECT name from notification_method_type """

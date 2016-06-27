@@ -33,6 +33,10 @@ postgresql:
   host: 127.0.0.1
 
 notification_types:
+    plugins:
+     - monasca_notification.plugins.hipchat_notifier:HipChatNotifier
+     - monasca_notification.plugins.slack_notifier:SlackNotifier
+
     email:
         server: 192.168.10.4
         port: 25
@@ -47,6 +51,16 @@ notification_types:
     pagerduty:
         timeout: 5
         url: "https://events.pagerduty.com/generic/2010-04-15/create_event.json"
+
+    hipchat:
+        timeout: 5
+        ca_certs: "/etc/ssl/certs/ca-certificates.crt"
+        insecure: False
+
+    slack:
+        timeout: 5
+        ca_certs: "/etc/ssl/certs/ca-certificates.crt"
+        insecure: False
 
 processors:
     alarm:

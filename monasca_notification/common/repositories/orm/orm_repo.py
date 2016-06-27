@@ -1,5 +1,5 @@
 # Copyright 2015 FUJITSU LIMITED
-# (C) Copyright 2015,2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2015,2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -30,12 +30,15 @@ class OrmRepo(object):
 
         aa = models.create_alarm_action_model(metadata).alias('aa')
         nm = models.create_notification_method_model(metadata).alias('nm')
+        nmt = models.create_notification_method_type_model(metadata).alias('nmt')
 
         self._orm_query = select([nm.c.name, nm.c.type, nm.c.address, nm.c.periodic_interval])\
             .select_from(aa.join(nm, aa.c.action_id == nm.c.id))\
             .where(
                 and_(aa.c.alarm_definition_id == bindparam('alarm_definition_id'),
                      aa.c.alarm_state == bindparam('alarm_state')))
+
+        self._orm_nmt_query = select([nmt.c.name])
 
         self._orm = None
 
@@ -50,4 +53,26 @@ class OrmRepo(object):
                 return [(row[1].lower(), row[0], row[2], row[3]) for row in notifications]
         except DatabaseError as e:
             log.exception("Couldn't fetch alarms actions %s", e)
+            raise exc.DatabaseException(e)
+
+    def fetch_notification_method_types(self):
+        try:
+            with self._orm_engine.connect() as conn:
+                log.debug('Orm query {%s}', str(self._orm_nmt_query))
+                notification_method_types = conn.execute(self._orm_nmt_query).fetchall()
+
+                return [row[0] for row in notification_method_types]
+        except DatabaseError as e:
+            log.exception("Couldn't fetch notification method types %s", e)
+            raise exc.DatabaseException(e)
+
+    def insert_notification_method_types(self, notification_types):
+        try:
+            with self._orm_engine.connect() as conn:
+                for notification_type in notification_types:
+                    conn.execute(self.nmt.insert(), notification_type)
+
+        except DatabaseError as e:
+            self._mysql = None
+            log.exception("Couldn't insert notification types %s", e)
             raise exc.DatabaseException(e)

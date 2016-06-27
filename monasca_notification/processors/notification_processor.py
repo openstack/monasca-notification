@@ -1,4 +1,4 @@
-# (C) Copyright 2014-2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 import logging
 import monascastatsd
 
+from monasca_notification.common.utils import get_db_repo
 from monasca_notification.processors.base import BaseProcessor
 from monasca_notification.types import notifiers
 
@@ -27,7 +28,24 @@ class NotificationProcessor(BaseProcessor):
     def __init__(self, config):
         self.statsd = monascastatsd.Client(name='monasca', dimensions=BaseProcessor.dimensions)
         notifiers.init(self.statsd)
-        notifiers.config(config)
+        notifiers.load_plugins(config['notification_types'])
+        notifiers.config(config['notification_types'])
+        self._db_repo = get_db_repo(config)
+        self.insert_configured_plugins()
+
+    def insert_configured_plugins(self):
+        """Persists configured plugin types in DB
+             For each notification type configured add it in db, if it is not there
+        """
+        configured_plugin_types = notifiers.enabled_notifications()
+
+        persisted_plugin_types = self._db_repo.fetch_notification_method_types()
+        remaining_plugin_types = set(configured_plugin_types) - set(persisted_plugin_types)
+
+        if remaining_plugin_types:
+            log.info("New plugins detected: Adding new notification types {} to database"
+                     .format(remaining_plugin_types))
+            self._db_repo.insert_notification_method_types(remaining_plugin_types)
 
     def send(self, notifications):
         """Send the notifications
