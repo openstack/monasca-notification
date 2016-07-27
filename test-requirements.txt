@@ -1,4 +1,4 @@
-hacking>=0.9.2,<0.10
+hacking>=0.11.0,<0.12 # Apache-2.0
 pyflakes==0.8.1
 nose
 nosexcover

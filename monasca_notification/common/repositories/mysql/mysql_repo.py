@@ -111,4 +111,4 @@ class MysqlRepo(BaseRepo):
         except pymysql.Error as e:
             self._mysql = None
             log.exception("Couldn't insert notification types %s", e)
-            raise exc.DatabaseException(e)        
+            raise exc.DatabaseException(e)

@@ -32,11 +32,10 @@ class OrmRepo(object):
         nm = models.create_notification_method_model(metadata).alias('nm')
         nmt = models.create_notification_method_type_model(metadata).alias('nmt')
 
-        self._orm_query = select([nm.c.name, nm.c.type, nm.c.address, nm.c.periodic_interval])\
-            .select_from(aa.join(nm, aa.c.action_id == nm.c.id))\
-            .where(
-                and_(aa.c.alarm_definition_id == bindparam('alarm_definition_id'),
-                     aa.c.alarm_state == bindparam('alarm_state')))
+        self._orm_query = (select([nm.c.name, nm.c.type, nm.c.address, nm.c.periodic_interval])
+                           .select_from(aa.join(nm, aa.c.action_id == nm.c.id))
+                           .where(and_(aa.c.alarm_definition_id == bindparam('alarm_definition_id'),
+                                       aa.c.alarm_state == bindparam('alarm_state'))))
 
         self._orm_nmt_query = select([nmt.c.name])
 

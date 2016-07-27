@@ -167,12 +167,12 @@ class EmailNotifier(AbstractNotifier):
 
                 msg = email.mime.text.MIMEText(text)
 
-                msg['Subject'] = u'{} {} "{}" for Host: {} Target: {}'\
-                    .format(notification.state,
-                            notification.severity,
-                            notification.alarm_name,
-                            hostname[0],
-                            targethost[0]).encode("utf-8")
+                msg['Subject'] = (u'{} {} "{}" for Host: {} Target: {}'
+                                  .format(notification.state,
+                                          notification.severity,
+                                          notification.alarm_name,
+                                          hostname[0],
+                                          targethost[0]).encode("utf-8"))
 
             else:
                 text = EMAIL_MULTIPLE_HOST_BASE.format(
