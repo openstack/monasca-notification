@@ -1,0 +1,37 @@
+# Refer the following url for request parameters.
+
+jira_format:
+
+  # Message to be displayed. This is in Jinja2 format and can be customized. 
+
+  # notification.alarm_id
+  # notification.alarm_name
+  # notification.alarm_timestamp
+  # notification.message
+  # notification.name
+  # notification.notification_timestamp
+  # notification.src_partition
+  # notification.src_offset
+  # notification.state
+  # notification.severity
+  # notification.link
+  # notification.lifecycle_state
+  # notification.tenant_id
+  # notification.type
+  # notification.metrics
+  # notification.retry_count
+  # notification.raw_alarm
+  # notification.period
+  # notification.periodic_topic
+
+  # Please include alarm_id in summary as it is used for searching the issues
+  summary: Alaram created for {{ notification.alarm_name }} with severity {{ notification.state }} for {{ notification.alarm_id }}
+  description : "{{ notification.alarm_name }}"  
+  comments :  |
+        AlarmName:   {{ notification.alarm_name }}  
+        AlarmId:  {{ notification.alarm_id }}  
+        AlarmTimestamp:  {{ notification.alarm_time_stamp}}  
+        message:  {{ notification.message}}  
+        state:  {{ notification.state}}  
+        severity:  {{ notification.severity}}  
+
