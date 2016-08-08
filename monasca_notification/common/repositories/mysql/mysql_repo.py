@@ -59,7 +59,7 @@ class MysqlRepo(BaseRepo):
             log.exception('MySQL connect failed %s', e)
             raise
 
-    def fetch_notification(self, alarm):
+    def fetch_notifications(self, alarm):
         try:
             if self._mysql is None:
                 self._connect_to_mysql()
@@ -67,7 +67,7 @@ class MysqlRepo(BaseRepo):
             cur.execute(self._find_alarm_action_sql, (alarm['alarmDefinitionId'], alarm['newState']))
 
             for row in cur:
-                yield (row[1].lower(), row[0], row[2], row[3])
+                yield (row[0], row[1].lower(), row[2], row[3], row[4])
         except pymysql.Error as e:
             self._mysql = None
             log.exception("Couldn't fetch alarms actions %s", e)
@@ -121,4 +121,20 @@ class MysqlRepo(BaseRepo):
         except pymysql.Error as e:
             self._mysql = None
             log.exception("Couldn't insert notification types %s", e)
+            raise exc.DatabaseException(e)
+
+    def get_notification(self, notification_id):
+        try:
+            if self._mysql is None:
+                self._connect_to_mysql()
+            cur = self._mysql.cursor()
+            cur.execute(self._get_notification_sql, notification_id)
+            row = cur.fetchone()
+            if row is None:
+                return None
+            else:
+                return [row[0], row[1].lower(), row[2], row[3]]
+        except pymysql.Error as e:
+            self._mysql = None
+            log.exception("Couldn't fetch the notification method %s", e)
             raise exc.DatabaseException(e)

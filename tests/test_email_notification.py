@@ -104,7 +104,7 @@ class TestEmail(unittest.TestCase):
 
         alarm_dict = alarm(metric)
 
-        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', 0, 0, alarm_dict)
+        notification = Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
 
         self.trap.append(email.send_notification(notification))
 
@@ -222,7 +222,7 @@ class TestEmail(unittest.TestCase):
 
         alarm_dict = alarm(metrics)
 
-        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', 0, 0, alarm_dict)
+        notification = Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
 
         self.trap.append(email.send_notification(notification))
 
@@ -268,7 +268,7 @@ class TestEmail(unittest.TestCase):
 
         alarm_dict = alarm(metrics)
 
-        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', 0, 0, alarm_dict)
+        notification = Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
 
         email_result = email.send_notification(notification)
 
@@ -311,7 +311,7 @@ class TestEmail(unittest.TestCase):
 
         alarm_dict = alarm(metrics)
 
-        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', 0, 0, alarm_dict)
+        notification = Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
 
         self.trap.append(email.send_notification(notification))
 
@@ -351,7 +351,7 @@ class TestEmail(unittest.TestCase):
 
         alarm_dict = alarm(metrics)
 
-        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', 0, 0, alarm_dict)
+        notification = Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
 
         self.trap.append(email.send_notification(notification))
 
@@ -391,7 +391,7 @@ class TestEmail(unittest.TestCase):
 
         alarm_dict = alarm(metrics)
 
-        notification = Notification('email', 0, 1, 'email notification', 'me@here.com', 0, 0, alarm_dict)
+        notification = Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
 
         self.trap.append(email.send_notification(notification))
 

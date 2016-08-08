@@ -31,17 +31,24 @@ class OrmRepo(object):
         aa = models.create_alarm_action_model(metadata).alias('aa')
         nm = models.create_notification_method_model(metadata).alias('nm')
         nmt = models.create_notification_method_type_model(metadata).alias('nmt')
+        a = models.create_alarm_model(metadata).alias('a')
 
-        self._orm_query = (select([nm.c.name, nm.c.type, nm.c.address, nm.c.periodic_interval])
-                           .select_from(aa.join(nm, aa.c.action_id == nm.c.id))
-                           .where(and_(aa.c.alarm_definition_id == bindparam('alarm_definition_id'),
-                                       aa.c.alarm_state == bindparam('alarm_state'))))
+        self._orm_query = select([nm.c.id, nm.c.type, nm.c.name, nm.c.address, nm.c.period])\
+            .select_from(aa.join(nm, aa.c.action_id == nm.c.id))\
+            .where(
+                and_(aa.c.alarm_definition_id == bindparam('alarm_definition_id'),
+                     aa.c.alarm_state == bindparam('alarm_state')))
+
+        self._orm_get_alarm_state = select([a.c.state]).where(a.c.id == bindparam('alarm_id'))
 
         self._orm_nmt_query = select([nmt.c.name])
 
+        self._orm_get_notification = select([nm.c.name, nm.c.type, nm.c.address, nm.c.period])\
+            .where(nm.c.id == bindparam('notification_id'))
+
         self._orm = None
 
-    def fetch_notification(self, alarm):
+    def fetch_notifications(self, alarm):
         try:
             with self._orm_engine.connect() as conn:
                 log.debug('Orm query {%s}', str(self._orm_query))
@@ -49,9 +56,22 @@ class OrmRepo(object):
                                              alarm_definition_id=alarm['alarmDefinitionId'],
                                              alarm_state=alarm['newState'])
 
-                return [(row[1].lower(), row[0], row[2], row[3]) for row in notifications]
+                return [(row[0], row[1].lower(), row[2], row[3], row[4]) for row in notifications]
         except DatabaseError as e:
             log.exception("Couldn't fetch alarms actions %s", e)
+            raise exc.DatabaseException(e)
+
+    def get_alarm_current_state(self, alarm_id):
+        try:
+            with self._orm_engine.connect() as conn:
+                log.debug('Orm query {%s}', str(self._orm_get_alarm_state))
+                result = conn.execute(self._orm_get_alarm_state,
+                                      alarm_id=alarm_id)
+                row = result.fetchone()
+                state = row[0] if row is not None else None
+                return state
+        except DatabaseError as e:
+            log.exception("Couldn't fetch the current alarm state %s", e)
             raise exc.DatabaseException(e)
 
     def fetch_notification_method_types(self):
@@ -72,6 +92,20 @@ class OrmRepo(object):
                     conn.execute(self.nmt.insert(), notification_type)
 
         except DatabaseError as e:
-            self._mysql = None
             log.exception("Couldn't insert notification types %s", e)
+            raise exc.DatabaseException(e)
+
+    def get_notification(self, notification_id):
+        try:
+            with self._orm_engine.connect() as conn:
+                log.debug('Orm query {%s}', str(self._orm_get_notification))
+                result = conn.execute(self._orm_get_notification,
+                                      notification_id=notification_id)
+                notification = result.fetchone()
+                if notification is None:
+                    return None
+                else:
+                    return [notification[0], notification[1].lower(), notification[2], notification[3]]
+        except DatabaseError as e:
+            log.exception("Couldn't fetch the notification method %s", e)
             raise exc.DatabaseException(e)

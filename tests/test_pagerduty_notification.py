@@ -144,9 +144,8 @@ class TestWebhook(unittest.TestCase):
 
         alarm_dict = alarm(metric)
 
-        notification = Notification('pagerduty',
-                                    0,
-                                    1,
+        notification = Notification(0,
+                                    'pagerduty',
                                     'pagerduty notification',
                                     'ABCDEF',
                                     0,

@@ -1,4 +1,4 @@
-# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,11 +33,11 @@ def test_json():
              "lifecycleState": "OPEN",
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
-    test_notification = notification.Notification('ntype', 'src_partition',
-                                                  'src_offset', 'name',
+    test_notification = notification.Notification(1, 'ntype', 'name',
                                                   'address', 0, 0, alarm)
 
-    expected_dict = {u'name': u'name',
+    expected_dict = {u'id': 1,
+                     u'name': u'name',
                      u'type': u'ntype',
                      u'notification_timestamp': None,
                      u'tenant_id': u'tenantId',
@@ -83,11 +83,11 @@ def test_json_non_zero_period():
              "lifecycleState": "OPEN",
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
-    test_notification = notification.Notification('ntype', 'src_partition',
-                                                  'src_offset', 'name',
+    test_notification = notification.Notification(1, 'ntype', 'name',
                                                   'address', 60, 0, alarm)
 
-    expected_dict = {u'name': u'name',
+    expected_dict = {u'id': 1,
+                     u'name': u'name',
                      u'type': u'ntype',
                      u'notification_timestamp': None,
                      u'tenant_id': u'tenantId',
@@ -130,11 +130,9 @@ def test_equal():
              "lifecycleState": "OPEN",
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
-    test_notification = notification.Notification('ntype', 'src_partition',
-                                                  'src_offset', 'name',
+    test_notification = notification.Notification(0, 'ntype', 'name',
                                                   'address', 0, 0, alarm)
-    test_notification2 = notification.Notification('ntype', 'src_partition',
-                                                   'src_offset', 'name',
+    test_notification2 = notification.Notification(0, 'ntype', 'name',
                                                    'address', 0, 0, alarm)
 
     assert(test_notification == test_notification2)
@@ -151,11 +149,9 @@ def test_unequal():
              "lifecycleState": "OPEN",
              'tenantId': 'tenantId',
              'metrics': 'cpu_util'}
-    test_notification = notification.Notification('ntype', 'src_partition',
-                                                  'src_offset', 'name',
+    test_notification = notification.Notification(0, 'ntype', 'name',
                                                   'address', 0, 0, alarm)
-    test_notification2 = notification.Notification('ntype', 'src_partition',
-                                                   'src_offset', 'name',
+    test_notification2 = notification.Notification(1, 'ntype', 'name',
                                                    'address', 0, 0, alarm)
     test_notification2.alarm_id = None
 

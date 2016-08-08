@@ -23,9 +23,10 @@ from __future__ import unicode_literals
 from datetime import datetime
 from sqlalchemy import Column, String, Enum, DateTime, ForeignKey, Table
 
+ALARM_STATES = ('UNDETERMINED', 'OK', 'ALARM')
+
 
 def create_alarm_action_model(metadata=None):
-    ALARM_STATES = ('UNDETERMINED', 'OK', 'ALARM')
     return Table('alarm_action', metadata,
                  Column('action_id',
                         String(36), ForeignKey('notification_method.id'),
@@ -49,3 +50,15 @@ def create_notification_method_model(metadata=None):
 def create_notification_method_type_model(metadata=None):
     return Table('notification_method_type', metadata,
                  Column('name', String(20), primary_key=True))
+
+
+def create_alarm_model(metadata=None):
+    return Table('alarm', metadata,
+                 Column('id', String(20), primary_key=True),
+                 Column('alarm_definition_id', String(36)),
+                 Column('state', Enum(*ALARM_STATES)),
+                 Column('lifecycle_state', String(50)),
+                 Column('link', String(512)),
+                 Column('created_at', DateTime, default=lambda: datetime.utcnow()),
+                 Column('updated_at', DateTime, onupdate=lambda: datetime.utcnow()),
+                 Column('state_updated_at', DateTime))

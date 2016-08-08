@@ -1,4 +1,4 @@
-# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -124,10 +124,10 @@ class TestAlarmProcessor(unittest.TestCase):
                       "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
         alarm = self._create_raw_alarm(0, 4, alarm_dict)
 
-        sql_response = [['test notification', 'EMAIL', 'me@here.com', 0]]
+        sql_response = [[1, 'EMAIL', 'test notification', 'me@here.com', 0]]
         notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
-        test_notification = Notification('email', 0, 4, 'test notification', 'me@here.com', 0, 0, alarm_dict)
+        test_notification = Notification(1, 'email', 'test notification', 'me@here.com', 0, 0, alarm_dict)
 
         self.assertEqual(notifications, [test_notification])
         self.assertEqual(partition, 0)
@@ -141,12 +141,12 @@ class TestAlarmProcessor(unittest.TestCase):
 
         alarm = self._create_raw_alarm(0, 5, alarm_dict)
 
-        sql_response = [['test notification', 'EMAIL', 'me@here.com', 0],
-                        ['test notification2', 'EMAIL', 'me@here.com', 0]]
+        sql_response = [[1, 'EMAIL', 'test notification', 'me@here.com', 0],
+                        [2, 'EMAIL', 'test notification2', 'me@here.com', 0]]
         notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
-        test_notification = Notification('email', 0, 5, 'test notification', 'me@here.com', 0, 0, alarm_dict)
-        test_notification2 = Notification('email', 0, 5, 'test notification2', 'me@here.com', 0, 0, alarm_dict)
+        test_notification = Notification(1, 'email', 'test notification', 'me@here.com', 0, 0, alarm_dict)
+        test_notification2 = Notification(2, 'email', 'test notification2', 'me@here.com', 0, 0, alarm_dict)
 
         self.assertEqual(notifications, [test_notification, test_notification2])
         self.assertEqual(partition, 0)

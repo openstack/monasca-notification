@@ -225,8 +225,7 @@ class TestInterface(unittest.TestCase):
         notifiers.config(config_dict)
 
         notifications = []
-        notifications.append(Notification('email', 0, 1,
-                                          'email notification',
+        notifications.append(Notification(0, 'email', 'email notification',
                                           'me@here.com', 0, 0, alarm({})))
 
         notifiers.send_notifications(notifications)
@@ -251,8 +250,7 @@ class TestInterface(unittest.TestCase):
         notifiers.config(config_dict)
 
         notifications = []
-        notifications.append(Notification('email', 0, 1,
-                                          'email notification',
+        notifications.append(Notification(0, 'email', 'email notification',
                                           'me@here.com', 0, 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
@@ -280,8 +278,7 @@ class TestInterface(unittest.TestCase):
         self.assertIn("No config data for type: pagerduty", self.trap)
 
         notifications = []
-        notifications.append(Notification('pagerduty', 0, 1,
-                                          'pagerduty notification',
+        notifications.append(Notification(0, 'pagerduty', 'pagerduty notification',
                                           'me@here.com', 0, 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
@@ -313,14 +310,11 @@ class TestInterface(unittest.TestCase):
         notifiers.config(config_dict)
 
         notifications = []
-        notifications.append(Notification('email', 0, 1,
-                                          'email notification',
+        notifications.append(Notification(0, 'email', 'email notification',
                                           'me@here.com', 0, 0, alarm({})))
-        notifications.append(Notification('email', 0, 1,
-                                          'email notification',
+        notifications.append(Notification(1, 'email', 'email notification',
                                           'foo@here.com', 0, 0, alarm({})))
-        notifications.append(Notification('email', 0, 1,
-                                          'email notification',
+        notifications.append(Notification(2, 'email', 'email notification',
                                           'bar@here.com', 0, 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
@@ -349,14 +343,11 @@ class TestInterface(unittest.TestCase):
         notifiers.config(config_dict)
 
         notifications = []
-        notifications.append(Notification('email', 0, 1,
-                                          'email notification',
+        notifications.append(Notification(0, 'email', 'email notification',
                                           'me@here.com', 0, 0, alarm({})))
-        notifications.append(Notification('email', 0, 1,
-                                          'email notification',
+        notifications.append(Notification(1, 'email', 'email notification',
                                           'foo@here.com', 0, 0, alarm({})))
-        notifications.append(Notification('email', 0, 1,
-                                          'email notification',
+        notifications.append(Notification(2, 'email', 'email notification',
                                           'bar@here.com', 0, 0, alarm({})))
 
         notifiers.send_notifications(notifications)

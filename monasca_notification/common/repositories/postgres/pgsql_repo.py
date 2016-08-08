@@ -35,14 +35,14 @@ class PostgresqlRepo(BaseRepo):
             log.exception('Pgsql connect failed %s', e)
             raise
 
-    def fetch_notification(self, alarm):
+    def fetch_notifications(self, alarm):
         try:
             if self._pgsql is None:
                 self._connect_to_pgsql()
             cur = self._pgsql.cursor()
             cur.execute(self._find_alarm_action_sql, (alarm['alarmDefinitionId'], alarm['newState']))
             for row in cur:
-                yield (row[1].lower(), row[0], row[2], row[3])
+                yield (row[0], row[1].lower(), row[2], row[3], row[4])
         except psycopg2.Error as e:
             log.exception("Couldn't fetch alarms actions %s", e)
             raise exc.DatabaseException(e)
@@ -66,11 +66,9 @@ class PostgresqlRepo(BaseRepo):
                 self._connect_to_pgsql()
             cur = self._pgsql.cursor()
             cur.execute(self._find_all_notification_types_sql)
-
             for row in cur:
                 yield (row[0])
         except psycopg2.Error as e:
-            self._mysql = None
             log.exception("Couldn't fetch notification types %s", e)
             raise exc.DatabaseException(e)
 
@@ -80,8 +78,21 @@ class PostgresqlRepo(BaseRepo):
                 self._connect_to_pgsql()
             cur = self._pgsql.cursor()
             cur.executemany(self._insert_notification_types_sql, notification_types)
-
         except psycopg2.Error as e:
-            self._mysql = None
             log.exception("Couldn't insert notification types %s", e)
+            raise exc.DatabaseException(e)
+
+    def get_notification(self, notification_id):
+        try:
+            if self._pgsql is None:
+                self._connect_to_pgsql()
+            cur = self._pgsql.cursor()
+            cur.execute(self._get_notification_sql, notification_id)
+            row = cur.fetchone()
+            if row is None:
+                return None
+            else:
+                return [row[0], row[1].lower(), row[2], row[3]]
+        except psycopg2.Error as e:
+            log.exception("Couldn't fetch the notification method %s", e)
             raise exc.DatabaseException(e)
