@@ -108,6 +108,16 @@ class MysqlRepo(BaseRepo):
             cur = self._mysql.cursor()
             cur.executemany(self._insert_notification_types_sql, notification_types)
 
+        except pymysql.IntegrityError as ignoredException:
+            # If multiple instances of the notification engine tries to write the
+            # same content at the same time, only one of them will succeed and others will
+            # get duplicate primary key, integrity error. We can safely ignore this error.
+            # This may happen only during the first start when the tables are empty.
+            code, mesg = ignoredException.args
+            if code == pymysql.constants.ER.DUP_ENTRY:
+                log.debug("Notification type exists in DB. Ignoring the exception  {}".format(mesg))
+            else:
+                raise exc.DatabaseException(ignoredException)
         except pymysql.Error as e:
             self._mysql = None
             log.exception("Couldn't insert notification types %s", e)
