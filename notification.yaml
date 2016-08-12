@@ -56,11 +56,13 @@ notification_types:
         timeout: 5
         ca_certs: "/etc/ssl/certs/ca-certificates.crt"
         insecure: False
+        proxy:  https://myproxy.corp.com:8080
 
     slack:
         timeout: 5
         ca_certs: "/etc/ssl/certs/ca-certificates.crt"
         insecure: False
+        proxy:  https://myproxy.corp.com:8080
 
 processors:
     alarm:
