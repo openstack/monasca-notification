@@ -1,4 +1,4 @@
-# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -78,18 +78,17 @@ class AlarmProcessor(BaseProcessor):
 
         return True
 
-    def _build_notification(self, partition, offset, alarm):
+    def _build_notification(self, alarm):
         db_time = self._statsd.get_timer()
 
         with db_time.time('config_db_time'):
-            alarms_actions = self._db_repo.fetch_notification(alarm)
+            alarms_actions = self._db_repo.fetch_notifications(alarm)
 
         return [Notification(alarms_action[0],
-                             partition,
-                             offset,
                              alarms_action[1],
                              alarms_action[2],
                              alarms_action[3],
+                             alarms_action[4],
                              0,
                              alarm) for alarms_action in alarms_actions]
 
@@ -117,10 +116,10 @@ class AlarmProcessor(BaseProcessor):
             return [], partition, offset
 
         try:
-            notifications = self._build_notification(partition, offset, alarm)
+            notifications = self._build_notification(alarm)
         except exc.DatabaseException:
             log.debug('Database Error.  Attempting reconnect')
-            notifications = self._build_notification(partition, offset, alarm)
+            notifications = self._build_notification(alarm)
 
         if len(notifications) == 0:
             no_notification_count += 1

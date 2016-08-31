@@ -57,11 +57,12 @@ def enabled_notifications():
 
 
 def config(config):
+    formatted_config = {type.lower(): value for type, value in config.iteritems()}
     for notifier in possible_notifiers:
-        ntype = notifier.type
-        if ntype in config:
+        ntype = notifier.type.lower()
+        if ntype in formatted_config:
             try:
-                notifier.config(config[ntype])
+                notifier.config(formatted_config[ntype])
                 configured_notifiers[ntype] = notifier
                 statsd_counter[ntype] = statsd.get_counter(notifier.statsd_name)
                 log.info("{} notification ready".format(ntype))
@@ -69,6 +70,9 @@ def config(config):
                 log.exception("config exception for {}".format(ntype))
         else:
             log.warn("No config data for type: {}".format(ntype))
+    config_with_no_notifiers = set(formatted_config.keys()) - set(configured_notifiers.keys())
+    if config_with_no_notifiers:
+        log.warn("No notifiers found for {0}". format(", ".join(config_with_no_notifiers)))
 
 
 def send_notifications(notifications):
@@ -94,7 +98,7 @@ def send_notifications(notifications):
         else:
             failed.append(notification)
 
-    return (sent, failed, invalid)
+    return sent, failed, invalid
 
 
 def send_single_notification(notification):

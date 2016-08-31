@@ -1,4 +1,4 @@
-# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,11 +25,10 @@ class Notification(object):
         'alarm_id',
         'alarm_name',
         'alarm_timestamp',
+        'id',
         'message',
         'name',
         'notification_timestamp',
-        'src_partition',
-        'src_offset',
         'state',
         'severity',
         'link',
@@ -43,25 +42,22 @@ class Notification(object):
         'periodic_topic'
     )
 
-    def __init__(self, ntype, src_partition, src_offset, name, address, period,
-                 retry_count, alarm):
+    def __init__(self, id, type, name, address, period, retry_count, alarm):
         """Setup the notification object
-             The src_partition and src_offset allow the notification
-              to be linked to the alarm which triggered it.
-             ntype - The notification type
+             id - The notification id
+             type - The notification type
              name - Name used in sending
              address - where to send the notification
-             period - period of sending the notification
+             period - period of sending the notificationv
              retry_count - number of times we've tried to send
              alarm - info that caused the notification
              notifications that come after this one to remain uncommitted.
              Note that data may include unicode strings.
         """
+        self.id = id
         self.address = address
         self.name = name
-        self.src_partition = src_partition
-        self.src_offset = src_offset
-        self.type = ntype
+        self.type = type
         self.retry_count = retry_count
 
         self.raw_alarm = alarm
@@ -99,6 +95,7 @@ class Notification(object):
         """Return json representation
         """
         notification_fields = [
+            'id',
             'type',
             'name',
             'address',

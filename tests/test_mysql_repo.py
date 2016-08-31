@@ -1,4 +1,4 @@
-# (C) Copyright 2015 Hewlett Packard Enterprise Development Company LP
+# (C) Copyright 2015 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ class TestMySqlRepo(unittest.TestCase):
                  'newState': 'bar'}
 
         def get_notification(repo, alarm):
-            g = repo.fetch_notification(alarm)
+            g = repo.fetch_notifications(alarm)
             for x in g:
                 pass
 

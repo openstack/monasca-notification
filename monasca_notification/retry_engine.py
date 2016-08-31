@@ -20,7 +20,8 @@ import time
 
 from monasca_common.kafka.consumer import KafkaConsumer
 from monasca_common.kafka.producer import KafkaProducer
-from notification import Notification
+from monasca_notification.common.utils import construct_notification_object
+from monasca_notification.common.utils import get_db_repo
 from processors.base import BaseProcessor
 from processors.notification_processor import NotificationProcessor
 
@@ -48,28 +49,19 @@ class RetryEngine(object):
         self._producer = KafkaProducer(config['kafka']['url'])
 
         self._notifier = NotificationProcessor(config)
+        self._db_repo = get_db_repo(config)
 
     def run(self):
         for raw_notification in self._consumer:
-            partition = raw_notification[0]
-            offset = raw_notification[1].offset
             message = raw_notification[1].message.value
 
             notification_data = json.loads(message)
 
-            ntype = notification_data['type']
-            name = notification_data['name']
-            addr = notification_data['address']
-            period = notification_data['period']
+            notification = construct_notification_object(self._db_repo, notification_data)
 
-            notification = Notification(ntype,
-                                        partition,
-                                        offset,
-                                        name,
-                                        addr,
-                                        period,
-                                        notification_data['retry_count'],
-                                        notification_data['raw_alarm'])
+            if notification is None:
+                self._consumer.commit()
+                continue
 
             wait_duration = self._retry_interval - (
                 time.time() - notification_data['notification_timestamp'])
@@ -89,13 +81,18 @@ class RetryEngine(object):
                 if notification.retry_count < self._retry_max:
                     log.error(u"retry failed for {} with name {} "
                               u"at {}.  "
-                              u"Saving for later retry.".format(ntype, name, addr))
+                              u"Saving for later retry.".format(notification.type,
+                                                                notification.name,
+                                                                notification.address))
                     self._producer.publish(self._topics['retry_topic'],
                                            [notification.to_json()])
                 else:
                     log.error(u"retry failed for {} with name {} "
                               u"at {} after {} retries.  "
                               u"Giving up on retry."
-                              .format(ntype, name, addr, self._retry_max))
+                              .format(notification.type,
+                                      notification.name,
+                                      notification.address,
+                                      self._retry_max))
 
             self._consumer.commit()
