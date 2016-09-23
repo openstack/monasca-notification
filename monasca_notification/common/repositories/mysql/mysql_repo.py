@@ -14,13 +14,13 @@
 import logging
 import pymysql
 
-from monasca_notification.common.repositories.base.base_repo import BaseRepo
+from monasca_notification.common.repositories.base import base_repo
 from monasca_notification.common.repositories import exceptions as exc
 
 log = logging.getLogger(__name__)
 
 
-class MysqlRepo(BaseRepo):
+class MysqlRepo(base_repo.BaseRepo):
     def __init__(self, config):
         super(MysqlRepo, self).__init__(config)
         if 'ssl' in config['mysql']:

@@ -17,7 +17,7 @@ import json
 import requests
 import urlparse
 
-from monasca_notification.plugins.abstract_notifier import AbstractNotifier
+from monasca_notification.plugins import abstract_notifier
 
 """
    notification.address = https://slack.com/api/chat.postMessage?token=token&channel=#channel"
@@ -30,7 +30,7 @@ from monasca_notification.plugins.abstract_notifier import AbstractNotifier
 """
 
 
-class SlackNotifier(AbstractNotifier):
+class SlackNotifier(abstract_notifier.AbstractNotifier):
     def __init__(self, log):
         self._log = log
 

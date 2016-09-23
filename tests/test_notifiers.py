@@ -18,7 +18,7 @@ import mock
 import time
 import unittest
 
-from monasca_notification.notification import Notification
+from monasca_notification import notification as m_notification
 from monasca_notification.types import notifiers
 
 
@@ -225,8 +225,8 @@ class TestInterface(unittest.TestCase):
         notifiers.config(config_dict)
 
         notifications = []
-        notifications.append(Notification(0, 'email', 'email notification',
-                                          'me@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(0, 'email', 'email notification',
+                                                         'me@here.com', 0, 0, alarm({})))
 
         notifiers.send_notifications(notifications)
 
@@ -250,8 +250,8 @@ class TestInterface(unittest.TestCase):
         notifiers.config(config_dict)
 
         notifications = []
-        notifications.append(Notification(0, 'email', 'email notification',
-                                          'me@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(0, 'email', 'email notification',
+                                                         'me@here.com', 0, 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
@@ -278,8 +278,8 @@ class TestInterface(unittest.TestCase):
         self.assertIn("No config data for type: pagerduty", self.trap)
 
         notifications = []
-        notifications.append(Notification(0, 'pagerduty', 'pagerduty notification',
-                                          'me@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(0, 'pagerduty', 'pagerduty notification',
+                                                         'me@here.com', 0, 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
@@ -310,12 +310,12 @@ class TestInterface(unittest.TestCase):
         notifiers.config(config_dict)
 
         notifications = []
-        notifications.append(Notification(0, 'email', 'email notification',
-                                          'me@here.com', 0, 0, alarm({})))
-        notifications.append(Notification(1, 'email', 'email notification',
-                                          'foo@here.com', 0, 0, alarm({})))
-        notifications.append(Notification(2, 'email', 'email notification',
-                                          'bar@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(0, 'email', 'email notification',
+                                                         'me@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(1, 'email', 'email notification',
+                                                         'foo@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(2, 'email', 'email notification',
+                                                         'bar@here.com', 0, 0, alarm({})))
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
@@ -343,12 +343,12 @@ class TestInterface(unittest.TestCase):
         notifiers.config(config_dict)
 
         notifications = []
-        notifications.append(Notification(0, 'email', 'email notification',
-                                          'me@here.com', 0, 0, alarm({})))
-        notifications.append(Notification(1, 'email', 'email notification',
-                                          'foo@here.com', 0, 0, alarm({})))
-        notifications.append(Notification(2, 'email', 'email notification',
-                                          'bar@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(0, 'email', 'email notification',
+                                                         'me@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(1, 'email', 'email notification',
+                                                         'foo@here.com', 0, 0, alarm({})))
+        notifications.append(m_notification.Notification(2, 'email', 'email notification',
+                                                         'bar@here.com', 0, 0, alarm({})))
 
         notifiers.send_notifications(notifications)
 

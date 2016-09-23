@@ -14,13 +14,13 @@
 import logging
 import psycopg2
 
-from monasca_notification.common.repositories.base.base_repo import BaseRepo
+from monasca_notification.common.repositories.base import base_repo
 from monasca_notification.common.repositories import exceptions as exc
 
 log = logging.getLogger(__name__)
 
 
-class PostgresqlRepo(BaseRepo):
+class PostgresqlRepo(base_repo.BaseRepo):
     def __init__(self, config):
         super(PostgresqlRepo, self).__init__(config)
         self._pgsql_params = config['postgresql']

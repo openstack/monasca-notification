@@ -19,7 +19,7 @@ import Queue
 import requests
 import unittest
 
-from monasca_notification.notification import Notification
+from monasca_notification import notification as m_notification
 from monasca_notification.plugins import webhook_notifier
 
 
@@ -86,7 +86,8 @@ class TestWebhook(unittest.TestCase):
 
         alarm_dict = alarm(metric)
 
-        notification = Notification(0, 'webhook', 'webhook notification', 'http://mock:3333/', 0, 0, alarm_dict)
+        notification = m_notification.Notification(0, 'webhook', 'webhook notification',
+                                                   'http://mock:3333/', 0, 0, alarm_dict)
 
         self.trap.put(webhook.send_notification(notification))
 

@@ -21,7 +21,7 @@ import mock
 import time
 import unittest
 
-from monasca_notification.notification import Notification
+from monasca_notification import notification as m_notification
 from monasca_notification.processors import alarm_processor
 
 alarm_tuple = collections.namedtuple('alarm_tuple', ['offset', 'message'])
@@ -127,7 +127,8 @@ class TestAlarmProcessor(unittest.TestCase):
         sql_response = [[1, 'EMAIL', 'test notification', 'me@here.com', 0]]
         notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
-        test_notification = Notification(1, 'email', 'test notification', 'me@here.com', 0, 0, alarm_dict)
+        test_notification = m_notification.Notification(1, 'email', 'test notification',
+                                                        'me@here.com', 0, 0, alarm_dict)
 
         self.assertEqual(notifications, [test_notification])
         self.assertEqual(partition, 0)
@@ -145,8 +146,10 @@ class TestAlarmProcessor(unittest.TestCase):
                         [2, 'EMAIL', 'test notification2', 'me@here.com', 0]]
         notifications, partition, offset = self._run_alarm_processor(alarm, sql_response)
 
-        test_notification = Notification(1, 'email', 'test notification', 'me@here.com', 0, 0, alarm_dict)
-        test_notification2 = Notification(2, 'email', 'test notification2', 'me@here.com', 0, 0, alarm_dict)
+        test_notification = m_notification.Notification(1, 'email', 'test notification',
+                                                        'me@here.com', 0, 0, alarm_dict)
+        test_notification2 = m_notification.Notification(2, 'email', 'test notification2',
+                                                         'me@here.com', 0, 0, alarm_dict)
 
         self.assertEqual(notifications, [test_notification, test_notification2])
         self.assertEqual(partition, 0)

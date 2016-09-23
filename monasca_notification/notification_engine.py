@@ -17,8 +17,8 @@ import logging
 import monascastatsd
 import time
 
-from monasca_common.kafka.consumer import KafkaConsumer
-from monasca_common.kafka.producer import KafkaProducer
+from monasca_common.kafka import consumer
+from monasca_common.kafka import producer
 from processors.alarm_processor import AlarmProcessor
 from processors.base import BaseProcessor
 from processors.notification_processor import NotificationProcessor
@@ -33,12 +33,13 @@ class NotificationEngine(object):
         self._topics['retry_topic'] = config['kafka']['notification_retry_topic']
         self._statsd = monascastatsd.Client(name='monasca',
                                             dimensions=BaseProcessor.dimensions)
-        self._consumer = KafkaConsumer(config['kafka']['url'],
-                                       config['zookeeper']['url'],
-                                       config['zookeeper']['notification_path'],
-                                       config['kafka']['group'],
-                                       config['kafka']['alarm_topic'])
-        self._producer = KafkaProducer(config['kafka']['url'])
+        self._consumer = consumer.KafkaConsumer(
+            config['kafka']['url'],
+            config['zookeeper']['url'],
+            config['zookeeper']['notification_path'],
+            config['kafka']['group'],
+            config['kafka']['alarm_topic'])
+        self._producer = producer.KafkaProducer(config['kafka']['url'])
         self._alarm_ttl = config['processors']['alarm']['ttl']
         self._alarms = AlarmProcessor(self._alarm_ttl, config)
         self._notifier = NotificationProcessor(config)

@@ -19,7 +19,7 @@ import mock
 import time
 import unittest
 
-from monasca_notification.notification import Notification
+from monasca_notification import notification as m_notification
 from monasca_notification.processors import notification_processor
 
 
@@ -97,7 +97,7 @@ class TestNotificationProcessor(unittest.TestCase):
                       "timestamp": time.time(),
                       "metrics": metric}
 
-        notification = Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
+        notification = m_notification.Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
 
         self._start_processor([notification])
 
@@ -111,7 +111,8 @@ class TestNotificationProcessor(unittest.TestCase):
         alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
                       "stateChangeReason": "I am alarming!", "timestamp": time.time(), "metrics": "cpu_util",
                       "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
-        invalid_notification = Notification(0, 'invalid', 'test notification', 'me@here.com', 0, 0, alarm_dict)
+        invalid_notification = m_notification.Notification(0, 'invalid', 'test notification',
+                                                           'me@here.com', 0, 0, alarm_dict)
 
         self._start_processor([invalid_notification])
 

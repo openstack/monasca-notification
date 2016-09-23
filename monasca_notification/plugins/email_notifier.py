@@ -17,7 +17,7 @@ import email.mime.text
 import smtplib
 import time
 
-from monasca_notification.plugins.abstract_notifier import AbstractNotifier
+from monasca_notification.plugins import abstract_notifier
 
 EMAIL_SINGLE_HOST_BASE = u'''On host "{hostname}" for target "{target_host}" {message}
 
@@ -50,7 +50,7 @@ With dimensions
 {metric_dimensions}'''
 
 
-class EmailNotifier(AbstractNotifier):
+class EmailNotifier(abstract_notifier.AbstractNotifier):
     def __init__(self, log):
         self._log = log
         self._smtp = None
