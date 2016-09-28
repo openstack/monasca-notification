@@ -50,7 +50,7 @@ class NotificationProcessor(BaseProcessor):
     def send(self, notifications):
         """Send the notifications
              For each notification in a message it is sent according to its type.
-             If all notifications fail the alarm partition/offset are added to the the finished queue
+             If all notifications fail the alarm partition/offset are added to the finished queue
         """
 
         invalid_type_count = self.statsd.get_counter(name='invalid_type_count')
