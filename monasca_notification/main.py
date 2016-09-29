@@ -18,7 +18,6 @@
 """
 
 import logging
-import logging.config
 import multiprocessing
 import os
 import signal
