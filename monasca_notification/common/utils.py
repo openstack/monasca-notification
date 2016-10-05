@@ -1,5 +1,6 @@
 # (C) Copyright 2016 Hewlett Packard Enterprise Development LP
-#
+# Copyright 2016 FUJITSU LIMITED
+
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import monascastatsd
 
 from monasca_common.simport import simport
 
@@ -20,6 +22,9 @@ from monasca_notification.common.repositories import exceptions
 from monasca_notification.notification import Notification
 
 log = logging.getLogger(__name__)
+
+NOTIFICATION_DIMENSIONS = {'service': 'monitoring',
+                           'component': 'monasca-notification'}
 
 
 def get_db_repo(config):
@@ -69,3 +74,17 @@ def grab_stored_notification_method(db_repo, notification_id):
             stored_notification = db_repo.get_notification(notification_id)
 
         return stored_notification
+
+
+def get_statsd_client(config, dimensions=None):
+    local_dims = dimensions.copy() if dimensions else {}
+    local_dims.update(NOTIFICATION_DIMENSIONS)
+    if 'statsd' in config:
+        client = monascastatsd.Client(name='monasca',
+                                      host=config['statsd'].get('host', 'localhost'),
+                                      port=config['statsd'].get('port', 8125),
+                                      dimensions=local_dims)
+    else:
+        client = monascastatsd.Client(name='monasca',
+                                      dimensions=local_dims)
+    return client

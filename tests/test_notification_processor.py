@@ -54,6 +54,9 @@ class TestNotificationProcessor(unittest.TestCase):
                              'db': 'dbname',
                              'passwd': 'mysql_passwd'}
 
+        self.statsd_config = {'host': 'localhost',
+                              'port': 8125}
+
     def tearDown(self):
         pass
 
@@ -61,7 +64,7 @@ class TestNotificationProcessor(unittest.TestCase):
     # Test helper functions
     # ------------------------------------------------------------------------
     @mock.patch('pymysql.connect')
-    @mock.patch('monasca_notification.processors.notification_processor.monascastatsd')
+    @mock.patch('monasca_notification.common.utils.monascastatsd')
     @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
     @mock.patch('monasca_notification.processors.notification_processor.notifiers.log')
     def _start_processor(self, notifications, mock_log, mock_smtp, mock_statsd, mock_pymsql):
@@ -76,6 +79,7 @@ class TestNotificationProcessor(unittest.TestCase):
         config = {}
         config["email"] = self.email_config
         config["mysql"] = self.mysql_config
+        config["statsd"] = self.statsd_config
         config["notification_types"] = {}
 
         processor = (notification_processor.NotificationProcessor(config))

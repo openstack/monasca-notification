@@ -14,19 +14,18 @@
 # limitations under the License.
 
 import logging
-import monascastatsd
 
 from monasca_notification.common.utils import get_db_repo
-from monasca_notification.processors import base
+from monasca_notification.common.utils import get_statsd_client
 from monasca_notification.types import notifiers
 
 log = logging.getLogger(__name__)
 
 
-class NotificationProcessor(base.BaseProcessor):
+class NotificationProcessor(object):
 
     def __init__(self, config):
-        self.statsd = monascastatsd.Client(name='monasca', dimensions=base.BaseProcessor.dimensions)
+        self.statsd = get_statsd_client(config)
         notifiers.init(self.statsd)
         notifiers.load_plugins(config['notification_types'])
         notifiers.config(config['notification_types'])

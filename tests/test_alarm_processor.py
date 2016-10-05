@@ -55,14 +55,16 @@ class TestAlarmProcessor(unittest.TestCase):
             mock_mysql.cursor.return_value = mock_mysql
             mock_mysql.__iter__.return_value = sql_response
 
-        mysql_config = {'mysql': {'ssl': None,
-                                  'host': 'mysql_host',
-                                  'port': 'mysql_port',
-                                  'user': 'mysql_user',
-                                  'db': 'dbname',
-                                  'passwd': 'mysql_passwd'}}
+        config = {'mysql': {'ssl': None,
+                            'host': 'mysql_host',
+                            'port': 'mysql_port',
+                            'user': 'mysql_user',
+                            'db': 'dbname',
+                            'passwd': 'mysql_passwd'},
+                  'statsd': {'host': 'localhost',
+                             'port': 8125}}
 
-        processor = alarm_processor.AlarmProcessor(600, mysql_config)
+        processor = alarm_processor.AlarmProcessor(600, config)
 
         return processor.to_notification(alarm)
 

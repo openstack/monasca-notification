@@ -15,25 +15,22 @@
 
 import json
 import logging
-import monascastatsd
 import time
 
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.utils import get_db_repo
+from monasca_notification.common.utils import get_statsd_client
 from monasca_notification import notification
 from monasca_notification import notification_exceptions
-from monasca_notification.processors import base
 
 
 log = logging.getLogger(__name__)
 
 
-class AlarmProcessor(base.BaseProcessor):
+class AlarmProcessor(object):
     def __init__(self, alarm_ttl, config):
         self._alarm_ttl = alarm_ttl
-        self._statsd = monascastatsd.Client(
-            name='monasca',
-            dimensions=base.BaseProcessor.dimensions)
+        self._statsd = get_statsd_client(config)
         self._db_repo = get_db_repo(config)
 
     @staticmethod

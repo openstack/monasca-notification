@@ -15,14 +15,13 @@
 
 import json
 import logging
-import monascastatsd
 import time
 
 from monasca_common.kafka import consumer
 from monasca_common.kafka import producer
 from monasca_notification.common.utils import construct_notification_object
 from monasca_notification.common.utils import get_db_repo
-from processors import base
+from monasca_notification.common.utils import get_statsd_client
 from processors import notification_processor
 
 log = logging.getLogger(__name__)
@@ -37,9 +36,7 @@ class RetryEngine(object):
         self._topics['notification_topic'] = config['kafka']['notification_topic']
         self._topics['retry_topic'] = config['kafka']['notification_retry_topic']
 
-        self._statsd = monascastatsd.Client(
-            name='monasca',
-            dimensions=base.BaseProcessor.dimensions)
+        self._statsd = get_statsd_client(config)
 
         self._consumer = consumer.KafkaConsumer(
             config['kafka']['url'],

@@ -15,7 +15,6 @@
 
 import json
 import logging
-import monascastatsd
 import time
 
 from monasca_common.kafka import consumer
@@ -23,7 +22,7 @@ from monasca_common.kafka import producer
 from monasca_notification.common.repositories import exceptions
 from monasca_notification.common.utils import construct_notification_object
 from monasca_notification.common.utils import get_db_repo
-from processors import base
+from monasca_notification.common.utils import get_statsd_client
 from processors import notification_processor
 
 log = logging.getLogger(__name__)
@@ -33,9 +32,7 @@ class PeriodicEngine(object):
     def __init__(self, config, period):
         self._topic_name = config['kafka']['periodic'][period]
 
-        self._statsd = monascastatsd.Client(
-            name='monasca',
-            dimensions=base.BaseProcessor.dimensions)
+        self._statsd = get_statsd_client(config)
 
         zookeeper_path = config['zookeeper']['periodic_path'][period]
         self._consumer = consumer.KafkaConsumer(config['kafka']['url'],

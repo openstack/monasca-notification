@@ -62,7 +62,8 @@ sent out multiple times. To minimize this risk a number of techniques are used:
 Yaml config file by default is in '/etc/monasca/notification.yaml', a sample is in this project.
 
 ## Monitoring
-statsd is incorporated into the daemon and will send all stats to localhost on udp port 8125.
+statsd is incorporated into the daemon and will send all stats to statsd server launched by monasca-agent.
+Default host and port points at **localhost:8125**.
 
 - Counters
     - ConsumedFromKafka

@@ -14,13 +14,12 @@
 # limitations under the License.
 
 import logging
-import monascastatsd
 import time
 
 from monasca_common.kafka import consumer
 from monasca_common.kafka import producer
+from monasca_notification.common.utils import get_statsd_client
 from processors.alarm_processor import AlarmProcessor
-from processors.base import BaseProcessor
 from processors.notification_processor import NotificationProcessor
 
 log = logging.getLogger(__name__)
@@ -31,8 +30,8 @@ class NotificationEngine(object):
         self._topics = {}
         self._topics['notification_topic'] = config['kafka']['notification_topic']
         self._topics['retry_topic'] = config['kafka']['notification_retry_topic']
-        self._statsd = monascastatsd.Client(name='monasca',
-                                            dimensions=BaseProcessor.dimensions)
+
+        self._statsd = get_statsd_client(config)
         self._consumer = consumer.KafkaConsumer(
             config['kafka']['url'],
             config['zookeeper']['url'],

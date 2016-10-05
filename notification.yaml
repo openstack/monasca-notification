@@ -115,3 +115,6 @@ logging: # Used in logging.dictConfig
         handlers:
             - console
         level: DEBUG
+statsd:
+    host: 'localhost'
+    port: 8125
