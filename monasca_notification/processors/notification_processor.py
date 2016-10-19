@@ -17,16 +17,16 @@ import logging
 import monascastatsd
 
 from monasca_notification.common.utils import get_db_repo
-from monasca_notification.processors.base import BaseProcessor
+from monasca_notification.processors import base
 from monasca_notification.types import notifiers
 
 log = logging.getLogger(__name__)
 
 
-class NotificationProcessor(BaseProcessor):
+class NotificationProcessor(base.BaseProcessor):
 
     def __init__(self, config):
-        self.statsd = monascastatsd.Client(name='monasca', dimensions=BaseProcessor.dimensions)
+        self.statsd = monascastatsd.Client(name='monasca', dimensions=base.BaseProcessor.dimensions)
         notifiers.init(self.statsd)
         notifiers.load_plugins(config['notification_types'])
         notifiers.config(config['notification_types'])

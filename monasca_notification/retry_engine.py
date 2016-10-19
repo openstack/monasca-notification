@@ -18,12 +18,12 @@ import logging
 import monascastatsd
 import time
 
-from monasca_common.kafka.consumer import KafkaConsumer
-from monasca_common.kafka.producer import KafkaProducer
+from monasca_common.kafka import consumer
+from monasca_common.kafka import producer
 from monasca_notification.common.utils import construct_notification_object
 from monasca_notification.common.utils import get_db_repo
-from processors.base import BaseProcessor
-from processors.notification_processor import NotificationProcessor
+from processors import base
+from processors import notification_processor
 
 log = logging.getLogger(__name__)
 
@@ -37,18 +37,20 @@ class RetryEngine(object):
         self._topics['notification_topic'] = config['kafka']['notification_topic']
         self._topics['retry_topic'] = config['kafka']['notification_retry_topic']
 
-        self._statsd = monascastatsd.Client(name='monasca',
-                                            dimensions=BaseProcessor.dimensions)
+        self._statsd = monascastatsd.Client(
+            name='monasca',
+            dimensions=base.BaseProcessor.dimensions)
 
-        self._consumer = KafkaConsumer(config['kafka']['url'],
-                                       config['zookeeper']['url'],
-                                       config['zookeeper']['notification_retry_path'],
-                                       config['kafka']['group'],
-                                       config['kafka']['notification_retry_topic'])
+        self._consumer = consumer.KafkaConsumer(
+            config['kafka']['url'],
+            config['zookeeper']['url'],
+            config['zookeeper']['notification_retry_path'],
+            config['kafka']['group'],
+            config['kafka']['notification_retry_topic'])
 
-        self._producer = KafkaProducer(config['kafka']['url'])
+        self._producer = producer.KafkaProducer(config['kafka']['url'])
 
-        self._notifier = NotificationProcessor(config)
+        self._notifier = notification_processor.NotificationProcessor(config)
         self._db_repo = get_db_repo(config)
 
     def run(self):

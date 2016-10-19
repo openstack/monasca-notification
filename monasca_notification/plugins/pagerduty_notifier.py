@@ -16,13 +16,13 @@
 import json
 import requests
 
-from monasca_notification.plugins.abstract_notifier import AbstractNotifier
+from monasca_notification.plugins import abstract_notifier
 
 
 VALID_HTTP_CODES = [200, 201, 204]
 
 
-class PagerdutyNotifier(AbstractNotifier):
+class PagerdutyNotifier(abstract_notifier.AbstractNotifier):
     def __init__(self, log):
         self._log = log
 

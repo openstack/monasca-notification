@@ -17,7 +17,7 @@ import json
 import requests
 import urlparse
 
-from monasca_notification.plugins.abstract_notifier import AbstractNotifier
+from monasca_notification.plugins import abstract_notifier
 
 """
    notification.address = https://hipchat.hpcloud.net/v2/room/<room_id>/notification?auth_token=432432
@@ -37,7 +37,7 @@ from monasca_notification.plugins.abstract_notifier import AbstractNotifier
 """
 
 
-class HipChatNotifier(AbstractNotifier):
+class HipChatNotifier(abstract_notifier.AbstractNotifier):
     def __init__(self, log):
         self._log = log
 

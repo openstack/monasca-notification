@@ -20,19 +20,20 @@ import time
 
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.utils import get_db_repo
-from monasca_notification.notification import Notification
-from monasca_notification.notification_exceptions import AlarmFormatError
-from monasca_notification.processors.base import BaseProcessor
+from monasca_notification import notification
+from monasca_notification import notification_exceptions
+from monasca_notification.processors import base
 
 
 log = logging.getLogger(__name__)
 
 
-class AlarmProcessor(BaseProcessor):
+class AlarmProcessor(base.BaseProcessor):
     def __init__(self, alarm_ttl, config):
         self._alarm_ttl = alarm_ttl
-        self._statsd = monascastatsd.Client(name='monasca',
-                                            dimensions=BaseProcessor.dimensions)
+        self._statsd = monascastatsd.Client(
+            name='monasca',
+            dimensions=base.BaseProcessor.dimensions)
         self._db_repo = get_db_repo(config)
 
     @staticmethod
@@ -57,9 +58,10 @@ class AlarmProcessor(BaseProcessor):
         alarm = json_alarm['alarm-transitioned']
         for field in expected_fields:
             if field not in alarm:
-                raise AlarmFormatError('Alarm data missing field %s' % field)
+                raise notification_exceptions.AlarmFormatError(
+                    'Alarm data missing field %s' % field)
         if ('tenantId' not in alarm) or ('alarmId' not in alarm):
-            raise AlarmFormatError
+            raise notification_exceptions.AlarmFormatError
 
         return alarm
 
@@ -84,13 +86,14 @@ class AlarmProcessor(BaseProcessor):
         with db_time.time('config_db_time'):
             alarms_actions = self._db_repo.fetch_notifications(alarm)
 
-        return [Notification(alarms_action[0],
-                             alarms_action[1],
-                             alarms_action[2],
-                             alarms_action[3],
-                             alarms_action[4],
-                             0,
-                             alarm) for alarms_action in alarms_actions]
+        return [notification.Notification(
+                alarms_action[0],
+                alarms_action[1],
+                alarms_action[2],
+                alarms_action[3],
+                alarms_action[4],
+                0,
+                alarm) for alarms_action in alarms_actions]
 
     def to_notification(self, raw_alarm):
         """Check the notification setting for this project then create the appropriate notification
