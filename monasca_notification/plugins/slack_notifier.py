@@ -88,6 +88,10 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
         if (self._config.get("ca_certs")):
             verify = self._config.get("ca_certs")
 
+        proxyDict = None
+        if (self._config.get("proxy")):
+            proxyDict = {"https": self._config.get("proxy")}
+
         try:
             # Posting on the given URL
             self._log.debug("Sending to the url {0} , with query_params {1}".format(url, query_params))
@@ -95,6 +99,7 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
                                    data=slack_message,
                                    verify=verify,
                                    params=query_params,
+                                   proxies=proxyDict,
                                    timeout=self._config['timeout'])
 
             if result.status_code not in range(200, 300):

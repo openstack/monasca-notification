@@ -92,12 +92,17 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
         if (self._config.get("ca_certs")):
             verify = self._config.get("ca_certs")
 
+        proxyDict = None
+        if (self._config.get("proxy")):
+            proxyDict = {"https": self._config.get("proxy")}
+
         try:
             # Posting on the given URL
             result = requests.post(url=url,
                                    data=hipchat_message,
                                    verify=verify,
                                    params=query_params,
+                                   proxies=proxyDict,
                                    timeout=self._config['timeout'])
 
             if result.status_code in range(200, 300):
