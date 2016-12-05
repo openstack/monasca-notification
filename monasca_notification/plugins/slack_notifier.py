@@ -96,7 +96,7 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
             # Posting on the given URL
             self._log.debug("Sending to the url {0} , with query_params {1}".format(url, query_params))
             result = requests.post(url=url,
-                                   data=slack_message,
+                                   json=slack_message,
                                    verify=verify,
                                    params=query_params,
                                    proxies=proxyDict,
