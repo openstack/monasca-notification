@@ -36,7 +36,7 @@ exiting = False
 
 
 def clean_exit(signum, frame=None):
-    """Exit all processes attempting to finish uncommited active work before exit.
+    """Exit all processes attempting to finish uncommitted active work before exit.
          Can be called on an os signal or no zookeeper losing connection.
     """
     global exiting
