@@ -1,0 +1,7 @@
+[run]
+branch = True
+source = monasca_notification
+omit = tests/*
+
+[report]
+ignore_errors = True

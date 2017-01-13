@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import six
+
 import logging
 import time
 
@@ -23,25 +25,35 @@ from monasca_notification.plugins import webhook_notifier
 
 log = logging.getLogger(__name__)
 
-possible_notifiers = []
-configured_notifiers = {}
-statsd_counter = {}
+possible_notifiers = None
+configured_notifiers = None
+statsd_counter = None
 
 statsd = None
 statsd_timer = None
 
 
 def init(statsd_obj):
-    global statsd, statsd_timer
+    global statsd, statsd_timer, \
+        possible_notifiers, configured_notifiers,\
+        statsd_counter
+
     statsd = statsd_obj
     statsd_timer = statsd.get_timer()
 
-    possible_notifiers.append(email_notifier.EmailNotifier(log))
-    possible_notifiers.append(webhook_notifier.WebhookNotifier(log))
-    possible_notifiers.append(pagerduty_notifier.PagerdutyNotifier(log))
+    statsd_counter = {}
+    configured_notifiers = {}
+
+    possible_notifiers = [
+        email_notifier.EmailNotifier(log),
+        webhook_notifier.WebhookNotifier(log),
+        pagerduty_notifier.PagerdutyNotifier(log)
+    ]
 
 
 def load_plugins(config):
+    global possible_notifiers
+
     for plugin_class in config.get("plugins", []):
         try:
             possible_notifiers.append(simport.load(plugin_class)(log))
@@ -50,14 +62,18 @@ def load_plugins(config):
 
 
 def enabled_notifications():
+    global configured_notifiers
+
     results = []
     for key in configured_notifiers:
         results.append(key.upper())
     return results
 
 
-def config(config):
-    formatted_config = {type.lower(): value for type, value in config.iteritems()}
+def config(cfg):
+    global possible_notifiers, configured_notifiers, statsd_counter
+
+    formatted_config = {t.lower(): v for t, v in six.iteritems(cfg)}
     for notifier in possible_notifiers:
         ntype = notifier.type.lower()
         if ntype in formatted_config:
@@ -102,6 +118,8 @@ def send_notifications(notifications):
 
 
 def send_single_notification(notification):
+    global configured_notifiers
+
     ntype = notification.type
     try:
         return configured_notifiers[ntype].send_notification(notification)
