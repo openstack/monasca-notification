@@ -36,6 +36,11 @@ from monasca_notification.plugins import abstract_notifier
 
 """
 
+SEVERITY_COLORS = {"low": 'green',
+                   'medium': 'gray',
+                   'high': 'yellow',
+                   'critical': 'red'}
+
 
 class HipChatNotifier(abstract_notifier.AbstractNotifier):
     def __init__(self, log):
@@ -68,11 +73,14 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
                 'metrics': notification.metrics}
 
         hipchat_request = {}
-        hipchat_request['color'] = 'green'
+        hipchat_request['color'] = self._get_color(notification.severity.lower())
         hipchat_request['message_format'] = 'text'
         hipchat_request['message'] = json.dumps(body, indent=3)
 
         return hipchat_request
+
+    def _get_color(self, severity):
+        return SEVERITY_COLORS.get(severity, 'purple')
 
     def send_notification(self, notification):
         """Send the notification via hipchat
@@ -109,9 +117,9 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
                 self._log.info("Notification successfully posted.")
                 return True
             else:
-                msg = "Received an HTTP code {} when trying to send to  hipchat on URL {} with response {} ."
+                msg = "Received an HTTP code {} when trying to send to hipchat on URL {} with response {}."
                 self._log.error(msg.format(result.status_code, url, result.text))
                 return False
         except Exception:
-            self._log.exception("Error trying to send to hipchat  on URL {}".format(url))
+            self._log.exception("Error trying to send to hipchat on URL {}".format(url))
             return False
