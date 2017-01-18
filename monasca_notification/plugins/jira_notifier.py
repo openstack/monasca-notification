@@ -83,7 +83,7 @@ class JiraNotifier(AbstractNotifier):
         if (not self.jira_fields_format and self._config.get("custom_formatter")):
             try:
                 with open(self._config.get("custom_formatter")) as f:
-                    jira_fields_format = yaml.load(f)
+                    jira_fields_format = yaml.safe_load(f)
             except Exception:
                 self._log.exception("Unable to read custom_formatter file. Check file location")
                 raise

@@ -95,7 +95,7 @@ def main(argv=None):
     else:
         config_file = '/etc/monasca/notification.yaml'
 
-    config = yaml.load(open(config_file, 'r'))
+    config = yaml.safe_load(open(config_file, 'r'))
 
     # Setup logging
     logging.config.dictConfig(config['logging'])
