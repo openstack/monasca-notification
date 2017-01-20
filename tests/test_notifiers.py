@@ -382,3 +382,16 @@ class TestInterface(unittest.TestCase):
         configured_plugins = ["email", "webhook", "pagerduty", "slack"]
         for plugin in notifiers.configured_notifiers:
             self.asssertIn(plugin.type in configured_plugins)
+
+    @mock.patch('monasca_notification.types.notifiers.log')
+    def test_no_plugins_keyword_in_possible_notifiers(self, mock_log):
+        mock_log.warning = self.trap.append
+        config_dict = {"plugins": ["monasca_notification.plugins.slack_notifier:SlackNotifier"],
+                       "fake_notifier": ["monasca_notification.plugins.fake_notifier:FakeNotifier"],
+                       "slack": {"timeout": 5, "ca_certs": "/etc/ssl/certs/ca-certificates.crt", "insecure": False}
+                       }
+        notifiers.init(self.statsd)
+        notifiers.possible_notifiers = []
+        notifiers.load_plugins(config_dict)
+        notifiers.config(config_dict)
+        self.assertEqual('No notifiers found for fake_notifier', mock_log.warn.call_args[0][0])
