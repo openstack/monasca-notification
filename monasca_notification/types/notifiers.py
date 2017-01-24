@@ -87,6 +87,10 @@ def config(cfg):
         else:
             log.warn("No config data for type: {}".format(ntype))
     config_with_no_notifiers = set(formatted_config.keys()) - set(configured_notifiers.keys())
+    # Plugins section contains only additional plugins and should not be
+    # considered as a separate plugin
+    if 'plugins' in config_with_no_notifiers:
+        config_with_no_notifiers.remove('plugins')
     if config_with_no_notifiers:
         log.warn("No notifiers found for {0}". format(", ".join(config_with_no_notifiers)))
 
