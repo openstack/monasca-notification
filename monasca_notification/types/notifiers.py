@@ -21,10 +21,6 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import importutils
 
-from monasca_notification.plugins import email_notifier
-from monasca_notification.plugins import pagerduty_notifier
-from monasca_notification.plugins import webhook_notifier
-
 log = logging.getLogger(__name__)
 CONF = cfg.CONF
 
@@ -46,12 +42,7 @@ def init(statsd_obj):
 
     statsd_counter = {}
     configured_notifiers = {}
-
-    possible_notifiers = [
-        email_notifier.EmailNotifier(log),
-        webhook_notifier.WebhookNotifier(log),
-        pagerduty_notifier.PagerdutyNotifier(log)
-    ]
+    possible_notifiers = []
 
 
 def load_plugins():

@@ -61,7 +61,7 @@ class TestNotificationProcessor(base.BaseTestCase):
     # ------------------------------------------------------------------------
     @mock.patch('pymysql.connect')
     @mock.patch('monasca_notification.common.utils.monascastatsd')
-    @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
+    @mock.patch('monasca_notification.plugins.email_notifier.smtplib')
     @mock.patch('monasca_notification.processors.notification_processor.notifiers.log')
     def _start_processor(self, notifications, mock_log, mock_smtp, mock_statsd, mock_pymsql):
         """Start the processor with the proper mocks

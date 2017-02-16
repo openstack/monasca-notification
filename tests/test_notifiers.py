@@ -1,4 +1,4 @@
-# (C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2015-2017 Hewlett Packard Enterprise Development LP
 # Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -149,55 +149,103 @@ class TestInterface(base.BaseTestCase):
     def _goodSendStub(self, log):
         return NotifyStub(self.trap, False, False, False)
 
-    @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
-    @mock.patch('monasca_notification.types.notifiers.log')
-    def test_enabled_notifications(self, mock_log, mock_smtp):
+    def test_enabled_notifications_none(self):
+        self.conf_override(
+            group='notification_types',
+            enabled=[]
+        )
+
         notifiers.init(self.statsd)
+        notifiers.load_plugins()
         notifiers.config()
 
         notifications = notifiers.enabled_notifications()
 
-        self.assertEqual(len(notifications), 3)
-        self.assertEqual(sorted(notifications),
-                         ["EMAIL", "PAGERDUTY", "WEBHOOK"])
+        self.assertEqual(len(notifications), 0)
 
-    @mock.patch('monasca_notification.types.notifiers.email_notifier')
-    @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
+    def test_enabled_notifications(self):
+        self.conf_override(
+            group='notification_types',
+            enabled=[
+                'monasca_notification.plugins.email_notifier:EmailNotifier',
+                'monasca_notification.plugins.pagerduty_notifier:PagerdutyNotifier',
+                'monasca_notification.plugins.webhook_notifier:WebhookNotifier',
+                'monasca_notification.plugins.hipchat_notifier:HipChatNotifier',
+                'monasca_notification.plugins.slack_notifier:SlackNotifier',
+                'monasca_notification.plugins.jira_notifier:JiraNotifier'
+            ]
+        )
+        notifiers.init(self.statsd)
+        notifiers.load_plugins()
+        notifiers.config()
+
+        notifications = notifiers.enabled_notifications()
+        self.assertEqual(len(notifications), 6)
+        self.assertItemsEqual(notifications,
+                              ['EMAIL', 'PAGERDUTY', 'WEBHOOK',
+                               'HIPCHAT', 'SLACK', 'JIRA'])
+
+    @mock.patch('monasca_notification.plugins.email_notifier')
+    @mock.patch('monasca_notification.plugins.email_notifier.smtplib')
     @mock.patch('monasca_notification.types.notifiers.log')
-    def test_send_notification_exception(self, mock_log, mock_smtp, mock_email):
+    @mock.patch('monasca_notification.types.notifiers.importutils')
+    def test_send_notification_exception(self, mock_im, mock_log,
+                                         mock_smtp, mock_email):
+        self.conf_override(
+            group='notification_types',
+            enabled=[
+                'monasca_notification.plugins.email_notifier:EmailNotifier'
+            ]
+        )
+
         mock_log.warn = self.trap.append
         mock_log.error = self.trap.append
         mock_log.exception = self.trap.append
 
         mock_email.EmailNotifier = self._sendExceptionStub
+        mock_im.import_class.return_value = mock_email.EmailNotifier
 
         notifiers.init(self.statsd)
+        notifiers.load_plugins()
         notifiers.config()
 
-        notifications = []
-        notifications.append(m_notification.Notification(0, 'email', 'email notification',
-                                                         'me@here.com', 0, 0, alarm({})))
+        notifications = [
+            m_notification.Notification(0, 'email', 'email notification',
+                                        'me@here.com', 0, 0, alarm({}))
+        ]
 
         notifiers.send_notifications(notifications)
 
         self.assertIn("send_notification exception for email", self.trap)
 
-    @mock.patch('monasca_notification.types.notifiers.email_notifier')
-    @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
+    @mock.patch('monasca_notification.plugins.email_notifier')
+    @mock.patch('monasca_notification.plugins.email_notifier.smtplib')
     @mock.patch('monasca_notification.types.notifiers.log')
-    def test_send_notification_failure(self, mock_log, mock_smtp, mock_email):
+    @mock.patch('monasca_notification.types.notifiers.importutils')
+    def test_send_notification_failure(self, mock_im, mock_log,
+                                       mock_smtp, mock_email):
+        self.conf_override(
+            group='notification_types',
+            enabled=[
+                'monasca_notification.plugins.email_notifier:EmailNotifier'
+            ]
+        )
+
         mock_log.warn = self.trap.append
         mock_log.error = self.trap.append
         mock_log.exception = self.trap.append
 
         mock_email.EmailNotifier = self._sendFailureStub
+        mock_im.import_class.return_value = mock_email.EmailNotifier
 
         notifiers.init(self.statsd)
+        notifiers.load_plugins()
         notifiers.config()
 
-        notifications = []
-        notifications.append(m_notification.Notification(0, 'email', 'email notification',
-                                                         'me@here.com', 0, 0, alarm({})))
+        notifications = [
+            m_notification.Notification(0, 'email', 'email notification',
+                                        'me@here.com', 0, 0, alarm({}))
+        ]
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
@@ -206,28 +254,38 @@ class TestInterface(base.BaseTestCase):
         self.assertEqual(invalid, [])
 
     @mock.patch('monasca_notification.types.notifiers.time')
-    @mock.patch('monasca_notification.types.notifiers.email_notifier')
-    @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
+    @mock.patch('monasca_notification.plugins.email_notifier')
+    @mock.patch('monasca_notification.plugins.email_notifier.smtplib')
     @mock.patch('monasca_notification.types.notifiers.log')
-    def test_send_notification_correct(self, mock_log, mock_smtp,
+    @mock.patch('monasca_notification.types.notifiers.importutils')
+    def test_send_notification_correct(self, mock_im, mock_log, mock_smtp,
                                        mock_email, mock_time):
+        self.conf_override(
+            group='notification_types',
+            enabled=[
+                'monasca_notification.plugins.email_notifier:EmailNotifier'
+            ]
+        )
+
         mock_log.warn = self.trap.append
         mock_log.error = self.trap.append
 
         mock_email.EmailNotifier = self._goodSendStub
-
         mock_time.time.return_value = 42
+        mock_im.import_class.return_value = mock_email.EmailNotifier
 
         notifiers.init(self.statsd)
+        notifiers.load_plugins()
         notifiers.config()
 
-        notifications = []
-        notifications.append(m_notification.Notification(0, 'email', 'email notification',
-                                                         'me@here.com', 0, 0, alarm({})))
-        notifications.append(m_notification.Notification(1, 'email', 'email notification',
-                                                         'foo@here.com', 0, 0, alarm({})))
-        notifications.append(m_notification.Notification(2, 'email', 'email notification',
-                                                         'bar@here.com', 0, 0, alarm({})))
+        notifications = [
+            m_notification.Notification(0, 'email', 'email notification',
+                                        'me@here.com', 0, 0, alarm({})),
+            m_notification.Notification(1, 'email', 'email notification',
+                                        'foo@here.com', 0, 0, alarm({})),
+            m_notification.Notification(2, 'email', 'email notification',
+                                        'bar@here.com', 0, 0, alarm({}))
+        ]
 
         sent, failed, invalid = notifiers.send_notifications(notifications)
 
@@ -238,25 +296,36 @@ class TestInterface(base.BaseTestCase):
         for n in sent:
             self.assertEqual(n.notification_timestamp, 42)
 
-    @mock.patch('monasca_notification.types.notifiers.email_notifier')
-    @mock.patch('monasca_notification.types.notifiers.email_notifier.smtplib')
+    @mock.patch('monasca_notification.plugins.email_notifier')
+    @mock.patch('monasca_notification.plugins.email_notifier.smtplib')
     @mock.patch('monasca_notification.types.notifiers.log')
-    def test_statsd(self, mock_log, mock_smtp, mock_email):
+    @mock.patch('monasca_notification.types.notifiers.importutils')
+    def test_statsd(self, mock_im, mock_log, mock_smtp, mock_email):
+        self.conf_override(
+            group='notification_types',
+            enabled=[
+                'monasca_notification.plugins.email_notifier:EmailNotifier'
+            ]
+        )
+
         mock_log.warn = self.trap.append
         mock_log.error = self.trap.append
 
         mock_email.EmailNotifier = self._goodSendStub
+        mock_im.import_class.return_value = mock_email.EmailNotifier
 
         notifiers.init(self.statsd)
+        notifiers.load_plugins()
         notifiers.config()
 
-        notifications = []
-        notifications.append(m_notification.Notification(0, 'email', 'email notification',
-                                                         'me@here.com', 0, 0, alarm({})))
-        notifications.append(m_notification.Notification(1, 'email', 'email notification',
-                                                         'foo@here.com', 0, 0, alarm({})))
-        notifications.append(m_notification.Notification(2, 'email', 'email notification',
-                                                         'bar@here.com', 0, 0, alarm({})))
+        notifications = [
+            m_notification.Notification(0, 'email', 'email notification',
+                                        'me@here.com', 0, 0, alarm({})),
+            m_notification.Notification(1, 'email', 'email notification',
+                                        'foo@here.com', 0, 0, alarm({})),
+            m_notification.Notification(2, 'email', 'email notification',
+                                        'bar@here.com', 0, 0, alarm({}))
+        ]
 
         notifiers.send_notifications(notifications)
 
@@ -275,11 +344,11 @@ class TestInterface(base.BaseTestCase):
 
         notifiers.init(self.statsd)
         notifiers.load_plugins()
-        self.assertEqual(len(notifiers.possible_notifiers), 5)
+        notifiers.config()
 
-        configured_plugins = ["email", "webhook", "pagerduty", "hipchat", "slack"]
-        for plugin in notifiers.configured_notifiers:
-            self.asssertIn(plugin.type in configured_plugins)
+        self.assertEqual(len(notifiers.possible_notifiers), 2)
+        self.assertItemsEqual(['hipchat', 'slack'],
+                              notifiers.configured_notifiers)
 
     @mock.patch('monasca_notification.types.notifiers.log')
     def test_invalid_plugin_load_exception_ignored(self, mock_log):
@@ -294,7 +363,7 @@ class TestInterface(base.BaseTestCase):
 
         notifiers.init(self.statsd)
         notifiers.load_plugins()
-        self.assertEqual(len(notifiers.possible_notifiers), 4)
+        self.assertEqual(len(notifiers.possible_notifiers), 1)
         self.assertEqual(len(self.trap), 1)
 
         configured_plugins = ["email", "webhook", "pagerduty", "slack"]

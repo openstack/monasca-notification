@@ -80,21 +80,6 @@ def load_from_yaml(yaml_config, conf=None):
         notifiers_cfg = {t.lower(): v for t, v in notifiers_cfg.items()}
         enabled_plugins = notifiers_cfg.pop('plugins', [])
 
-        # We still can have these 3 (email, pagerduty, webhook)
-        #  that are considered as builtin, hence should be always enabled
-        conf_to_plugin = {
-            'email': 'monasca_notification.plugins.'
-                     'email_notifier:EmailNotifier',
-            'pagerduty': 'monasca_notification.plugins.'
-                         'pagerduty_notifier:PagerdutyNotifier',
-            'webhook': 'monasca_notification.plugins.'
-                       'webhook_notifier:WebhookNotifier'
-        }
-        for ctp_key, ctp_clazz in conf_to_plugin.items():
-            if ctp_key in notifiers_cfg and ctp_key not in enabled_plugins:
-                LOG.debug('%s enabled as builtin plugin', ctp_key)
-                enabled_plugins.append(ctp_clazz)
-
         _plain_override(g='notification_types', enabled=enabled_plugins)
         if not enabled_plugins:
             return
