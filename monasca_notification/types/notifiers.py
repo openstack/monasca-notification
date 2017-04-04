@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import six
-
 import logging
 import time
 
@@ -73,7 +71,7 @@ def enabled_notifications():
 def config(cfg):
     global possible_notifiers, configured_notifiers, statsd_counter
 
-    formatted_config = {t.lower(): v for t, v in six.iteritems(cfg)}
+    formatted_config = {t.lower(): v for t, v in cfg.items()}
     for notifier in possible_notifiers:
         ntype = notifier.type.lower()
         if ntype in formatted_config:
