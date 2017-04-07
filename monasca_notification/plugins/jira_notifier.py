@@ -16,10 +16,12 @@
 from jinja2 import Template
 import jira
 import json
-import urlparse
 import yaml
 
 from monasca_notification.plugins.abstract_notifier import AbstractNotifier
+
+from six.moves import urllib
+
 
 """
    Note:
@@ -149,10 +151,10 @@ class JiraNotifier(AbstractNotifier):
 
         jira_fields = self._build_jira_message(notification)
 
-        parsed_url = urlparse.urlsplit(notification.address)
-        query_params = urlparse.parse_qs(parsed_url.query)
+        parsed_url = urllib.parse.urlsplit(notification.address)
+        query_params = urllib.parse.parse_qs(parsed_url.query)
         # URL without query params
-        url = urlparse.urljoin(notification.address, urlparse.urlparse(notification.address).path)
+        url = urllib.parse.urljoin(notification.address, urllib.parse.urlparse(notification.address).path)
 
         jira_fields["project"] = query_params["project"][0]
         if query_params.get("component"):

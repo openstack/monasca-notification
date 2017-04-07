@@ -52,7 +52,7 @@ class Notification(object):
              retry_count - number of times we've tried to send
              alarm - info that caused the notification
              notifications that come after this one to remain uncommitted.
-             Note that data may include unicode strings.
+             Note that data may include six.text_type strings.
         """
         self.id = id
         self.address = address
