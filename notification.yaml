@@ -1,5 +1,5 @@
 kafka:
-    url: 192.168.10.4:9092  # or comma seperated list of multiple hosts
+    url: 127.0.0.1:9092  # or comma seperated list of multiple hosts
     group: monasca-notification
     alarm_topic: alarm-state-transitions
     notification_topic: alarm-notifications
@@ -17,7 +17,7 @@ database:
     url: 'postgres://notification:password@127.0.0.1:5432/mon'
 
 mysql:
-  host: 192.168.10.4
+  host: 127.0.0.1
   port: 3306
   user: notification
   passwd: password
@@ -38,12 +38,12 @@ notification_types:
      - monasca_notification.plugins.slack_notifier:SlackNotifier
 
     email:
-        server: 192.168.10.4
+        server: 127.0.0.1
         port: 25
         user:
         password:
         timeout: 60
-        from_addr: hpcs.mon@hp.com
+        from_addr: monasca-notification@none.invalid
 
     webhook:
         timeout: 5
@@ -56,13 +56,13 @@ notification_types:
         timeout: 5
         ca_certs: "/etc/ssl/certs/ca-certificates.crt"
         insecure: False
-        proxy:  https://myproxy.corp.com:8080
+        proxy:  https://myproxy.corp.invalid:8080
 
     slack:
         timeout: 5
         ca_certs: "/etc/ssl/certs/ca-certificates.crt"
         insecure: False
-        proxy:  https://myproxy.corp.com:8080
+        proxy:  https://myproxy.corp.invalid:8080
 
 processors:
     alarm:
@@ -82,7 +82,7 @@ queues:
     sent_notifications_size: 50  # limiting this size reduces potential # of re-sent notifications after a failure
 
 zookeeper:
-    url: 192.168.10.4:2181  # or comma seperated list of multiple hosts
+    url: 127.0.0.1:2181  # or comma seperated list of multiple hosts
     notification_path: /notification/alarms
     notification_retry_path: /notification/retry
     periodic_path:
