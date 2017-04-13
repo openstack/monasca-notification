@@ -1,4 +1,4 @@
-# (C) Copyright 2016 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2016-2017 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
         url = urlparse.urljoin(notification.address, urlparse.urlparse(notification.address).path)
 
         # Default option is to do cert verification
-        verify = self._config.get('insecure', False)
+        verify = not self._config.get('insecure', True)
         # If ca_certs is specified, do cert validation and ignore insecure flag
         if (self._config.get("ca_certs")):
             verify = self._config.get("ca_certs")
