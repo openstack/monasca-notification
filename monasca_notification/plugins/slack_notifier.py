@@ -15,9 +15,11 @@
 
 import json
 import requests
-import urlparse
 
 from monasca_notification.plugins import abstract_notifier
+
+from six.moves import urllib
+
 
 """
    notification.address = https://slack.com/api/chat.postMessage?token=token&channel=#channel"
@@ -77,10 +79,10 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
         #  Slack room has "#" as first character
         address = address.replace("#", "%23")
 
-        parsed_url = urlparse.urlsplit(address)
-        query_params = urlparse.parse_qs(parsed_url.query)
+        parsed_url = urllib.parse.urlsplit(address)
+        query_params = urllib.parse.parse_qs(parsed_url.query)
         # URL without query params
-        url = urlparse.urljoin(address, urlparse.urlparse(address).path)
+        url = urllib.parse.urljoin(address, urllib.parse.urlparse(address).path)
 
         # Default option is to do cert verification
         verify = not self._config.get('insecure', True)

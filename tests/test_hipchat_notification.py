@@ -13,11 +13,17 @@
 
 import json
 import mock
-import Queue
 import unittest
+
+import six
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import hipchat_notifier
+
+if six.PY2:
+    import Queue as queue
+else:
+    import queue
 
 
 def alarm(metrics):
@@ -43,7 +49,7 @@ class requestsResponse(object):
 
 class TestHipchat(unittest.TestCase):
     def setUp(self):
-        self.trap = Queue.Queue()
+        self.trap = queue.Queue()
         self.hipchat_config = {'timeout': 50}
 
     def tearDown(self):

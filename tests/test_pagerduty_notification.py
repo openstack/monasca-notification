@@ -15,13 +15,19 @@
 
 import json
 import mock
-import Queue
 import requests
 import time
 import unittest
 
+import six
+
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import pagerduty_notifier
+
+if six.PY2:
+    import Queue as queue
+else:
+    import queue
 
 
 def alarm(metrics):
@@ -45,7 +51,7 @@ class requestsResponse(object):
 
 class TestWebhook(unittest.TestCase):
     def setUp(self):
-        self.trap = Queue.Queue()
+        self.trap = queue.Queue()
         self.pagerduty_config = {'timeout': 50, 'key': 'foobar'}
 
     def tearDown(self):

@@ -15,9 +15,11 @@
 
 import json
 import requests
-import urlparse
 
 from monasca_notification.plugins import abstract_notifier
+
+from six.moves import urllib
+
 
 """
    notification.address = https://hipchat.hpcloud.net/v2/room/<room_id>/notification?auth_token=432432
@@ -88,11 +90,11 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
         """
 
         hipchat_message = self._build_hipchat_message(notification)
-        parsed_url = urlparse.urlsplit(notification.address)
+        parsed_url = urllib.parse.urlsplit(notification.address)
 
-        query_params = urlparse.parse_qs(parsed_url.query)
+        query_params = urllib.parse.parse_qs(parsed_url.query)
         # URL without query params
-        url = urlparse.urljoin(notification.address, urlparse.urlparse(notification.address).path)
+        url = urllib.parse.urljoin(notification.address, urllib.parse.urlparse(notification.address).path)
 
         # Default option is to do cert verification
         verify = not self._config.get('insecure', True)

@@ -19,10 +19,12 @@ import socket
 import time
 import unittest
 
+import six
+
 from monasca_notification.notification import Notification
 from monasca_notification.plugins import email_notifier
 
-UNICODE_CHAR = unichr(2344)
+UNICODE_CHAR = six.unichr(2344)
 UNICODE_CHAR_ENCODED = UNICODE_CHAR.encode("utf-8")
 
 
