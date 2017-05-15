@@ -13,10 +13,11 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import logging
-import six
 import time
+
+from oslo_config import cfg
+from oslo_log import log as logging
+import six
 import ujson as json
 
 from monasca_notification.common.repositories import exceptions as exc
@@ -27,13 +28,14 @@ from monasca_notification import notification_exceptions
 
 
 log = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class AlarmProcessor(object):
-    def __init__(self, alarm_ttl, config):
-        self._alarm_ttl = alarm_ttl
-        self._statsd = get_statsd_client(config)
-        self._db_repo = get_db_repo(config)
+    def __init__(self):
+        self._alarm_ttl = CONF.alarm_processor.ttl
+        self._statsd = get_statsd_client()
+        self._db_repo = get_db_repo()
 
     @staticmethod
     def _parse_alarm(alarm_data):

@@ -1,4 +1,5 @@
 # (C) Copyright 2016 Hewlett Packard Enterprise Development Company LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +19,9 @@ import jira
 from six.moves import urllib
 import ujson as json
 import yaml
+
+from debtcollector import removals
+from oslo_config import cfg
 
 from monasca_notification.plugins.abstract_notifier import AbstractNotifier
 
@@ -51,27 +55,40 @@ from monasca_notification.plugins.abstract_notifier import AbstractNotifier
 """
 
 
+CONF = cfg.CONF
+
+
+def register_opts(conf):
+    gr = cfg.OptGroup(name='%s_notifier' % JiraNotifier.type)
+    opts = [
+        cfg.IntOpt(name='timeout', default=5, min=1),
+        cfg.StrOpt(name='user', required=False),
+        cfg.StrOpt(name='password', required=False, secret=True),
+        cfg.StrOpt(name='custom_formatter', default=None),
+        cfg.StrOpt(name='proxy', default=None)
+    ]
+
+    conf.register_group(gr)
+    conf.register_opts(opts, group=gr)
+
+
 class JiraNotifier(AbstractNotifier):
 
+    type = 'jira'
     _search_query = search_query = "project={} and reporter='{}' and summary ~ '{}'"
 
     def __init__(self, log):
+        super(JiraNotifier, self).__init__()
         self._log = log
         self.jira_fields_format = None
 
+    @removals.remove(
+        message='Configuration of notifier is available through oslo.cfg',
+        version='1.9.0',
+        removal_version='3.0.0'
+    )
     def config(self, config_dict):
-        self._config = {'timeout': 5}
-        if not config_dict.get("user") and not config_dict.get("password"):
-            message = "Missing user and password settings in JIRA plugin configuration"
-            self._log.exception(message)
-            raise Exception(message)
-
-        self._config.update(config_dict)
-        self.jira_fields_format = self._get_jira_custom_format_fields()
-
-    @property
-    def type(self):
-        return "jira"
+        pass
 
     @property
     def statsd_name(self):
@@ -80,9 +97,10 @@ class JiraNotifier(AbstractNotifier):
     def _get_jira_custom_format_fields(self):
         jira_fields_format = None
 
-        if (not self.jira_fields_format and self._config.get("custom_formatter")):
+        formatter = CONF.jira_notifier.custom_formatter
+        if not self.jira_fields_format and formatter:
             try:
-                with open(self._config.get("custom_formatter")) as f:
+                with open(formatter, 'r') as f:
                     jira_fields_format = yaml.safe_load(f)
             except Exception:
                 self._log.exception("Unable to read custom_formatter file. Check file location")
@@ -139,8 +157,10 @@ class JiraNotifier(AbstractNotifier):
         return jira_fields
 
     def _build_jira_message(self, notification):
-        if self._config.get("custom_formatter"):
-            return self._build_custom_jira_message(notification, self.jira_fields_format)
+        formatter = CONF.jira_notifier.custom_formatter
+        if formatter:
+            return self._build_custom_jira_message(notification,
+                                                   self._get_jira_custom_format_fields())
 
         return self._build_default_jira_message(notification)
 
@@ -159,13 +179,17 @@ class JiraNotifier(AbstractNotifier):
         if query_params.get("component"):
             jira_fields["component"] = query_params["component"][0]
 
-        auth = (self._config["user"], self._config["password"])
-        proxyDict = None
-        if (self._config.get("proxy")):
-            proxyDict = {"https": self._config.get("proxy")}
+        auth = (
+            CONF.jira_notifier.user,
+            CONF.jira_notifier.password
+        )
+        proxy = CONF.jira_notifier.proxy
+        proxy_dict = None
+        if proxy is not None:
+            proxy_dict = {"https": proxy}
 
         try:
-            jira_obj = jira.JIRA(url, basic_auth=auth, proxies=proxyDict)
+            jira_obj = jira.JIRA(url, basic_auth=auth, proxies=proxy_dict)
 
             self.jira_workflow(jira_fields, jira_obj, notification)
         except Exception:
@@ -192,7 +216,8 @@ class JiraNotifier(AbstractNotifier):
             issue_dict["components"] = [{"name": jira_fields.get("component")}]
 
         search_term = self._search_query.format(issue_dict["project"]["key"],
-                                                self._config["user"], notification.alarm_id)
+                                                CONF.jira_notifier.user,
+                                                notification.alarm_id)
         issue_list = jira_obj.search_issues(search_term)
         if not issue_list:
             self._log.debug("Creating an issue with the data {}".format(issue_dict))

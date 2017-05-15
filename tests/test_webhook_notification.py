@@ -1,4 +1,5 @@
 # (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,13 +16,13 @@
 
 import mock
 import requests
-import unittest
 
 import six
 import ujson as json
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import webhook_notifier
+from tests import base
 
 if six.PY2:
     import Queue as queue
@@ -50,12 +51,14 @@ class requestsResponse(object):
         self.status_code = status
 
 
-class TestWebhook(unittest.TestCase):
+class TestWebhook(base.PluginTestCase):
+
     def setUp(self):
+        super(TestWebhook, self).setUp(webhook_notifier.register_opts)
         self.trap = queue.Queue()
-        self.webhook_config = {'timeout': 50}
 
     def tearDown(self):
+        super(TestWebhook, self).tearDown()
         self.assertTrue(self.trap.empty())
 
     def _http_post_200(self, url, data, headers, **kwargs):
@@ -83,8 +86,6 @@ class TestWebhook(unittest.TestCase):
         mock_requests.post = http_func
 
         webhook = webhook_notifier.WebhookNotifier(mock_log)
-
-        webhook.config(self.webhook_config)
 
         metric = []
         metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
@@ -140,6 +141,7 @@ class TestWebhook(unittest.TestCase):
         """webhook timeout exception
         """
 
+        self.conf_override(group='webhook_notifier', timeout=50)
         self.notify(self._http_post_exception)
 
         result = self.trap.get()
@@ -152,7 +154,6 @@ class TestWebhook(unittest.TestCase):
         self.assertNotRegexpMatches(result, "content-type.: .application/json")
 
         self.assertRegexpMatches(result, "Error trying to post on URL http://mock:3333/")
-        self.assertRaises(requests.exceptions.Timeout)
 
         return_value = self.trap.get()
         self.assertFalse(return_value)

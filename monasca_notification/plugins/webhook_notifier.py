@@ -1,4 +1,5 @@
 # (C) Copyright 2015,2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,20 +17,39 @@
 import requests
 import ujson as json
 
+from debtcollector import removals
+from oslo_config import cfg
+
 from monasca_notification.plugins import abstract_notifier
+
+CONF = cfg.CONF
+
+
+def register_opts(conf):
+    gr = cfg.OptGroup(name='%s_notifier' % WebhookNotifier.type)
+    opts = [
+        cfg.IntOpt(name='timeout', default=5, min=1)
+    ]
+
+    conf.register_group(gr)
+    conf.register_opts(opts, group=gr)
 
 
 class WebhookNotifier(abstract_notifier.AbstractNotifier):
+
+    type = 'webhook'
+
     def __init__(self, log):
+        super(WebhookNotifier, self).__init__()
         self._log = log
 
+    @removals.remove(
+        message='Configuration of notifier is available through oslo.cfg',
+        version='1.9.0',
+        removal_version='3.0.0'
+    )
     def config(self, config_dict):
-        self._config = {'timeout': 5}
-        self._config.update(config_dict)
-
-    @property
-    def type(self):
-        return "webhook"
+        pass
 
     @property
     def statsd_name(self):
@@ -60,7 +80,7 @@ class WebhookNotifier(abstract_notifier.AbstractNotifier):
             result = requests.post(url=url,
                                    data=json.dumps(body),
                                    headers=headers,
-                                   timeout=self._config['timeout'])
+                                   timeout=CONF.webhook_notifier.timeout)
 
             if result.status_code in range(200, 300):
                 self._log.info("Notification successfully posted.")

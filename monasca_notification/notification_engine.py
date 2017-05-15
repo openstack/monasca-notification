@@ -1,4 +1,5 @@
 # (C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,44 +14,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import time
+
+from oslo_config import cfg
+from oslo_log import log as logging
 
 from monasca_common.kafka import consumer
 from monasca_common.kafka import producer
 from monasca_notification.common.utils import get_statsd_client
-from monasca_notification.processors.alarm_processor import AlarmProcessor
-from monasca_notification.processors.notification_processor import NotificationProcessor
+from monasca_notification.processors import alarm_processor as ap
+from monasca_notification.processors import notification_processor as np
 
 log = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class NotificationEngine(object):
-    def __init__(self, config):
-        self._topics = {}
-        self._topics['notification_topic'] = config['kafka']['notification_topic']
-        self._topics['retry_topic'] = config['kafka']['notification_retry_topic']
-
-        self._statsd = get_statsd_client(config)
+    def __init__(self):
+        self._statsd = get_statsd_client()
         self._consumer = consumer.KafkaConsumer(
-            config['kafka']['url'],
-            config['zookeeper']['url'],
-            config['zookeeper']['notification_path'],
-            config['kafka']['group'],
-            config['kafka']['alarm_topic'])
-        self._producer = producer.KafkaProducer(config['kafka']['url'])
-        self._alarm_ttl = config['processors']['alarm']['ttl']
-        self._alarms = AlarmProcessor(self._alarm_ttl, config)
-        self._notifier = NotificationProcessor(config)
-
-        self._config = config
+            CONF.kafka.url,
+            ','.join(CONF.zookeeper.url),
+            CONF.zookeeper.notification_path,
+            CONF.kafka.group,
+            CONF.kafka.alarm_topic)
+        self._producer = producer.KafkaProducer(CONF.kafka.url)
+        self._alarms = ap.AlarmProcessor()
+        self._notifier = np.NotificationProcessor()
 
     def _add_periodic_notifications(self, notifications):
         for notification in notifications:
             topic = notification.periodic_topic
-            if topic in self._config['kafka']['periodic'] and notification.type == "webhook":
+            if topic in CONF.kafka.periodic and notification.type == "webhook":
                 notification.notification_timestamp = time.time()
-                self._producer.publish(self._config['kafka']['periodic'][topic],
+                self._producer.publish(CONF.kafka.periodic[topic],
                                        [notification.to_json()])
 
     def run(self):
@@ -62,9 +59,9 @@ class NotificationEngine(object):
                 self._add_periodic_notifications(notifications)
 
                 sent, failed = self._notifier.send(notifications)
-                self._producer.publish(self._topics['notification_topic'],
+                self._producer.publish(CONF.kafka.notification_topic,
                                        [i.to_json() for i in sent])
-                self._producer.publish(self._topics['retry_topic'],
+                self._producer.publish(CONF.kafka.notification_retry_topic,
                                        [i.to_json() for i in failed])
 
             self._consumer.commit()

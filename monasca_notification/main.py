@@ -18,20 +18,23 @@
     This engine reads alarms from Kafka and then notifies the customer using their configured notification method.
 """
 
-import logging
-import logging.config
 import multiprocessing
 import os
 import signal
 import sys
 import time
-import yaml
+import warnings
 
-from monasca_notification.notification_engine import NotificationEngine
-from monasca_notification.periodic_engine import PeriodicEngine
-from monasca_notification.retry_engine import RetryEngine
+from oslo_log import log
 
-log = logging.getLogger(__name__)
+from monasca_notification import config
+from monasca_notification import notification_engine
+from monasca_notification import periodic_engine
+from monasca_notification import retry_engine
+
+LOG = log.getLogger(__name__)
+CONF = config.CONF
+
 processors = []  # global list to facilitate clean signal handling
 exiting = False
 
@@ -45,10 +48,10 @@ def clean_exit(signum, frame=None):
         # Since this is set up as a handler for SIGCHLD when this kills one
         # child it gets another signal, the global exiting avoids this running
         # multiple times.
-        log.debug('Exit in progress clean_exit received additional signal %s' % signum)
+        LOG.debug('Exit in progress clean_exit received additional signal %s' % signum)
         return
 
-    log.info('Received signal %s, beginning graceful shutdown.' % signum)
+    LOG.info('Received signal %s, beginning graceful shutdown.' % signum)
     exiting = True
     wait_for_exit = False
 
@@ -68,7 +71,7 @@ def clean_exit(signum, frame=None):
 
     # Kill everything, that didn't already die
     for child in multiprocessing.active_children():
-        log.debug('Killing pid %s' % child.pid)
+        LOG.debug('Killing pid %s' % child.pid)
         try:
             os.kill(child.pid, signal.SIGKILL)
         except Exception:  # nosec
@@ -82,50 +85,35 @@ def clean_exit(signum, frame=None):
     sys.exit(signum)
 
 
-def start_process(process_type, config, *args):
-    log.info("start process: {}".format(process_type))
-    p = process_type(config, *args)
+def start_process(process_type, *args):
+    LOG.info("start process: {}".format(process_type))
+    p = process_type(*args)
     p.run()
 
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-    if len(argv) == 2:
-        config_file = argv[1]
-    elif len(argv) > 2:
-        print("Usage: " + argv[0] + " <config_file>")
-        print("Config file defaults to /etc/monasca/notification.yaml")
-        return 1
-    else:
-        config_file = '/etc/monasca/notification.yaml'
+    warnings.simplefilter('always')
+    config.parse_args(argv=argv)
 
-    config = yaml.safe_load(open(config_file, 'rb'))
-
-    # Setup logging
-    try:
-        if config['logging']['raise_exceptions'] is True:
-            logging.raiseExceptions = True
-        else:
-            logging.raiseExceptions = False
-    except KeyError:
-        logging.raiseExceptions = False
-        pass
-    logging.config.dictConfig(config['logging'])
-
-    for proc in range(0, config['processors']['notification']['number']):
+    for proc in range(0, CONF.notification_processor.number):
         processors.append(multiprocessing.Process(
-            target=start_process, args=(NotificationEngine, config)))
+            target=start_process,
+            args=(notification_engine.NotificationEngine,))
+        )
 
     processors.append(multiprocessing.Process(
-        target=start_process, args=(RetryEngine, config)))
+        target=start_process,
+        args=(retry_engine.RetryEngine,))
+    )
 
-    if 60 in config['kafka']['periodic']:
+    if 60 in CONF.kafka.periodic:
         processors.append(multiprocessing.Process(
-            target=start_process, args=(PeriodicEngine, config, 60)))
+            target=start_process,
+            args=(periodic_engine.PeriodicEngine, 60))
+        )
 
     try:
-        log.info('Starting processes')
+        LOG.info('Starting processes')
         for process in processors:
             process.start()
 
@@ -139,8 +127,9 @@ def main(argv=None):
             time.sleep(10)
 
     except Exception:
-        log.exception('Error! Exiting.')
+        LOG.exception('Error! Exiting.')
         clean_exit(signal.SIGKILL)
 
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

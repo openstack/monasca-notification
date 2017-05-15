@@ -1,4 +1,5 @@
 # (C) Copyright 2015,2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,25 +17,44 @@
 import requests
 import ujson as json
 
+from debtcollector import removals
+from oslo_config import cfg
+
 from monasca_notification.plugins import abstract_notifier
 
 
+CONF = cfg.CONF
 VALID_HTTP_CODES = [200, 201, 204]
 
 
+def register_opts(conf):
+    gr = cfg.OptGroup(name='%s_notifier' % PagerdutyNotifier.type)
+    opts = [
+        cfg.IntOpt(name='timeout', default=5, min=1),
+        cfg.StrOpt(name='url',
+                   default='https://events.pagerduty.com/'
+                           'generic/2010-04-15/create_event.json')
+    ]
+
+    conf.register_group(gr)
+    conf.register_opts(opts, group=gr)
+
+
 class PagerdutyNotifier(abstract_notifier.AbstractNotifier):
+
+    type = 'pagerduty'
+
     def __init__(self, log):
+        super(PagerdutyNotifier, self).__init__()
         self._log = log
 
+    @removals.remove(
+        message='Configuration of notifier is available through oslo.cfg',
+        version='1.9.0',
+        removal_version='3.0.0'
+    )
     def config(self, config):
-        self._config = {
-            'timeout': 5,
-            'url': 'https://events.pagerduty.com/generic/2010-04-15/create_event.json'}
-        self._config.update(config)
-
-    @property
-    def type(self):
-        return "pagerduty"
+        pass
 
     @property
     def statsd_name(self):
@@ -44,7 +64,7 @@ class PagerdutyNotifier(abstract_notifier.AbstractNotifier):
         """Send pagerduty notification
         """
 
-        url = self._config['url']
+        url = CONF.pagerduty_notifier.url
         headers = {"content-type": "application/json"}
         body = {"service_key": notification.address,
                 "event_type": "trigger",
@@ -60,7 +80,7 @@ class PagerdutyNotifier(abstract_notifier.AbstractNotifier):
             result = requests.post(url=url,
                                    data=json.dumps(body),
                                    headers=headers,
-                                   timeout=self._config['timeout'])
+                                   timeout=CONF.pagerduty_notifier.timeout)
 
             if result.status_code in VALID_HTTP_CODES:
                 return True

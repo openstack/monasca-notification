@@ -1,4 +1,5 @@
 # (C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +21,12 @@ import six
 import smtplib
 import time
 
+from debtcollector import removals
+from oslo_config import cfg
 
 from monasca_notification.plugins import abstract_notifier
+
+CONF = cfg.CONF
 
 EMAIL_SINGLE_HOST_BASE = u'''On host "{hostname}" for target "{target_host}" {message}
 
@@ -60,21 +65,38 @@ With dimensions
 {metric_dimensions}'''
 
 
+def register_opts(conf):
+    gr = cfg.OptGroup(name='%s_notifier' % EmailNotifier.type)
+    opts = [
+        cfg.StrOpt(name='from_addr'),
+        cfg.HostAddressOpt(name='server'),
+        cfg.PortOpt(name='port', default=25),
+        cfg.IntOpt(name='timeout', default=5, min=1),
+        cfg.StrOpt(name='user', default=None),
+        cfg.StrOpt(name='password', default=None, secret=True),
+        cfg.StrOpt(name='grafana_url', default=None)
+    ]
+
+    conf.register_group(gr)
+    conf.register_opts(opts, group=gr)
+
+
 class EmailNotifier(abstract_notifier.AbstractNotifier):
+
+    type = 'email'
 
     def __init__(self, log):
         super(EmailNotifier, self).__init__()
         self._log = log
         self._smtp = None
-        self._config = None
 
-    def config(self, config):
-        self._config = config
+    @removals.remove(
+        message='Configuration of notifier is available through oslo.cfg',
+        version='1.9.0',
+        removal_version='3.0.0'
+    )
+    def config(self, config=None):
         self._smtp_connect()
-
-    @property
-    def type(self):
-        return "email"
 
     @property
     def statsd_name(self):
@@ -122,7 +144,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
             return False
 
     def _sendmail(self, notification, msg):
-        self._smtp.sendmail(self._config['from_addr'],
+        self._smtp.sendmail(CONF.email_notifier.from_addr,
                             notification.address,
                             msg.as_string())
         self._log.debug("Sent email to {}, notification {}".format(notification.address,
@@ -135,15 +157,19 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
     def _smtp_connect(self):
         """Connect to the smtp server
         """
-        self._log.info("Connecting to Email Server {}".format(self._config['server']))
+        self._log.info("Connecting to Email Server {}".format(
+            CONF.email_notifier.server))
 
         try:
-            smtp = smtplib.SMTP(self._config['server'],
-                                self._config['port'],
-                                timeout=self._config['timeout'])
+            smtp = smtplib.SMTP(CONF.email_notifier.server,
+                                CONF.email_notifier.port,
+                                timeout=CONF.email_notifier.timeout)
 
-            if ('user', 'password') in self._config.keys():
-                smtp.login(self._config['user'], self._config['password'])
+            email_notifier_user = CONF.email_notifier.user
+            email_notifier_password = CONF.email_notifier.password
+            if email_notifier_user and email_notifier_password:
+                smtp.login(email_notifier_user,
+                           email_notifier_password)
 
             self._smtp = smtp
             return True
@@ -222,7 +248,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
 
         msg = email.mime.text.MIMEText(text, 'plain', 'utf-8')
         msg['Subject'] = email.header.Header(subject, 'utf-8')
-        msg['From'] = self._config['from_addr']
+        msg['From'] = CONF.email_notifier.from_addr
         msg['To'] = notification.address
         msg['Date'] = email.utils.formatdate(localtime=True, usegmt=True)
 
@@ -237,7 +263,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
         has been defined.
         """
 
-        grafana_url = self._config.get('grafana_url', None)
+        grafana_url = CONF.email_notifier.grafana_url
         if grafana_url is None:
             return None
 

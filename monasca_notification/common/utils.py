@@ -13,25 +13,25 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 import monascastatsd
 
-from monasca_common.simport import simport
+from oslo_config import cfg
+from oslo_log import log
 
 from monasca_notification.common.repositories import exceptions
 from monasca_notification.notification import Notification
 
-log = logging.getLogger(__name__)
+LOG = log.getLogger(__name__)
+CONF = cfg.CONF
 
 NOTIFICATION_DIMENSIONS = {'service': 'monitoring',
                            'component': 'monasca-notification'}
 
 
-def get_db_repo(config):
-    if 'database' in config and 'repo_driver' in config['database']:
-        return simport.load(config['database']['repo_driver'])(config)
-    else:
-        return simport.load('monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo')(config)
+def get_db_repo():
+    repo_driver = CONF.database.repo_driver
+    LOG.debug('Enabling the %s RDB repository', repo_driver)
+    return repo_driver(CONF)
 
 
 def construct_notification_object(db_repo, notification_json):
@@ -47,7 +47,7 @@ def construct_notification_object(db_repo, notification_json):
         stored_notification = grab_stored_notification_method(db_repo, notification.id)
         # Notification method was deleted
         if stored_notification is None:
-            log.debug("Notification method {0} was deleted from database. "
+            LOG.debug("Notification method {0} was deleted from database. "
                       "Will stop sending.".format(notification.id))
             return None
         # Update notification method with most up to date values
@@ -58,11 +58,11 @@ def construct_notification_object(db_repo, notification_json):
             notification.period = stored_notification[3]
             return notification
     except exceptions.DatabaseException:
-        log.warn("Error querying mysql for notification method. "
+        LOG.warn("Error querying mysql for notification method. "
                  "Using currently cached method.")
         return notification
     except Exception as e:
-        log.warn("Error when attempting to construct notification {0}".format(e))
+        LOG.warn("Error when attempting to construct notification {0}".format(e))
         return None
 
 
@@ -70,21 +70,18 @@ def grab_stored_notification_method(db_repo, notification_id):
         try:
             stored_notification = db_repo.get_notification(notification_id)
         except exceptions.DatabaseException:
-            log.debug('Database Error.  Attempting reconnect')
+            LOG.debug('Database Error.  Attempting reconnect')
             stored_notification = db_repo.get_notification(notification_id)
 
         return stored_notification
 
 
-def get_statsd_client(config, dimensions=None):
+def get_statsd_client(dimensions=None):
     local_dims = dimensions.copy() if dimensions else {}
     local_dims.update(NOTIFICATION_DIMENSIONS)
-    if 'statsd' in config:
-        client = monascastatsd.Client(name='monasca',
-                                      host=config['statsd'].get('host', 'localhost'),
-                                      port=config['statsd'].get('port', 8125),
-                                      dimensions=local_dims)
-    else:
-        client = monascastatsd.Client(name='monasca',
-                                      dimensions=local_dims)
+    client = monascastatsd.Client(name='monasca',
+                                  host=CONF.statsd.host,
+                                  port=CONF.statsd.port,
+                                  dimensions=local_dims)
+
     return client

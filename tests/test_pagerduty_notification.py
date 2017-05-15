@@ -1,4 +1,5 @@
 # (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,12 +18,12 @@ import json
 import mock
 import requests
 import time
-import unittest
 
 import six
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import pagerduty_notifier
+from tests import base
 
 if six.PY2:
     import Queue as queue
@@ -49,12 +50,18 @@ class requestsResponse(object):
         self.status_code = status
 
 
-class TestWebhook(unittest.TestCase):
+class TestPagerduty(base.PluginTestCase):
+
     def setUp(self):
+        super(TestPagerduty, self).setUp(
+            pagerduty_notifier.register_opts
+        )
+        self.conf_override(group='pagerduty_notifier', timeout=50)
+
         self.trap = queue.Queue()
-        self.pagerduty_config = {'timeout': 50, 'key': 'foobar'}
 
     def tearDown(self):
+        super(TestPagerduty, self).tearDown()
         self.assertTrue(self.trap.empty())
 
     def _http_post_200(self, url, data, headers, **kwargs):
@@ -141,8 +148,6 @@ class TestWebhook(unittest.TestCase):
         mock_requests.post = http_func
 
         pagerduty = pagerduty_notifier.PagerdutyNotifier(mock_log)
-
-        pagerduty.config(self.pagerduty_config)
 
         metric = []
         metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
@@ -274,8 +279,6 @@ class TestWebhook(unittest.TestCase):
 
         self.assertRegexpMatches(results, "Exception on pagerduty request")
         self.assertRegexpMatches(results, "key=<ABCDEF>")
-
-        self.assertRaises(requests.exceptions.Timeout)
 
         return_value = self.trap.get()
         self.assertFalse(return_value)

@@ -1,4 +1,4 @@
-# Copyright 2016 FUJITSU LIMITED
+# Copyright 2016-2017 FUJITSU LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -13,41 +13,45 @@
 # under the License.
 
 from mock import patch
-import unittest
 
 from monasca_notification.common import utils
+from tests import base
 
 
-class TestStatsdConnection(unittest.TestCase):
+class TestStatsdConnection(base.BaseTestCase):
     extra_dimensions = {'foo': 'bar'}
     base_name = 'monasca'
 
     def test_statsd_default_connection(self):
-        config = {}
         with patch(
                 'monasca_notification.common.utils.monascastatsd.Client') as c:
-            utils.get_statsd_client(config)
+            utils.get_statsd_client()
             c.assert_called_once_with(dimensions=utils.NOTIFICATION_DIMENSIONS,
-                                      name=self.base_name)
+                                      name=self.base_name,
+                                      host='127.0.0.1',
+                                      port=8125)
 
     def test_statsd_config_connection(self):
         port_number = 9999
         hostname = 'www.example.org'
-        config = {'statsd': {'host': hostname, 'port': port_number}}
+
+        self.conf_override(group='statsd', host=hostname, port=port_number)
+
         with patch(
                 'monasca_notification.common.utils.monascastatsd.Client') as c:
-            utils.get_statsd_client(config)
+            utils.get_statsd_client()
             c.assert_called_once_with(dimensions=utils.NOTIFICATION_DIMENSIONS,
                                       name=self.base_name,
                                       port=port_number,
                                       host=hostname)
 
     def test_statsd_update_dimmensions(self):
-        config = {}
         expected_dimensions = utils.NOTIFICATION_DIMENSIONS.copy()
         expected_dimensions.update(self.extra_dimensions)
         with patch(
                 'monasca_notification.common.utils.monascastatsd.Client') as c:
-            utils.get_statsd_client(config, dimensions=self.extra_dimensions)
+            utils.get_statsd_client(dimensions=self.extra_dimensions)
             c.assert_called_once_with(dimensions=expected_dimensions,
-                                      name=self.base_name)
+                                      name=self.base_name,
+                                      host='127.0.0.1',
+                                      port=8125)

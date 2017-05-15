@@ -1,4 +1,5 @@
 # (C) Copyright 2015 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,15 +15,21 @@
 # limitations under the License.
 
 import mock
-import unittest
 
 import pymysql
 
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.repositories.mysql import mysql_repo
+from tests import base
 
 
-class TestMySqlRepo(unittest.TestCase):
+class TestMySqlRepo(base.BaseTestCase):
+    def setUp(self):
+        super(TestMySqlRepo, self).setUp()
+        self.conf_default(group='mysql', host='localhost',
+                          port=3306, user='bar',
+                          passwd='1', db='2')
+
     @mock.patch('monasca_notification.common.repositories.mysql.mysql_repo.pymysql')
     def testReconnect(self, mock_mysql):
         m = mock.MagicMock()
@@ -32,13 +39,7 @@ class TestMySqlRepo(unittest.TestCase):
         mock_mysql.connect.return_value = m
         mock_mysql.Error = pymysql.Error
 
-        config = {'mysql': {'host': 'foo',
-                            'port': '3306',
-                            'user': 'bar',
-                            'passwd': '1',
-                            'db': '2'}}
-
-        repo = mysql_repo.MysqlRepo(config)
+        repo = mysql_repo.MysqlRepo(base.config.CONF)
 
         alarm = {'alarmDefinitionId': 'foo',
                  'newState': 'bar'}

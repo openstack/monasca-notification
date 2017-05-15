@@ -1,4 +1,5 @@
 # (C) Copyright 2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +15,10 @@
 # limitations under the License.
 
 import json
-import logging
 import time
+
+from oslo_config import cfg
+from oslo_log import log as logging
 
 from monasca_common.kafka import consumer
 from monasca_common.kafka import producer
@@ -26,25 +29,26 @@ from monasca_notification.common.utils import get_statsd_client
 from monasca_notification.processors import notification_processor
 
 log = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class PeriodicEngine(object):
-    def __init__(self, config, period):
-        self._topic_name = config['kafka']['periodic'][period]
+    def __init__(self, period):
+        self._topic_name = CONF.kafka.periodic[period]
 
-        self._statsd = get_statsd_client(config)
+        self._statsd = get_statsd_client()
 
-        zookeeper_path = config['zookeeper']['periodic_path'][period]
-        self._consumer = consumer.KafkaConsumer(config['kafka']['url'],
-                                                config['zookeeper']['url'],
+        zookeeper_path = CONF.zookeeper.periodic_path[period]
+        self._consumer = consumer.KafkaConsumer(CONF.kafka.url,
+                                                ','.join(CONF.zookeeper.url),
                                                 zookeeper_path,
-                                                config['kafka']['group'],
+                                                CONF.kafka.group,
                                                 self._topic_name)
 
-        self._producer = producer.KafkaProducer(config['kafka']['url'])
+        self._producer = producer.KafkaProducer(CONF.kafka.url)
 
-        self._notifier = notification_processor.NotificationProcessor(config)
-        self._db_repo = get_db_repo(config)
+        self._notifier = notification_processor.NotificationProcessor()
+        self._db_repo = get_db_repo()
         self._period = period
 
     def _keep_sending(self, alarm_id, original_state, type, period):

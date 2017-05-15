@@ -1,0 +1,125 @@
+kafka:
+    url: 127.0.0.1:9092
+    group: a
+    alarm_topic: b
+    notification_topic: c
+    notification_retry_topic: d
+    periodic:
+        60: e
+    max_offset_lag: 666
+
+database:
+  repo_driver: mysql
+  orm:
+    url: 'postgres://a:b@127.0.0.1:9999/goo'
+
+mysql:
+  host: 100.99.100.99
+  port: 3306
+  user: goku
+  passwd: kame-ha-me-ha
+  db: planet_vegeta
+
+postgresql:
+  user: goku
+  password: kame-ha-me-ha
+  database: planet_vegeta
+  port: 9999
+  host: 100.10.100.10
+
+notification_types:
+    plugins:
+     - monasca_notification.plugins.hipchat_notifier:HipChatNotifier
+     - monasca_notification.plugins.slack_notifier:SlackNotifier
+     - monasca_notification.plugins.jira_notifier:JiraNotifier
+
+    email:
+        server: 127.0.0.1
+        port: 25
+        user:
+        password:
+        timeout: 60
+        from_addr: root@localhost
+        grafana_url: 'http://127.0.0.1:3000'
+
+    webhook:
+        timeout: 123
+
+    pagerduty:
+        timeout: 231
+        url: "https://a.b.c/d/e/f.json"
+
+    hipchat:
+        timeout: 512
+        ca_certs: "/a.crt"
+        insecure: True
+        proxy:  https://myproxy.corp.invalid:9999
+
+    slack:
+        timeout: 512
+        ca_certs: "/a.crt"
+        insecure: True
+        proxy: https://myproxy.corp.invalid:9999
+
+    jira:
+        user: username
+        password: password
+        timeout: 666
+        custom_formatter: /some_yml.yml
+        proxy: www.example.org
+
+processors:
+    alarm:
+        number: 666
+        ttl: 666
+    notification:
+        number: 666
+
+retry:
+    interval: 300
+    max_attempts: 500
+
+queues:
+    alarms_size: 1024
+    finished_size: 1024
+    notifications_size: 1024
+    sent_notifications_size: 1024
+
+zookeeper:
+    url: 127.0.0.1:2181
+    notification_path: /foo/bar
+    notification_retry_path: /son/goku
+    periodic_path:
+        666: /bu/666_bubu
+
+logging:
+    raise_exceptions: False
+    version: 1
+    disable_existing_loggers: False
+    formatters:
+        default:
+            format: "%(asctime)s %(levelname)s %(name)s %(message)s"
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: default
+        file:
+            class : logging.handlers.RotatingFileHandler
+            filename: /tmp/notification.log
+            formatter: default
+            maxBytes: 10485760  # Rotate at file size ~10MB
+            backupCount: 5  # Keep 5 older logs around
+    loggers:
+        kazoo:
+            level: WARN
+        kafka:
+            level: WARN
+        statsd:
+            level: WARN
+    root:
+        handlers:
+            - console
+        level: DEBUG
+statsd:
+    host: 'localhost'
+    port: 8125

@@ -13,17 +13,18 @@
 import mock
 
 from monasca_notification.common.repositories.orm import orm_repo
-from oslotest import base
+from tests import base
 
 
 class TestOrmRepo(base.BaseTestCase):
+
     @mock.patch('monasca_notification.common.repositories.orm.orm_repo.engine_from_config')
     def setUp(self, mock_sql_engine_from_config):
         super(TestOrmRepo, self).setUp()
-        config = {'database':
-                  {'orm':
-                   {'url': 'mysql+pymysql://user:password@hostname:3306/mon'}}}
-        self._rep = orm_repo.OrmRepo(config)
+        self.conf_default(
+            group='orm', url='mysql+pymysql://user:password@hostname:3306/mon'
+        )
+        self._rep = orm_repo.OrmRepo()
         self.mock_conn = \
             self._rep._orm_engine.connect.return_value.__enter__.return_value
 

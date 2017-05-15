@@ -1,5 +1,6 @@
 # coding=utf-8
 # (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +21,6 @@ import mock
 import smtplib
 import socket
 import time
-import unittest
 
 import six
 
@@ -34,6 +34,7 @@ else:
 
 from monasca_notification.notification import Notification
 from monasca_notification.plugins import email_notifier
+from tests import base
 
 UNICODE_CHAR = six.unichr(2344)
 UNICODE_CHAR_ENCODED = UNICODE_CHAR.encode("utf-8")
@@ -113,20 +114,16 @@ class smtpStubException(object):
         raise smtplib.SMTPServerDisconnected
 
 
-class TestEmail(unittest.TestCase):
+class TestEmail(base.PluginTestCase):
     def setUp(self):
+        super(TestEmail, self).setUp(email_notifier.register_opts)
+
         self.trap = []
-
-        self.email_config = {'server': 'my.smtp.server',
-                             'port': 25,
-                             'user': None,
-                             'password': None,
-                             'timeout': 60,
-                             'from_addr': 'hpcs.mon@hp.com',
-                             'grafana_url': 'http://127.0.0.1:3000'}
-
-    def tearDown(self):
-        pass
+        self.conf_override(group='email_notifier', server='my.smtp.server',
+                           port=25, user=None,
+                           password=None, timeout=60,
+                           from_addr='hpcs.mon@hp.com',
+                           grafana_url='http://127.0.0.1:3000')
 
     def _smtpStub(self, *arg, **kwargs):
         return smtpStub(self.trap)
@@ -143,7 +140,6 @@ class TestEmail(unittest.TestCase):
         mock_log.error = self.trap.append
 
         email = email_notifier.EmailNotifier(mock_log)
-        email.config(self.email_config)
 
         alarm_dict = alarm(metric)
 
@@ -269,7 +265,7 @@ class TestEmail(unittest.TestCase):
 
         email = email_notifier.EmailNotifier(mock_log)
 
-        email.config(self.email_config)
+        email.config()
 
         alarm_dict = alarm(metrics)
 
@@ -313,7 +309,7 @@ class TestEmail(unittest.TestCase):
 
         email = email_notifier.EmailNotifier(mock_log)
 
-        email.config(self.email_config)
+        email.config()
 
         del self.trap[:]
 
@@ -324,8 +320,7 @@ class TestEmail(unittest.TestCase):
         email_result = email.send_notification(notification)
 
         self.assertFalse(email_result)
-        self.assertIn("Connecting to Email Server {}"
-                      .format(self.email_config['server']),
+        self.assertIn("Connecting to Email Server my.smtp.server",
                       self.trap)
 
     @mock.patch('monasca_notification.plugins.email_notifier.smtplib')
@@ -358,7 +353,7 @@ class TestEmail(unittest.TestCase):
 
         email = email_notifier.EmailNotifier(mock_log)
 
-        email.config(self.email_config)
+        email.config()
 
         alarm_dict = alarm(metrics)
 
@@ -398,7 +393,7 @@ class TestEmail(unittest.TestCase):
 
         email = email_notifier.EmailNotifier(mock_log)
 
-        email.config(self.email_config)
+        email.config()
 
         alarm_dict = alarm(metrics)
 
@@ -438,7 +433,7 @@ class TestEmail(unittest.TestCase):
 
         email = email_notifier.EmailNotifier(mock_log)
 
-        email.config(self.email_config)
+        email.config()
 
         alarm_dict = alarm(metrics)
 
@@ -471,7 +466,6 @@ class TestEmail(unittest.TestCase):
         mock_smtp.SMTPException = smtplib.SMTPException
 
         email = email_notifier.EmailNotifier(mock_log)
-        email.config(self.email_config)
 
         # Create alarm timestamp and timestamp for 'from' and 'to' dates in milliseconds.
         alarm_date = datetime.datetime(2017, 6, 7, 18, 0)

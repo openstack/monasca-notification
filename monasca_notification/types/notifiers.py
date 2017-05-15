@@ -1,4 +1,5 @@
 # (C) Copyright 2015,2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import time
 
-from monasca_common.simport import simport
+from debtcollector import removals
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import importutils
+
 from monasca_notification.plugins import email_notifier
 from monasca_notification.plugins import pagerduty_notifier
 from monasca_notification.plugins import webhook_notifier
 
 log = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 possible_notifiers = None
 configured_notifiers = None
@@ -49,14 +54,16 @@ def init(statsd_obj):
     ]
 
 
-def load_plugins(config):
+def load_plugins():
     global possible_notifiers
-
-    for plugin_class in config.get("plugins", []):
+    for plugin_class in CONF.notification_types.enabled:
         try:
-            possible_notifiers.append(simport.load(plugin_class)(log))
+            plugin_class = plugin_class.replace(':', '.')
+            clz = importutils.import_class(plugin_class)
+            possible_notifiers.append(clz(logging.getLogger(plugin_class)))
         except Exception:
-            log.exception("unable to load the class {0} , ignoring it".format(plugin_class))
+            log.exception("unable to load the class %s , ignoring it" %
+                          plugin_class)
 
 
 def enabled_notifications():
@@ -68,29 +75,20 @@ def enabled_notifications():
     return results
 
 
-def config(cfg):
+@removals.remove(
+    message='Loading the plugin configuration has been moved to oslo, '
+            'This method will be fully deleted in future releases',
+    version='1.9.0',
+    removal_version='3.0.0'
+)
+def config():
     global possible_notifiers, configured_notifiers, statsd_counter
 
-    formatted_config = {t.lower(): v for t, v in cfg.items()}
     for notifier in possible_notifiers:
         ntype = notifier.type.lower()
-        if ntype in formatted_config:
-            try:
-                notifier.config(formatted_config[ntype])
-                configured_notifiers[ntype] = notifier
-                statsd_counter[ntype] = statsd.get_counter(notifier.statsd_name)
-                log.info("{} notification ready".format(ntype))
-            except Exception:
-                log.exception("config exception for {}".format(ntype))
-        else:
-            log.warn("No config data for type: {}".format(ntype))
-    config_with_no_notifiers = set(formatted_config.keys()) - set(configured_notifiers.keys())
-    # Plugins section contains only additional plugins and should not be
-    # considered as a separate plugin
-    if 'plugins' in config_with_no_notifiers:
-        config_with_no_notifiers.remove('plugins')
-    if config_with_no_notifiers:
-        log.warn("No notifiers found for {0}". format(", ".join(config_with_no_notifiers)))
+        configured_notifiers[ntype] = notifier
+        statsd_counter[ntype] = statsd.get_counter(notifier.statsd_name)
+        log.info("{} notification ready".format(ntype))
 
 
 def send_notifications(notifications):

@@ -11,11 +11,11 @@
 # the License.
 
 import mock
-from oslotest import base
 import six
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import jira_notifier
+from tests import base
 
 if six.PY2:
     import Queue as queue
@@ -64,7 +64,7 @@ class RequestsResponse(object):
         self.status_code = status
 
 
-class TestJira(base.BaseTestCase):
+class TestJira(base.PluginTestCase):
 
     default_address = 'http://test.jira:3333/?project=MyProject' \
                       '&component=MyComponent'
@@ -72,7 +72,14 @@ class TestJira(base.BaseTestCase):
     issue_status_resolved = 'resolved'
 
     def setUp(self):
-        super(TestJira, self).setUp()
+        super(TestJira, self).setUp(
+            jira_notifier.register_opts
+        )
+        self.conf_override(
+            group='jira_notifier',
+            user='username',
+            password='password'
+        )
 
         self._trap = queue.Queue()
 
@@ -85,17 +92,12 @@ class TestJira(base.BaseTestCase):
 
         self._jr = jira_notifier.JiraNotifier(mock_log)
 
-        self._jira_config = {'user': 'username',
-                             'password': 'password'}
-
     @mock.patch('monasca_notification.plugins.jira_notifier.jira')
     def _notify(self,
                 transitions_value,
                 issue_status,
-                jira_config,
                 address,
                 mock_jira):
-        self._jr.config(jira_config)
         alarm_dict = alarm()
 
         mock_jira_obj = mock.Mock()
@@ -117,7 +119,6 @@ class TestJira(base.BaseTestCase):
     def test_send_notification_issue_status_resolved(self):
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         TestJira.issue_status_resolved,
-                                                        self._jira_config,
                                                         TestJira.default_address)
         self.assertTrue(result)
         mock_jira_obj.create_issue.assert_not_called()
@@ -130,7 +131,6 @@ class TestJira(base.BaseTestCase):
         issue_status = 'closed'
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         issue_status,
-                                                        self._jira_config,
                                                         TestJira.default_address)
         self.assertTrue(result)
         mock_jira_obj.create_issue.assert_not_called()
@@ -143,7 +143,6 @@ class TestJira(base.BaseTestCase):
         issue_status = 'progress'
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         issue_status,
-                                                        self._jira_config,
                                                         TestJira.default_address)
         self.assertTrue(result)
         mock_jira_obj.create_issue.assert_not_called()
@@ -153,7 +152,6 @@ class TestJira(base.BaseTestCase):
         transitions_value = [[{'id': 100, 'name': 'not open'}]]
         mock_jira, mock_jira_obj, result = self._notify(transitions_value,
                                                         TestJira.issue_status_resolved,
-                                                        self._jira_config,
                                                         TestJira.default_address)
         self.assertTrue(result)
         mock_jira_obj.create_issue.assert_not_called()
@@ -163,7 +161,6 @@ class TestJira(base.BaseTestCase):
         issue_status = None
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         issue_status,
-                                                        self._jira_config,
                                                         TestJira.default_address)
         self.assertTrue(result)
         mock_jira_obj.transitions.assert_not_called()
@@ -174,7 +171,6 @@ class TestJira(base.BaseTestCase):
         address = 'http://test.jira:3333/?project=MyProject'
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         issue_status,
-                                                        self._jira_config,
                                                         address)
         self.assertTrue(result)
         self.assertEqual(issue(component=False), mock_jira_obj.create_issue.call_args[1])
@@ -183,18 +179,18 @@ class TestJira(base.BaseTestCase):
     def test_send_notification_create_jira_object_args(self):
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         TestJira.issue_status_resolved,
-                                                        self._jira_config,
                                                         TestJira.default_address)
         self.assertEqual('http://test.jira:3333/', mock_jira.JIRA.call_args[0][0])
         self.assertEqual(('username', 'password'), mock_jira.JIRA.call_args[1].get('basic_auth'))
         self.assertEqual(None, mock_jira.JIRA.call_args[1].get('proxies'))
 
     def test_send_notification_with_proxy(self):
-        jira_config = self._jira_config
-        jira_config.update({'proxy': 'http://yourid:password@proxyserver:8080'})
+        self.conf_override(
+            proxy='http://yourid:password@proxyserver:8080',
+            group='jira_notifier'
+        )
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         TestJira.issue_status_resolved,
-                                                        jira_config,
                                                         TestJira.default_address)
         self.assertTrue(result)
         self.assertEqual({'https': 'http://yourid:password@proxyserver:8080'},
@@ -202,45 +198,46 @@ class TestJira(base.BaseTestCase):
 
     def test_send_notification_custom_config_success(self):
         issue_status = None
-        jira_config = self._jira_config
-        jira_config.update(
-            {'custom_formatter': 'tests/resources/test_jiraformat.yml'})
+        self.conf_override(
+            custom_formatter='tests/resources/test_jiraformat.yml',
+            group='jira_notifier'
+        )
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         issue_status,
-                                                        jira_config,
                                                         TestJira.default_address)
         self.assertTrue(result)
         mock_jira_obj.transitions.assert_not_called()
         self.assertEqual(issue(custom_config=True), mock_jira_obj.create_issue.call_args[1])
 
     def test_send_notification_custom_config_failed(self):
-        jira_config = self._jira_config
-        jira_config.update(
-            {'custom_formatter': 'tests/resources/test_jiraformat_without_summary.yml'})
+        self.conf_override(
+            custom_formatter='tests/resources/test_jiraformat_without_summary.yml',
+            group='jira_notifier'
+        )
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         TestJira.issue_status_resolved,
-                                                        jira_config,
                                                         TestJira.default_address)
         self.assertFalse(result)
 
     def test_send_notification_custom_config_without_comments(self):
-        jira_config = self._jira_config
-        jira_config.update(
-            {'custom_formatter': 'tests/resources/test_jiraformat_without_comments.yml'})
+        self.conf_override(
+            custom_formatter='tests/resources/test_jiraformat_without_comments.yml',
+            group='jira_notifier'
+        )
         mock_jira, mock_jira_obj, result = self._notify(TestJira.default_transitions_value,
                                                         TestJira.issue_status_resolved,
-                                                        jira_config,
                                                         TestJira.default_address)
         self.assertTrue(result)
         mock_jira_obj.add_comment.assert_not_called()
 
     def test_send_notification_custom_config_exception(self):
-        jira_config = self._jira_config
-        jira_config.update({'custom_formatter': 'tests/resources/not_exist_file.yml'})
+        self.conf_override(
+            custom_formatter='tests/resources/not_exist_file.yml',
+            group='jira_notifier'
+        )
         self.assertRaises(Exception, self._notify,
                           TestJira.default_transitions_value,
                           TestJira.issue_status_resolved,
-                          jira_config,
                           TestJira.default_address)
 
     def test_type(self):
@@ -248,6 +245,3 @@ class TestJira(base.BaseTestCase):
 
     def test_statsd_name(self):
         self.assertEqual('jira_notifier', self._jr.statsd_name)
-
-    def test_config_exception(self):
-        self.assertRaises(Exception, self._jr.config, {})

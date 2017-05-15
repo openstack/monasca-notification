@@ -14,12 +14,11 @@
 import json
 import mock
 
-from oslotest import base
-
 import six
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import slack_notifier
+from tests import base
 
 if six.PY2:
     import Queue as queue
@@ -70,9 +69,16 @@ class RequestsResponse(object):
         return json.loads(self.text)
 
 
-class TestSlack(base.BaseTestCase):
+class TestSlack(base.PluginTestCase):
+
     def setUp(self):
-        super(TestSlack, self).setUp()
+        super(TestSlack, self).setUp(
+            slack_notifier.register_opts
+        )
+        self.conf_default(group='slack_notifier', timeout=50,
+                          ca_certs='/etc/ssl/certs/ca-bundle.crt',
+                          proxy='http://yourid:password@proxyserver:8080',
+                          insecure=False)
 
         self._trap = queue.Queue()
 
@@ -85,16 +91,9 @@ class TestSlack(base.BaseTestCase):
         self._slk = slack_notifier.SlackNotifier(mock_log)
         slack_notifier.SlackNotifier._raw_data_url_caches = []
 
-        self._slack_config = {'timeout': 50,
-                              'ca_certs': '/etc/ssl/certs/ca-bundle.crt',
-                              'proxy': 'http://yourid:password@proxyserver:8080',
-                              'insecure': False}
-
     @mock.patch('monasca_notification.plugins.slack_notifier.requests')
-    def _notify(self, response_list, slack_config, mock_requests):
+    def _notify(self, response_list, mock_requests):
         mock_requests.post = mock.Mock(side_effect=response_list)
-
-        self._slk.config(slack_config)
 
         metric = []
         metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
@@ -123,7 +122,7 @@ class TestSlack(base.BaseTestCase):
         """
         response_list = [RequestsResponse(200, 'ok',
                                           {'Content-Type': 'application/text'})]
-        mock_method, result = self._notify(response_list, self._slack_config)
+        mock_method, result = self._notify(response_list)
         self.assertTrue(result)
         mock_method.assert_called_once()
         self._validate_post_args(mock_method.call_args_list[0][1], 'json')
@@ -137,7 +136,7 @@ class TestSlack(base.BaseTestCase):
                                           {'Content-Type': 'application/text'}),
                          RequestsResponse(200, '{"ok":false,"error":"failure"}',
                                           {'Content-Type': 'application/json'})]
-        mock_method, result = self._notify(response_list, self._slack_config)
+        mock_method, result = self._notify(response_list)
         self.assertFalse(result)
         self._validate_post_args(mock_method.call_args_list[0][1], 'json')
         self._validate_post_args(mock_method.call_args_list[1][1], 'data')
@@ -150,7 +149,7 @@ class TestSlack(base.BaseTestCase):
                                           {'Content-Type': 'application/json'}),
                          RequestsResponse(200, '{"ok":true}',
                                           {'Content-Type': 'application/json'})]
-        mock_method, result = self._notify(response_list, self._slack_config)
+        mock_method, result = self._notify(response_list)
         self.assertTrue(result)
         self._validate_post_args(mock_method.call_args_list[0][1], 'json')
         self._validate_post_args(mock_method.call_args_list[1][1], 'data')
@@ -165,7 +164,7 @@ class TestSlack(base.BaseTestCase):
                                ['http://test.slack:3333']):
             response_list = [RequestsResponse(200, '{"ok":true}',
                                               {'Content-Type': 'application/json'})]
-            mock_method, result = self._notify(response_list, self._slack_config)
+            mock_method, result = self._notify(response_list)
             self.assertTrue(result)
             mock_method.assert_called_once()
             self._validate_post_args(mock_method.call_args_list[0][1], 'data')
@@ -180,7 +179,7 @@ class TestSlack(base.BaseTestCase):
                                ['http://test.slack:3333']):
             response_list = [RequestsResponse(200, '{"ok":false,"error":"failure"}',
                                               {'Content-Type': 'application/json'})]
-            mock_method, result = self._notify(response_list, self._slack_config)
+            mock_method, result = self._notify(response_list)
             self.assertFalse(result)
             mock_method.assert_called_once()
             self._validate_post_args(mock_method.call_args_list[0][1], 'data')
@@ -190,9 +189,13 @@ class TestSlack(base.BaseTestCase):
     def test_slack_webhook_success_only_timeout(self):
         """slack success with only timeout config
         """
+        self.conf_override(group='slack_notifier', timeout=50,
+                           insecure=True, ca_certs=None,
+                           proxy=None)
+
         response_list = [RequestsResponse(200, 'ok',
                                           {'Content-Type': 'application/text'})]
-        mock_method, result = self._notify(response_list, {'timeout': 50})
+        mock_method, result = self._notify(response_list)
         self.assertTrue(result)
         mock_method.assert_called_once()
         self.assertEqual(slack_notifier.SlackNotifier._raw_data_url_caches, [])
@@ -205,16 +208,6 @@ class TestSlack(base.BaseTestCase):
         self.assertEqual('http://test.slack:3333', post_args.get('url'))
         self.assertFalse(post_args.get('verify'))
 
-    def test_slack_exception(self):
-        """exception occurs
-        """
-        mock_method, result = self._notify(RuntimeError('exception'),
-                                           self._slack_config)
-        self.assertFalse(result)
-
-        self._validate_post_args(mock_method.call_args_list[0][1], 'json')
-        self._validate_post_args(mock_method.call_args_list[1][1], 'data')
-
     def test_slack_reponse_400(self):
         """slack returns 400 error
         """
@@ -222,7 +215,7 @@ class TestSlack(base.BaseTestCase):
                                           {'Content-Type': 'application/json'}),
                          RequestsResponse(400, '{"ok":false,"error":"failure"}',
                                           {'Content-Type': 'application/json'})]
-        mock_method, result = self._notify(response_list, self._slack_config)
+        mock_method, result = self._notify(response_list)
         self.assertFalse(result)
 
         self._validate_post_args(mock_method.call_args_list[0][1], 'json')
@@ -239,7 +232,7 @@ class TestSlack(base.BaseTestCase):
                                               {'Content-Type': 'application/json'}),
                              RequestsResponse(200, '{"ok":true}',
                                               {'Content-Type': 'application/json'})]
-            mock_method, result = self._notify(response_list, self._slack_config)
+            mock_method, result = self._notify(response_list)
             self.assertTrue(result)
             self._validate_post_args(mock_method.call_args_list[0][1], 'json')
             self._validate_post_args(mock_method.call_args_list[1][1], 'data')
@@ -247,13 +240,14 @@ class TestSlack(base.BaseTestCase):
                              slack_notifier.SlackNotifier._raw_data_url_caches)
 
     def test_config_insecure_true_ca_certs(self):
-        slack_config = {'timeout': 50,
-                        'ca_certs': '/etc/ssl/certs/ca-bundle.crt',
-                        'insecure': True}
+        self.conf_override(group='slack_notifier', timeout=50,
+                           insecure=True,
+                           ca_certs='/etc/ssl/certs/ca-bundle.crt')
+
         response_list = [RequestsResponse(200, 'ok',
                                           {'Content-Type': 'application/text'})]
 
-        mock_method, result = self._notify(response_list, slack_config)
+        mock_method, result = self._notify(response_list)
         self.assertTrue(result)
         mock_method.assert_called_once()
         self.assertEqual(slack_notifier.SlackNotifier._raw_data_url_caches, [])
@@ -265,12 +259,14 @@ class TestSlack(base.BaseTestCase):
         self.assertEqual('/etc/ssl/certs/ca-bundle.crt', post_args.get('verify'))
 
     def test_config_insecure_true_no_ca_certs(self):
-        slack_config = {'timeout': 50,
-                        'insecure': True}
+        self.conf_override(group='slack_notifier', timeout=50,
+                           insecure=True,
+                           ca_certs=None)
+
         response_list = [RequestsResponse(200, 'ok',
                                           {'Content-Type': 'application/text'})]
 
-        mock_method, result = self._notify(response_list, slack_config)
+        mock_method, result = self._notify(response_list)
         self.assertTrue(result)
         mock_method.assert_called_once()
         self.assertEqual(slack_notifier.SlackNotifier._raw_data_url_caches, [])
@@ -282,12 +278,14 @@ class TestSlack(base.BaseTestCase):
         self.assertFalse(post_args.get('verify'))
 
     def test_config_insecure_false_no_ca_certs(self):
-        slack_config = {'timeout': 50,
-                        'insecure': False}
+        self.conf_override(group='slack_notifier', timeout=50,
+                           insecure=False,
+                           ca_certs=None)
+
         response_list = [RequestsResponse(200, 'ok',
                                           {'Content-Type': 'application/text'})]
 
-        mock_method, result = self._notify(response_list, slack_config)
+        mock_method, result = self._notify(response_list)
         self.assertTrue(result)
         mock_method.assert_called_once()
         self.assertEqual(slack_notifier.SlackNotifier._raw_data_url_caches, [])

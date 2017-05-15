@@ -1,4 +1,5 @@
 # (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,17 +20,19 @@ import collections
 import json
 import mock
 import time
-import unittest
 
 from monasca_notification import notification as m_notification
 from monasca_notification.processors import alarm_processor
+
+from tests import base
 
 alarm_tuple = collections.namedtuple('alarm_tuple', ['offset', 'message'])
 message_tuple = collections.namedtuple('message_tuple', ['value'])
 
 
-class TestAlarmProcessor(unittest.TestCase):
+class TestAlarmProcessor(base.BaseTestCase):
     def setUp(self):
+        super(TestAlarmProcessor, self).setUp()
         self.trap = []
 
     def _create_raw_alarm(self, partition, offset, message):
@@ -55,16 +58,13 @@ class TestAlarmProcessor(unittest.TestCase):
             mock_mysql.cursor.return_value = mock_mysql
             mock_mysql.__iter__.return_value = sql_response
 
-        config = {'mysql': {'ssl': None,
-                            'host': 'mysql_host',
-                            'port': 'mysql_port',
-                            'user': 'mysql_user',
-                            'db': 'dbname',
-                            'passwd': 'mysql_passwd'},
-                  'statsd': {'host': 'localhost',
-                             'port': 8125}}
-
-        processor = alarm_processor.AlarmProcessor(600, config)
+        self.conf_override(group='mysql', ssl=None,
+                           host='localhost', port='3306',
+                           user='mysql_user', db='dbname',
+                           passwd='mysql_passwd')
+        self.conf_override(group='statsd', host='localhost',
+                           port=8125)
+        processor = alarm_processor.AlarmProcessor()
 
         return processor.to_notification(alarm)
 

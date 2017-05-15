@@ -1,4 +1,5 @@
 # (C) Copyright 2016-2017 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,10 +17,13 @@
 import requests
 import ujson as json
 
+from debtcollector import removals
+from oslo_config import cfg
 from six.moves import urllib
 
 from monasca_notification.plugins import abstract_notifier
 
+CONF = cfg.CONF
 
 """
    notification.address = https://hipchat.hpcloud.net/v2/room/<room_id>/notification?auth_token=432432
@@ -44,17 +48,34 @@ SEVERITY_COLORS = {"low": 'green',
                    'critical': 'red'}
 
 
+def register_opts(conf):
+    gr = cfg.OptGroup(name='%s_notifier' % HipChatNotifier.type)
+    opts = [
+        cfg.IntOpt(name='timeout', default=5, min=1),
+        cfg.BoolOpt(name='insecure', default=True),
+        cfg.StrOpt(name='ca_certs', default=None),
+        cfg.StrOpt(name='proxy', default=None)
+    ]
+
+    conf.register_group(gr)
+    conf.register_opts(opts, group=gr)
+
+
 class HipChatNotifier(abstract_notifier.AbstractNotifier):
+
+    type = 'hipchat'
+
     def __init__(self, log):
+        super(HipChatNotifier, self).__init__()
         self._log = log
 
-    def config(self, config_dict):
-        self._config = {'timeout': 5}
-        self._config.update(config_dict)
-
-    @property
-    def type(self):
-        return "hipchat"
+    @removals.remove(
+        message='Configuration of notifier is available through oslo.cfg',
+        version='1.9.0',
+        removal_version='3.0.0'
+    )
+    def config(self, config_dict=None):
+        pass
 
     @property
     def statsd_name(self):
@@ -97,14 +118,17 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
         url = urllib.parse.urljoin(notification.address, urllib.parse.urlparse(notification.address).path)
 
         # Default option is to do cert verification
-        verify = not self._config.get('insecure', True)
+        verify = not CONF.hipchat_notifier.insecure
+        ca_certs = CONF.hipchat_notifier.ca_certs
+        proxy = CONF.hipchat_notifier.proxy
+
         # If ca_certs is specified, do cert validation and ignore insecure flag
-        if (self._config.get("ca_certs")):
-            verify = self._config.get("ca_certs")
+        if ca_certs is not None:
+            verify = ca_certs
 
         proxyDict = None
-        if (self._config.get("proxy")):
-            proxyDict = {"https": self._config.get("proxy")}
+        if proxy is not None:
+            proxyDict = {'https': proxy}
 
         try:
             # Posting on the given URL
@@ -113,7 +137,7 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
                                    verify=verify,
                                    params=query_params,
                                    proxies=proxyDict,
-                                   timeout=self._config['timeout'])
+                                   timeout=CONF.hipchat_notifier.timeout)
 
             if result.status_code in range(200, 300):
                 self._log.info("Notification successfully posted.")

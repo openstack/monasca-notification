@@ -1,4 +1,5 @@
 # (C) Copyright 2016-2017 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +18,25 @@ import requests
 from six.moves import urllib
 import ujson as json
 
+from debtcollector import removals
+from oslo_config import cfg
+
 from monasca_notification.plugins import abstract_notifier
+
+CONF = cfg.CONF
+
+
+def register_opts(conf):
+    gr = cfg.OptGroup(name='%s_notifier' % SlackNotifier.type)
+    opts = [
+        cfg.IntOpt(name='timeout', default=5, min=1),
+        cfg.BoolOpt(name='insecure', default=True),
+        cfg.StrOpt(name='ca_certs', default=None),
+        cfg.StrOpt(name='proxy', default=None)
+    ]
+
+    conf.register_group(gr)
+    conf.register_opts(opts, group=gr)
 
 
 class SlackNotifier(abstract_notifier.AbstractNotifier):
@@ -42,25 +61,24 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
             https://api.slack.com/incoming-webhooks
     """
 
-    CONFIG_CA_CERTS = 'ca_certs'
-    CONFIG_INSECURE = 'insecure'
-    CONFIG_PROXY = 'proxy'
-    CONFIG_TIMEOUT = 'timeout'
+    type = 'slack'
+
     MAX_CACHE_SIZE = 100
     RESPONSE_OK = 'ok'
 
     _raw_data_url_caches = []
 
     def __init__(self, log):
+        super(SlackNotifier, self).__init__()
         self._log = log
 
+    @removals.remove(
+        message='Configuration of notifier is available through oslo.cfg',
+        version='1.9.0',
+        removal_version='3.0.0'
+    )
     def config(self, config_dict):
-        self._config = {'timeout': 5}
-        self._config.update(config_dict)
-
-    @property
-    def type(self):
-        return "slack"
+        pass
 
     @property
     def statsd_name(self):
@@ -141,12 +159,12 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
 
         # Default option is to do cert verification
         # If ca_certs is specified, do cert validation and ignore insecure flag
-        verify = self._config.get(self.CONFIG_CA_CERTS,
-                                  (not self._config.get(self.CONFIG_INSECURE, True)))
+        verify = CONF.slack_notifier.ca_certs or not CONF.slack_notifier.insecure
 
-        proxyDict = None
-        if (self.CONFIG_PROXY in self._config):
-            proxyDict = {'https': self._config.get(self.CONFIG_PROXY)}
+        proxy = CONF.slack_notifier.proxy
+        proxy_dict = None
+        if proxy is not None:
+            proxy_dict = {'https': proxy}
 
         data_format_list = ['json', 'data']
         if url in SlackNotifier._raw_data_url_caches:
@@ -159,8 +177,8 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
                 'url': url,
                 'verify': verify,
                 'params': query_params,
-                'proxies': proxyDict,
-                'timeout': self._config[self.CONFIG_TIMEOUT],
+                'proxies': proxy_dict,
+                'timeout': CONF.slack_notifier.timeout,
                 data_format: slack_message
             }
             if self._send_message(request_options):

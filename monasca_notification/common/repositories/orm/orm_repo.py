@@ -1,4 +1,4 @@
-# Copyright 2015 FUJITSU LIMITED
+# Copyright 2015-2017 FUJITSU LIMITED
 # (C) Copyright 2015,2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -11,7 +11,8 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 
-import logging
+from oslo_config import cfg
+from oslo_log import log as logging
 from sqlalchemy import engine_from_config, MetaData
 from sqlalchemy.sql import select, bindparam, and_, insert
 from sqlalchemy.exc import DatabaseError
@@ -19,12 +20,15 @@ from sqlalchemy.exc import DatabaseError
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.repositories.orm import models
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
+CONF = cfg.CONF
 
 
 class OrmRepo(object):
-    def __init__(self, config):
-        self._orm_engine = engine_from_config(config['database']['orm'], prefix='')
+    def __init__(self):
+        self._orm_engine = engine_from_config({
+            'url': CONF.orm.url
+        }, prefix='')
 
         metadata = MetaData()
 
@@ -54,38 +58,38 @@ class OrmRepo(object):
     def fetch_notifications(self, alarm):
         try:
             with self._orm_engine.connect() as conn:
-                log.debug('Orm query {%s}', str(self._orm_query))
+                LOG.debug('Orm query {%s}', str(self._orm_query))
                 notifications = conn.execute(self._orm_query,
                                              alarm_definition_id=alarm['alarmDefinitionId'],
                                              alarm_state=alarm['newState'])
 
                 return [(row[0], row[1].lower(), row[2], row[3], row[4]) for row in notifications]
         except DatabaseError as e:
-            log.exception("Couldn't fetch alarms actions %s", e)
+            LOG.exception("Couldn't fetch alarms actions %s", e)
             raise exc.DatabaseException(e)
 
     def get_alarm_current_state(self, alarm_id):
         try:
             with self._orm_engine.connect() as conn:
-                log.debug('Orm query {%s}', str(self._orm_get_alarm_state))
+                LOG.debug('Orm query {%s}', str(self._orm_get_alarm_state))
                 result = conn.execute(self._orm_get_alarm_state,
                                       alarm_id=alarm_id)
                 row = result.fetchone()
                 state = row[0] if row is not None else None
                 return state
         except DatabaseError as e:
-            log.exception("Couldn't fetch the current alarm state %s", e)
+            LOG.exception("Couldn't fetch the current alarm state %s", e)
             raise exc.DatabaseException(e)
 
     def fetch_notification_method_types(self):
         try:
             with self._orm_engine.connect() as conn:
-                log.debug('Orm query {%s}', str(self._orm_nmt_query))
+                LOG.debug('Orm query {%s}', str(self._orm_nmt_query))
                 notification_method_types = conn.execute(self._orm_nmt_query).fetchall()
 
                 return [row[0] for row in notification_method_types]
         except DatabaseError as e:
-            log.exception("Couldn't fetch notification method types %s", e)
+            LOG.exception("Couldn't fetch notification method types %s", e)
             raise exc.DatabaseException(e)
 
     def insert_notification_method_types(self, notification_types):
@@ -98,13 +102,13 @@ class OrmRepo(object):
                     conn.execute(self._orm_add_notification_type, b_name=notification_type)
 
         except DatabaseError as e:
-            log.debug("Failed to insert notification types %s", notification_types)
+            LOG.debug("Failed to insert notification types %s", notification_types)
             raise exc.DatabaseException(e)
 
     def get_notification(self, notification_id):
         try:
             with self._orm_engine.connect() as conn:
-                log.debug('Orm query {%s}', str(self._orm_get_notification))
+                LOG.debug('Orm query {%s}', str(self._orm_get_notification))
                 result = conn.execute(self._orm_get_notification,
                                       notification_id=notification_id)
                 notification = result.fetchone()
@@ -113,5 +117,5 @@ class OrmRepo(object):
                 else:
                     return [notification[0], notification[1].lower(), notification[2], notification[3]]
         except DatabaseError as e:
-            log.exception("Couldn't fetch the notification method %s", e)
+            LOG.exception("Couldn't fetch the notification method %s", e)
             raise exc.DatabaseException(e)

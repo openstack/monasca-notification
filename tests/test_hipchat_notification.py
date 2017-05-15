@@ -13,12 +13,12 @@
 
 import json
 import mock
-import unittest
 
 import six
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import hipchat_notifier
+from tests import base
 
 if six.PY2:
     import Queue as queue
@@ -47,12 +47,15 @@ class requestsResponse(object):
         self.status_code = status
 
 
-class TestHipchat(unittest.TestCase):
+class TestHipchat(base.PluginTestCase):
     def setUp(self):
+        super(TestHipchat, self).setUp(hipchat_notifier.register_opts)
+        self.conf_default(group='hipchat_notifier', timeout=50)
+
         self.trap = queue.Queue()
-        self.hipchat_config = {'timeout': 50}
 
     def tearDown(self):
+        super(TestHipchat, self).tearDown()
         self.assertTrue(self.trap.empty())
 
     def _http_post_200(self, url, data, **kwargs):
@@ -72,7 +75,7 @@ class TestHipchat(unittest.TestCase):
 
         hipchat = hipchat_notifier.HipChatNotifier(mock_log)
 
-        hipchat.config(self.hipchat_config)
+        hipchat.config()
 
         metric = []
         metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}

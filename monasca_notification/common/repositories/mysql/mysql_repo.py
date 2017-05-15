@@ -11,7 +11,7 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 
-import logging
+from oslo_log import log as logging
 import pymysql
 
 from monasca_notification.common.repositories.base import base_repo
@@ -24,21 +24,9 @@ log = logging.getLogger(__name__)
 class MysqlRepo(base_repo.BaseRepo):
     def __init__(self, config):
         super(MysqlRepo, self).__init__(config)
-        if 'ssl' in config['mysql']:
-            self._mysql_ssl = config['mysql']['ssl']
-        else:
-            self._mysql_ssl = None
-
-        if 'port' in config['mysql']:
-            self._mysql_port = config['mysql']['port']
-        else:
-            #
-            # If port isn't specified in the config file,
-            # set it to the default value.
-            #
-            self._mysql_port = 3306
-
+        self._mysql_ssl = config['mysql']['ssl'] or None
         self._mysql_host = config['mysql']['host']
+        self._mysql_port = config['mysql']['port']
         self._mysql_user = config['mysql']['user']
         self._mysql_passwd = config['mysql']['passwd']
         self._mysql_dbname = config['mysql']['db']

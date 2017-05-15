@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
+from oslo_log import log as logging
 
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.utils import get_db_repo
@@ -25,12 +25,14 @@ log = logging.getLogger(__name__)
 
 class NotificationProcessor(object):
 
-    def __init__(self, config):
-        self.statsd = get_statsd_client(config)
+    def __init__(self):
+        self.statsd = get_statsd_client()
         notifiers.init(self.statsd)
-        notifiers.load_plugins(config['notification_types'])
-        notifiers.config(config['notification_types'])
-        self._db_repo = get_db_repo(config)
+
+        notifiers.load_plugins()
+        notifiers.config()
+
+        self._db_repo = get_db_repo()
         self.insert_configured_plugins()
 
     def _remaining_plugin_types(self):

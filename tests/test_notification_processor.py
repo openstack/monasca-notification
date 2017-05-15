@@ -1,4 +1,5 @@
 # (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 Fujitsu LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +18,11 @@
 
 import mock
 import time
-import unittest
 
 from monasca_notification import notification as m_notification
-from monasca_notification.processors import notification_processor
+from monasca_notification.plugins import email_notifier
+from monasca_notification.processors import notification_processor as np
+from tests import base
 
 
 class smtpStub(object):
@@ -36,29 +38,23 @@ class requestsResponse(object):
         self.status_code = status
 
 
-class TestNotificationProcessor(unittest.TestCase):
+class TestNotificationProcessor(base.BaseTestCase):
 
     def setUp(self):
+        super(TestNotificationProcessor, self).setUp()
         self.trap = []
-        self.email_config = {'server': 'my.smtp.server',
-                             'port': 25,
-                             'user': None,
-                             'password': None,
-                             'timeout': 60,
-                             'from_addr': 'hpcs.mon@hp.com'}
 
-        self.mysql_config = {'ssl': None,
-                             'host': 'mysql_host',
-                             'port': 'mysql_port',
-                             'user': 'mysql_user',
-                             'db': 'dbname',
-                             'passwd': 'mysql_passwd'}
+        email_notifier.register_opts(base.config.CONF)
 
-        self.statsd_config = {'host': 'localhost',
-                              'port': 8125}
+        self.conf_default(group='email_notifier', server='my.smtp.server',
+                          port=25, user=None, password=None,
+                          timeout=60, from_addr='hpcs.mon@hp.com')
+        self.conf_default(group='mysql', ssl=None, host='localhost',
+                          port='3306', user='mysql_user', db='dbname',
+                          passwd='mysql_passwd')
+        self.conf_default(group='statsd', host='localhost', port=8125)
 
-    def tearDown(self):
-        pass
+        self.conf_default(group='notification_types', enabled=[])
 
     # ------------------------------------------------------------------------
     # Test helper functions
@@ -70,19 +66,15 @@ class TestNotificationProcessor(unittest.TestCase):
     def _start_processor(self, notifications, mock_log, mock_smtp, mock_statsd, mock_pymsql):
         """Start the processor with the proper mocks
         """
-        # Since the log runs in another thread I can mock it directly, instead change the methods to put to a queue
+        # Since the log runs in another thread I can mock it directly,
+        # instead change the methods to put to a queue
         mock_log.warn = self.trap.append
         mock_log.error = self.trap.append
 
         mock_smtp.SMTP = self._smtpStub
 
-        config = {}
-        config["email"] = self.email_config
-        config["mysql"] = self.mysql_config
-        config["statsd"] = self.statsd_config
-        config["notification_types"] = {}
-
-        processor = (notification_processor.NotificationProcessor(config))
+        np.NotificationProcessor.insert_configured_plugins = mock.Mock()
+        processor = np.NotificationProcessor()
         processor.send(notifications)
 
     def _smtpStub(self, *arg, **kwargs):
