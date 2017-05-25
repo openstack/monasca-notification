@@ -19,18 +19,38 @@ import ujson as json
 
 from monasca_notification.plugins import abstract_notifier
 
-"""
-   notification.address = https://slack.com/api/chat.postMessage?token=token&channel=#channel"
-
-   Slack documentation about tokens:
-        1. Login to your slack account via browser and check the following pages
-             a. https://api.slack.com/docs/oauth-test-tokens
-             b. https://api.slack.com/tokens
-
-"""
-
 
 class SlackNotifier(abstract_notifier.AbstractNotifier):
+    """This module is a notification plugin to integrate with Slack.
+
+    This plugin supports 2 types of APIs below.
+
+    1st: Slack API
+        notification.address = https://slack.com/api/chat.postMessage?token={token}&channel=#foobar
+
+        You need to specify your token and channel name in the address.
+        Regarding {token}, login to your slack account via browser and check the following page.
+            https://api.slack.com/docs/oauth-test-tokens
+
+    2nd: Incoming webhook
+        notification.address = https://hooks.slack.com/services/foo/bar/buz
+
+        You need to get the Incoming webhook URL.
+        Login to your slack account via browser and check the following page.
+            https://my.slack.com/services/new/incoming-webhook/
+        Slack document about incoming webhook:
+            https://api.slack.com/incoming-webhooks
+    """
+
+    CONFIG_CA_CERTS = 'ca_certs'
+    CONFIG_INSECURE = 'insecure'
+    CONFIG_PROXY = 'proxy'
+    CONFIG_TIMEOUT = 'timeout'
+    MAX_CACHE_SIZE = 100
+    RESPONSE_OK = 'ok'
+
+    _raw_data_url_caches = []
+
     def __init__(self, log):
         self._log = log
 
@@ -65,6 +85,43 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
 
         return slack_request
 
+    def _check_response(self, result):
+        if 'application/json' in result.headers.get('Content-Type'):
+            response = result.json()
+            if response.get(self.RESPONSE_OK):
+                return True
+            else:
+                self._log.error('Received an error message when trying to send to slack. error={}'
+                                .format(response.get('error')))
+                return False
+        elif self.RESPONSE_OK == result.text:
+            return True
+        else:
+            self._log.error('Received an error message when trying to send to slack. error={}'
+                            .format(result.text))
+            return False
+
+    def _send_message(self, request_options):
+        try:
+            url = request_options.get('url')
+            result = requests.post(**request_options)
+            if result.status_code not in range(200, 300):
+                self._log.error('Received an HTTP code {} when trying to post on URL {}.'
+                                .format(result.status_code, url))
+                return False
+
+            # Slack returns 200 ok even if the token is invalid. Response has valid error message
+            if self._check_response(result):
+                self._log.info('Notification successfully posted.')
+                return True
+
+            self._log.error('Failed to send to slack on URL {}.'.format(url))
+            return False
+        except Exception as err:
+            self._log.exception('Error trying to send to slack on URL {}. Detail: {}'
+                                .format(url, err))
+            return False
+
     def send_notification(self, notification):
         """Send the notification via slack
             Posts on the given url
@@ -73,9 +130,9 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
         slack_message = self._build_slack_message(notification)
 
         address = notification.address
-        #  "#" is reserved character and replace it with ascii equivalent
-        #  Slack room has "#" as first character
-        address = address.replace("#", "%23")
+        #  '#' is reserved character and replace it with ascii equivalent
+        #  Slack room has '#' as first character
+        address = address.replace('#', '%23')
 
         parsed_url = urllib.parse.urlsplit(address)
         query_params = urllib.parse.parse_qs(parsed_url.query)
@@ -83,39 +140,44 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
         url = urllib.parse.urljoin(address, urllib.parse.urlparse(address).path)
 
         # Default option is to do cert verification
-        verify = not self._config.get('insecure', True)
         # If ca_certs is specified, do cert validation and ignore insecure flag
-        if (self._config.get("ca_certs")):
-            verify = self._config.get("ca_certs")
+        verify = self._config.get(self.CONFIG_CA_CERTS,
+                                  (not self._config.get(self.CONFIG_INSECURE, True)))
 
         proxyDict = None
-        if (self._config.get("proxy")):
-            proxyDict = {"https": self._config.get("proxy")}
+        if (self.CONFIG_PROXY in self._config):
+            proxyDict = {'https': self._config.get(self.CONFIG_PROXY)}
 
-        try:
-            # Posting on the given URL
-            self._log.debug("Sending to the url {0} , with query_params {1}".format(url, query_params))
-            result = requests.post(url=url,
-                                   json=slack_message,
-                                   verify=verify,
-                                   params=query_params,
-                                   proxies=proxyDict,
-                                   timeout=self._config['timeout'])
+        data_format_list = ['json', 'data']
+        if url in SlackNotifier._raw_data_url_caches:
+            data_format_list = ['data']
 
-            if result.status_code not in range(200, 300):
-                self._log.error("Received an HTTP code {} when trying to post on URL {}."
-                                .format(result.status_code, url))
-                return False
-
-            # Slack returns 200 ok even if the token is invalid. Response has valid error message
-            response = json.loads(result.text)
-            if response.get('ok'):
-                self._log.info("Notification successfully posted.")
+        for data_format in data_format_list:
+            self._log.info('Trying to send message to {} as {}'
+                           .format(url, data_format))
+            request_options = {
+                'url': url,
+                'verify': verify,
+                'params': query_params,
+                'proxies': proxyDict,
+                'timeout': self._config[self.CONFIG_TIMEOUT],
+                data_format: slack_message
+            }
+            if self._send_message(request_options):
+                if (data_format == 'data' and
+                        url not in SlackNotifier._raw_data_url_caches and
+                        len(SlackNotifier._raw_data_url_caches) < self.MAX_CACHE_SIZE):
+                    # NOTE:
+                    #    There are a few URLs which can accept only raw data, so
+                    #    only the URLs with raw data are kept in the cache. When
+                    #    too many URLs exists, it can be considered malicious
+                    #    user registers them.
+                    #    In this case, older ones should be safer than newer
+                    #    ones. When exceeding the cache size, do not replace the
+                    #    the old cache with the newer one.
+                    SlackNotifier._raw_data_url_caches.append(url)
                 return True
-            else:
-                self._log.error("Received an error message {} when trying to send to slack on URL {}."
-                                .format(response.get("error"), url))
-                return False
-        except Exception:
-            self._log.exception("Error trying to send to slack  on URL {}".format(url))
-            return False
+
+            self._log.info('Failed to send message to {} as {}'
+                           .format(url, data_format))
+        return False
