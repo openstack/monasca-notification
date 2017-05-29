@@ -41,7 +41,7 @@ def alarm():
 
 def issue(component=True, custom_config=False):
 
-    issue = {'fields': {'description': 'Monasca alaram',
+    issue = {'fields': {'description': 'Monasca alarm',
                         'issuetype': {'name': 'Bug'},
                         'project': {'key': 'MyProject'},
                         'summary': 'Monasca alarm for alarm_defintion test Alarm status '

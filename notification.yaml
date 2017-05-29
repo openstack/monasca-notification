@@ -36,6 +36,7 @@ notification_types:
     plugins:
      - monasca_notification.plugins.hipchat_notifier:HipChatNotifier
      - monasca_notification.plugins.slack_notifier:SlackNotifier
+     - monasca_notification.plugins.jira_notifier:JiraNotifier
 
     email:
         server: 127.0.0.1
@@ -63,6 +64,10 @@ notification_types:
         ca_certs: "/etc/ssl/certs/ca-certificates.crt"
         insecure: False
         proxy:  https://myproxy.corp.invalid:8080
+
+    jira:
+        user: username
+        password: password
 
 processors:
     alarm:

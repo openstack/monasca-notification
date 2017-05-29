@@ -40,7 +40,7 @@ from monasca_notification.plugins.abstract_notifier import AbstractNotifier
 
    Jira Configuration
        1) jira:
-            username: username
+            user: username
             password: password
 
     Sample notification:
@@ -183,7 +183,7 @@ class JiraNotifier(AbstractNotifier):
 
         issue_dict = {'project': {'key': jira_fields["project"]},
                       'summary': jira_fields["summary"],
-                      'description': 'Monasca alaram',
+                      'description': 'Monasca alarm',
                       'issuetype': {'name': 'Bug'}, }
 
         # If the JIRA workflow is created with mandatory components
