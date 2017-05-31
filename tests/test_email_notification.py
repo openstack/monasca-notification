@@ -24,6 +24,14 @@ import unittest
 
 import six
 
+import datetime
+
+if six.PY2:
+    import urlparse
+else:
+    from urllib import parse
+    from urllib.parse import urlparse
+
 from monasca_notification.notification import Notification
 from monasca_notification.plugins import email_notifier
 
@@ -114,7 +122,8 @@ class TestEmail(unittest.TestCase):
                              'user': None,
                              'password': None,
                              'timeout': 60,
-                             'from_addr': 'hpcs.mon@hp.com'}
+                             'from_addr': 'hpcs.mon@hp.com',
+                             'grafana_url': 'http://127.0.0.1:3000'}
 
     def tearDown(self):
         pass
@@ -134,7 +143,6 @@ class TestEmail(unittest.TestCase):
         mock_log.error = self.trap.append
 
         email = email_notifier.EmailNotifier(mock_log)
-
         email.config(self.email_config)
 
         alarm_dict = alarm(metric)
@@ -148,7 +156,9 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': u'foo1' + UNICODE_CHAR, u'service' + UNICODE_CHAR: 'bar1'}}
+        metric_data = {'name': 'cpu.percent',
+                       'dimensions': {'hostname': u'foo1' + UNICODE_CHAR,
+                                      u'service' + UNICODE_CHAR: 'bar1'}}
         metrics.append(metric_data)
 
         self.notify(self._smtpStub, metrics)
@@ -176,9 +186,9 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': u'foo1' + UNICODE_CHAR,
-                                      u'service' + UNICODE_CHAR: 'bar1',
-                                      u'target_host': u'some_where'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': u'foo1' + UNICODE_CHAR,
+                                                             u'service' + UNICODE_CHAR: 'bar1',
+                                                             u'target_host': u'some_where'}}
         metrics.append(metric_data)
 
         self.notify(self._smtpStub, metrics)
@@ -204,9 +214,9 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
         metrics.append(metric_data)
-        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
         metrics.append(metric_data)
 
         self.notify(self._smtpStub, metrics)
@@ -232,9 +242,9 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
         metrics.append(metric_data)
-        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
         metrics.append(metric_data)
 
         mock_log = mock.MagicMock()
@@ -276,9 +286,9 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
         metrics.append(metric_data)
-        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
         metrics.append(metric_data)
 
         mock_log = mock.MagicMock()
@@ -324,9 +334,9 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
         metrics.append(metric_data)
-        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
         metrics.append(metric_data)
 
         mock_log = mock.MagicMock()
@@ -366,9 +376,9 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
         metrics.append(metric_data)
-        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
         metrics.append(metric_data)
 
         mock_log = mock.MagicMock()
@@ -406,9 +416,9 @@ class TestEmail(unittest.TestCase):
         """
 
         metrics = []
-        metric_data = {'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
         metrics.append(metric_data)
-        metric_data = {'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
+        metric_data = {'name': 'cpu.percent', 'dimensions': {'hostname': 'foo2', 'service': 'bar2'}}
         metrics.append(metric_data)
 
         mock_log = mock.MagicMock()
@@ -438,3 +448,77 @@ class TestEmail(unittest.TestCase):
 
         self.assertNotIn("SMTP server disconnected. Will reconnect and retry message.", self.trap)
         self.assertIn("Error sending Email Notification", self.trap)
+
+    @mock.patch('monasca_notification.plugins.email_notifier.smtplib')
+    def test_get_link_url(self, mock_smtp):
+        # Given one metric with name and dimensions
+        metrics = []
+        metric = {'name': 'cpu.percent',
+                  'dimensions': {'hostname': 'foo1', 'service': 'bar1'}}
+        metrics.append(metric)
+
+        mock_log = mock.MagicMock()
+        mock_log.warn = self.trap.append
+        mock_log.error = self.trap.append
+        mock_log.debug = self.trap.append
+        mock_log.info = self.trap.append
+        mock_log.exception = self.trap.append
+
+        mock_smtp.SMTP.return_value = mock_smtp
+        mock_smtp.sendmail.side_effect = smtplib.SMTPException
+
+        mock_smtp.SMTPServerDisconnected = smtplib.SMTPServerDisconnected
+        mock_smtp.SMTPException = smtplib.SMTPException
+
+        email = email_notifier.EmailNotifier(mock_log)
+        email.config(self.email_config)
+
+        # Create alarm timestamp and timestamp for 'from' and 'to' dates in milliseconds.
+        alarm_date = datetime.datetime(2017, 6, 7, 18, 0)
+        alarm_ms, expected_from_ms, expected_to_ms = self.create_time_data(alarm_date)
+
+        # When retrieving the link to Grafana for the first metric and given timestamp
+        result_url = email._get_link_url(metrics[0], alarm_ms)
+        self.assertIsNotNone(result_url)
+
+        # Then the following link to Grafana (including the metric info and timestamp) is expected.
+        expected_url = "http://127.0.0.1:3000/dashboard/script/drilldown.js" \
+                       "?metric=cpu.percent&dim_hostname=foo1&dim_service=bar1" \
+                       "&from=%s&to=%s" % (expected_from_ms, expected_to_ms)
+        self._assert_equal_urls(expected_url, result_url)
+
+    def create_time_data(self, alarm_date):
+        epoch = datetime.datetime.utcfromtimestamp(0)
+        alarm_ms = int(round((alarm_date - epoch).total_seconds() * 1000))
+
+        # From and to dates are 10 minutes before and after the alarm occurred.
+        from_date = alarm_date - datetime.timedelta(minutes=10)
+        to_date = alarm_date + datetime.timedelta(minutes=10)
+
+        expected_from_ms = int(round((from_date - epoch).total_seconds() * 1000))
+        expected_to_ms = int(round((to_date - epoch).total_seconds() * 1000))
+
+        return alarm_ms, expected_from_ms, expected_to_ms
+
+    def _assert_equal_urls(self, expected_url, result_url):
+        if six.PY2:
+            expected_parsed = urlparse.urlparse(expected_url)
+            result_parsed = urlparse.urlparse(result_url)
+        else:
+            expected_parsed = urlparse(expected_url)
+            result_parsed = urlparse(result_url)
+
+        self.assertEqual(expected_parsed.netloc, result_parsed.netloc)
+        self.assertEqual(expected_parsed.path, result_parsed.path)
+
+        if six.PY2:
+            expected_parsed_query = urlparse.parse_qs(expected_parsed.query)
+            result_parsed_query = urlparse.parse_qs(result_parsed.query)
+        else:
+            expected_parsed_query = parse.parse_qs(expected_parsed.query)
+            result_parsed_query = parse.parse_qs(result_parsed.query)
+
+        self.assertEqual(len(expected_parsed_query), len(result_parsed_query))
+
+        for key in six.iterkeys(result_parsed_query):
+            self.assertEqual(expected_parsed_query[key], result_parsed_query[key])

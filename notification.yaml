@@ -44,6 +44,7 @@ notification_types:
         password:
         timeout: 60
         from_addr: monasca-notification@none.invalid
+        grafana_url: 'http://127.0.0.1:3000'
 
     webhook:
         timeout: 5

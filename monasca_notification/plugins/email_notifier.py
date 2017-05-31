@@ -16,8 +16,10 @@
 import email.header
 import email.mime.text
 import email.utils
+import six
 import smtplib
 import time
+
 
 from monasca_notification.plugins import abstract_notifier
 
@@ -25,8 +27,10 @@ EMAIL_SINGLE_HOST_BASE = u'''On host "{hostname}" for target "{target_host}" {me
 
 Alarm "{alarm_name}" transitioned to the {state} state at {timestamp} UTC
 alarm_id: {alarm_id}
+
 Lifecycle state: {lifecycle_state}
 Link: {link}
+Link to Grafana: {grafana_url}
 
 With dimensions:
 {metric_dimensions}'''
@@ -35,8 +39,10 @@ EMAIL_MULTIPLE_HOST_BASE = u'''On host "{hostname}" {message}
 
 Alarm "{alarm_name}" transitioned to the {state} state at {timestamp} UTC
 alarm_id: {alarm_id}
+
 Lifecycle state: {lifecycle_state}
 Link: {link}
+Link to Grafana: {grafana_url}
 
 With dimensions:
 {metric_dimensions}'''
@@ -45,8 +51,10 @@ EMAIL_NO_HOST_BASE = u'''On multiple hosts {message}
 
 Alarm "{alarm_name}" transitioned to the {state} state at {timestamp} UTC
 Alarm_id: {alarm_id}
+
 Lifecycle state: {lifecycle_state}
 Link: {link}
+Link to Grafana: {grafana_url}
 
 With dimensions
 {metric_dimensions}'''
@@ -152,6 +160,12 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
            be treated as type #2.
         """
         timestamp = time.asctime(time.gmtime(notification.alarm_timestamp))
+
+        alarm_seconds = notification.alarm_timestamp
+        alarm_ms = int(round(alarm_seconds * 1000))
+
+        graf_url = self._get_link_url(notification.metrics[0], alarm_ms)
+
         dimensions = _format_dimensions(notification)
 
         if len(hostname) == 1:  # Type 1
@@ -166,6 +180,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
                     alarm_id=notification.alarm_id,
                     metric_dimensions=dimensions,
                     link=notification.link,
+                    grafana_url=graf_url,
                     lifecycle_state=notification.lifecycle_state
                 )
                 subject = u'{} {} "{}" for Host: {} Target: {}'.format(
@@ -183,6 +198,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
                     alarm_id=notification.alarm_id,
                     metric_dimensions=dimensions,
                     link=notification.link,
+                    grafana_url=graf_url,
                     lifecycle_state=notification.lifecycle_state
                 )
                 subject = u'{} {} "{}" for Host: {}'.format(
@@ -197,6 +213,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
                 alarm_id=notification.alarm_id,
                 metric_dimensions=dimensions,
                 link=notification.link,
+                grafana_url=graf_url,
                 lifecycle_state=notification.lifecycle_state
             )
             subject = u'{} {} "{}" '.format(notification.state,
@@ -210,6 +227,38 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
         msg['Date'] = email.utils.formatdate(localtime=True, usegmt=True)
 
         return msg
+
+    def _get_link_url(self, metric, timestamp_ms):
+        """Returns the url to Grafana including a query with the
+        respective metric info (name, dimensions, timestamp)
+        :param metric: the metric for which to display the graph in Grafana
+        :param timestamp_ms: timestamp of the alarm for the metric in milliseconds
+        :return: the url to the graph for the given metric or None if no Grafana host
+        has been defined.
+        """
+
+        grafana_url = self._config.get('grafana_url', None)
+        if grafana_url is None:
+            return None
+
+        url = ''
+        metric_query = ''
+
+        metric_query = "?metric=%s" % metric['name']
+
+        dimensions = metric['dimensions']
+        for key, value in six.iteritems(dimensions):
+            metric_query += "&dim_%s=%s" % (key, value)
+
+        # Show the graph within a range of ten minutes before and after the alarm occurred.
+        offset = 600000
+        from_ms = timestamp_ms - offset
+        to_ms = timestamp_ms + offset
+        time_query = "&from=%s&to=%s" % (from_ms, to_ms)
+
+        url = grafana_url + '/dashboard/script/drilldown.js'
+
+        return url + metric_query + time_query
 
 
 def _format_dimensions(notification):
