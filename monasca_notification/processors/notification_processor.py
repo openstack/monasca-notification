@@ -15,6 +15,7 @@
 
 import logging
 
+from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.utils import get_db_repo
 from monasca_notification.common.utils import get_statsd_client
 from monasca_notification.types import notifiers
@@ -32,19 +33,34 @@ class NotificationProcessor(object):
         self._db_repo = get_db_repo(config)
         self.insert_configured_plugins()
 
+    def _remaining_plugin_types(self):
+        configured_plugin_types = notifiers.enabled_notifications()
+        persisted_plugin_types = self._db_repo.fetch_notification_method_types()
+
+        return set(configured_plugin_types) - set(persisted_plugin_types)
+
     def insert_configured_plugins(self):
         """Persists configured plugin types in DB
              For each notification type configured add it in db, if it is not there
         """
-        configured_plugin_types = notifiers.enabled_notifications()
+        remaining_plugin_types = self._remaining_plugin_types()
 
-        persisted_plugin_types = self._db_repo.fetch_notification_method_types()
-        remaining_plugin_types = set(configured_plugin_types) - set(persisted_plugin_types)
-
-        if remaining_plugin_types:
-            log.info("New plugins detected: Adding new notification types {} to database"
-                     .format(remaining_plugin_types))
-            self._db_repo.insert_notification_method_types(remaining_plugin_types)
+        max_retry = len(remaining_plugin_types)
+        retry_count = 0
+        while remaining_plugin_types:
+            retry_count = retry_count + 1
+            try:
+                log.info("New plugins detected: Adding new notification types %s to database",
+                         remaining_plugin_types)
+                self._db_repo.insert_notification_method_types(remaining_plugin_types)
+            except exc.DatabaseException as e:
+                # There is a possibility the other process has already registered the type.
+                remaining_plugin_types = self._remaining_plugin_types()
+                if remaining_plugin_types and (retry_count >= max_retry):
+                    log.exception("Couldn't insert notification types %s", e)
+                    raise e
+                else:
+                    log.debug("Plugin already exists. Ignore exception")
 
     def send(self, notifications):
         """Send the notifications

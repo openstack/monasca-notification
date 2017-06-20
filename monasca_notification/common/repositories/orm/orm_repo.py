@@ -13,7 +13,7 @@
 
 import logging
 from sqlalchemy import engine_from_config, MetaData
-from sqlalchemy.sql import select, bindparam, and_
+from sqlalchemy.sql import select, bindparam, and_, insert
 from sqlalchemy.exc import DatabaseError
 
 from monasca_notification.common.repositories import exceptions as exc
@@ -30,7 +30,8 @@ class OrmRepo(object):
 
         aa = models.create_alarm_action_model(metadata).alias('aa')
         nm = models.create_notification_method_model(metadata).alias('nm')
-        nmt = models.create_notification_method_type_model(metadata).alias('nmt')
+        nmt_insert = models.create_notification_method_type_model(metadata)
+        nmt = nmt_insert.alias('nmt')
         a = models.create_alarm_model(metadata).alias('a')
 
         self._orm_query = select([nm.c.id, nm.c.type, nm.c.name, nm.c.address, nm.c.period])\
@@ -45,6 +46,8 @@ class OrmRepo(object):
 
         self._orm_get_notification = select([nm.c.name, nm.c.type, nm.c.address, nm.c.period])\
             .where(nm.c.id == bindparam('notification_id'))
+
+        self._orm_add_notification_type = insert(nmt_insert).values(name=bindparam('b_name'))
 
         self._orm = None
 
@@ -86,13 +89,16 @@ class OrmRepo(object):
             raise exc.DatabaseException(e)
 
     def insert_notification_method_types(self, notification_types):
+        # This function can be called by multiple processes at same time.
+        # In that case, only the first one will succeed and the others will fail.
+        # We can ignore this error when the types have already been registered.
         try:
             with self._orm_engine.connect() as conn:
                 for notification_type in notification_types:
-                    conn.execute(self.nmt.insert(), notification_type)
+                    conn.execute(self._orm_add_notification_type, b_name=notification_type)
 
         except DatabaseError as e:
-            log.exception("Couldn't insert notification types %s", e)
+            log.debug("Failed to insert notification types %s", notification_types)
             raise exc.DatabaseException(e)
 
     def get_notification(self, notification_id):
