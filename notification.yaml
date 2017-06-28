@@ -89,6 +89,9 @@ zookeeper:
         60: /notification/60_seconds
 
 logging: # Used in logging.dictConfig
+    # This sets logging.raiseExcetpions. It is recommended to leave this set to False.
+    # See https://docs.python.org/2/howto/logging.html#exceptions-raised-during-logging
+    raise_exceptions: False
     version: 1
     disable_existing_loggers: False
     formatters:

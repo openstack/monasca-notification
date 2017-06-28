@@ -102,6 +102,14 @@ def main(argv=None):
     config = yaml.safe_load(open(config_file, 'r'))
 
     # Setup logging
+    try:
+        if config['logging']['raise_exceptions'] is True:
+            logging.raiseExceptions = True
+        else:
+            logging.raiseExceptions = False
+    except KeyError:
+        logging.raiseExceptions = False
+        pass
     logging.config.dictConfig(config['logging'])
 
     for proc in range(0, config['processors']['notification']['number']):
