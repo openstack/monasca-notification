@@ -15,13 +15,11 @@
 
 from jinja2 import Template
 import jira
-import json
+from six.moves import urllib
+import ujson as json
 import yaml
 
 from monasca_notification.plugins.abstract_notifier import AbstractNotifier
-
-from six.moves import urllib
-
 
 """
    Note:

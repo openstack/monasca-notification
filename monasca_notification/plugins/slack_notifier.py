@@ -13,13 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import requests
+from six.moves import urllib
+import ujson as json
 
 from monasca_notification.plugins import abstract_notifier
-
-from six.moves import urllib
-
 
 """
    notification.address = https://slack.com/api/chat.postMessage?token=token&channel=#channel"

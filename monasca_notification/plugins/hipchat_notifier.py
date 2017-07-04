@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import requests
-
-from monasca_notification.plugins import abstract_notifier
+import ujson as json
 
 from six.moves import urllib
+
+from monasca_notification.plugins import abstract_notifier
 
 
 """

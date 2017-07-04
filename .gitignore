@@ -9,9 +9,9 @@ ChangeLog
 #*
 build
 dist
-monasca_notification.egg-info
+*.egg-info
 .*.sw*
 
 .testrepository/
-.coverage
+.coverage.*
 cover/

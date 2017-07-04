@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import email.header
 import email.mime.text
+import email.utils
 import smtplib
 import time
 
@@ -51,9 +53,12 @@ With dimensions
 
 
 class EmailNotifier(abstract_notifier.AbstractNotifier):
+
     def __init__(self, log):
+        super(EmailNotifier, self).__init__()
         self._log = log
         self._smtp = None
+        self._config = None
 
     def config(self, config):
         self._config = config
@@ -129,7 +134,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
                                 self._config['port'],
                                 timeout=self._config['timeout'])
 
-            if self._config['user']:
+            if ('user', 'password') in self._config.keys():
                 smtp.login(self._config['user'], self._config['password'])
 
             self._smtp = smtp
@@ -147,7 +152,6 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
            be treated as type #2.
         """
         timestamp = time.asctime(time.gmtime(notification.alarm_timestamp))
-
         dimensions = _format_dimensions(notification)
 
         if len(hostname) == 1:  # Type 1
@@ -163,17 +167,12 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
                     metric_dimensions=dimensions,
                     link=notification.link,
                     lifecycle_state=notification.lifecycle_state
-                ).encode("utf-8")
-
-                msg = email.mime.text.MIMEText(text)
-
-                msg['Subject'] = (u'{} {} "{}" for Host: {} Target: {}'
-                                  .format(notification.state,
-                                          notification.severity,
-                                          notification.alarm_name,
-                                          hostname[0],
-                                          targethost[0]).encode("utf-8"))
-
+                )
+                subject = u'{} {} "{}" for Host: {} Target: {}'.format(
+                    notification.state, notification.severity,
+                    notification.alarm_name, hostname[0],
+                    targethost[0]
+                )
             else:
                 text = EMAIL_MULTIPLE_HOST_BASE.format(
                     hostname=hostname[0],
@@ -185,14 +184,10 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
                     metric_dimensions=dimensions,
                     link=notification.link,
                     lifecycle_state=notification.lifecycle_state
-                ).encode("utf-8")
-
-                msg = email.mime.text.MIMEText(text)
-
-                msg['Subject'] = u'{} {} "{}" for Host: {}'.format(notification.state,
-                                                                   notification.severity,
-                                                                   notification.alarm_name,
-                                                                   hostname[0]).encode("utf-8")
+                )
+                subject = u'{} {} "{}" for Host: {}'.format(
+                    notification.state, notification.severity,
+                    notification.alarm_name, hostname[0])
         else:  # Type 2
             text = EMAIL_NO_HOST_BASE.format(
                 message=notification.message.lower(),
@@ -203,15 +198,16 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
                 metric_dimensions=dimensions,
                 link=notification.link,
                 lifecycle_state=notification.lifecycle_state
-            ).encode("utf-8")
+            )
+            subject = u'{} {} "{}" '.format(notification.state,
+                                            notification.severity,
+                                            notification.alarm_name)
 
-            msg = email.mime.text.MIMEText(text)
-            msg['Subject'] = u'{} {} "{}" '.format(notification.state,
-                                                   notification.severity,
-                                                   notification.alarm_name).encode("utf-8")
-
+        msg = email.mime.text.MIMEText(text, 'plain', 'utf-8')
+        msg['Subject'] = email.header.Header(subject, 'utf-8')
         msg['From'] = self._config['from_addr']
         msg['To'] = notification.address
+        msg['Date'] = email.utils.formatdate(localtime=True, usegmt=True)
 
         return msg
 

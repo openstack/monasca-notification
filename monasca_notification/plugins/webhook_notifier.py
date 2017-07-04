@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import requests
+import ujson as json
 
 from monasca_notification.plugins import abstract_notifier
 

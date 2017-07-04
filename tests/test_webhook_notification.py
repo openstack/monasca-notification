@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import mock
 import requests
 import unittest
 
 import six
+import ujson as json
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import webhook_notifier
