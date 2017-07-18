@@ -19,8 +19,8 @@ import time
 from monasca_common.kafka import consumer
 from monasca_common.kafka import producer
 from monasca_notification.common.utils import get_statsd_client
-from processors.alarm_processor import AlarmProcessor
-from processors.notification_processor import NotificationProcessor
+from monasca_notification.processors.alarm_processor import AlarmProcessor
+from monasca_notification.processors.notification_processor import NotificationProcessor
 
 log = logging.getLogger(__name__)
 

@@ -26,9 +26,9 @@ import sys
 import time
 import yaml
 
-from notification_engine import NotificationEngine
-from periodic_engine import PeriodicEngine
-from retry_engine import RetryEngine
+from monasca_notification.notification_engine import NotificationEngine
+from monasca_notification.periodic_engine import PeriodicEngine
+from monasca_notification.retry_engine import RetryEngine
 
 log = logging.getLogger(__name__)
 processors = []  # global list to facilitate clean signal handling

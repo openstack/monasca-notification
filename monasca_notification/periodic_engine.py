@@ -23,7 +23,7 @@ from monasca_notification.common.repositories import exceptions
 from monasca_notification.common.utils import construct_notification_object
 from monasca_notification.common.utils import get_db_repo
 from monasca_notification.common.utils import get_statsd_client
-from processors import notification_processor
+from monasca_notification.processors import notification_processor
 
 log = logging.getLogger(__name__)
 
