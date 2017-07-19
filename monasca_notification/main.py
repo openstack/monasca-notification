@@ -1,4 +1,5 @@
 # (C) Copyright 2014-2017 Hewlett Packard Enterprise Development LP
+# Copyright 2017 FUJITSU LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -99,7 +100,7 @@ def main(argv=None):
     else:
         config_file = '/etc/monasca/notification.yaml'
 
-    config = yaml.safe_load(open(config_file, 'r'))
+    config = yaml.safe_load(open(config_file, 'rb'))
 
     # Setup logging
     try:

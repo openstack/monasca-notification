@@ -1,4 +1,5 @@
 # (C) Copyright 2014-2016 Hewlett Packard Enterprise Development LP
+# Copyright 2017 FUJITSU LIMITED
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import logging
+import six
 import time
+import ujson as json
 
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.utils import get_db_repo
@@ -51,6 +53,10 @@ class AlarmProcessor(object):
             'tenantId',
             'timestamp'
         ]
+        # check if alarm_data is <class 'bytes'>
+        # if yes convert it to standard string
+        if isinstance(alarm_data, six.binary_type):
+            alarm_data = alarm_data.decode("utf-8")
         json_alarm = json.loads(alarm_data)
         alarm = json_alarm['alarm-transitioned']
         for field in expected_fields:
