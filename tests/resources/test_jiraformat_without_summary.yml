@@ -1,0 +1,2 @@
+jira_format:
+  key: "Exception is occurred if there is no summary key in jiraformat.yml"

@@ -15,9 +15,9 @@
 # limitations under the License.
 
 import base64
+import email.header
 import mock
 import smtplib
-import email.header
 import socket
 import time
 import unittest
@@ -67,7 +67,7 @@ def _decode_headers(email_lines):
     subject, from_addr, to_addr = None, None, None
     for key_idx, key in enumerate(keys):
         accummulated = []
-        for idx in range(3, len(email_lines)-1):
+        for idx in range(3, len(email_lines) - 1):
             line = email_lines[idx]
             if not line:
                 break

@@ -1,0 +1,4 @@
+jira_format:
+  summary: Alarm created for {{ notification.alarm_name }} with severity
+           {{ notification.state }} for {{ notification.alarm_id }}
+  description : "{{ notification.alarm_name }}"

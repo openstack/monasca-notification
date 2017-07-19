@@ -11,18 +11,18 @@
 # the License.
 
 import mock
-import sqlalchemy
 
 from monasca_notification.common.repositories.orm import orm_repo
 from oslotest import base
+
 
 class TestOrmRepo(base.BaseTestCase):
     @mock.patch('monasca_notification.common.repositories.orm.orm_repo.engine_from_config')
     def setUp(self, mock_sql_engine_from_config):
         super(TestOrmRepo, self).setUp()
         config = {'database':
-                     {'orm':
-                         {'url': 'mysql+pymysql://user:password@hostname:3306/mon'}}}
+                  {'orm':
+                   {'url': 'mysql+pymysql://user:password@hostname:3306/mon'}}}
         self._rep = orm_repo.OrmRepo(config)
         self.mock_conn = \
             self._rep._orm_engine.connect.return_value.__enter__.return_value
@@ -68,7 +68,7 @@ class TestOrmRepo(base.BaseTestCase):
 
     def test_fetch_notification_method_types_success(self):
         notification_methods = [('EMAIL',), ('WEBHOOK',)]
-        self.mock_conn.execute.return_value.fetchall.return_value = [('EMAIL',), ('WEBHOOK',)]
+        self.mock_conn.execute.return_value.fetchall.return_value = notification_methods
 
         self.assertEqual(self._rep.fetch_notification_method_types(), ['EMAIL', 'WEBHOOK'])
 
@@ -85,7 +85,7 @@ class TestOrmRepo(base.BaseTestCase):
         self.assertEqual(self._rep._orm_add_notification_type,
                          self.mock_conn.execute.call_args_list[0][0][0])
         self.assertEqual({'b_name': 'SLACK'},
-                     self.mock_conn.execute.call_args_list[0][1])
+                         self.mock_conn.execute.call_args_list[0][1])
 
     def test_get_notification_success(self):
         notification_id = 'notification-123'
