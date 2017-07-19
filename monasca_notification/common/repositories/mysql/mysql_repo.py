@@ -1,4 +1,4 @@
-# Copyright 2015 FUJITSU LIMITED
+# Copyright 2015-2017 FUJITSU LIMITED
 # (C) Copyright 2015,2016 Hewlett Packard Enterprise Development LP
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -16,8 +16,6 @@ import pymysql
 
 from monasca_notification.common.repositories.base import base_repo
 from monasca_notification.common.repositories import exceptions as exc
-
-import six
 
 
 log = logging.getLogger(__name__)
@@ -52,7 +50,7 @@ class MysqlRepo(base_repo.BaseRepo):
             self._mysql = pymysql.connect(host=self._mysql_host,
                                           port=self._mysql_port,
                                           user=self._mysql_user,
-                                          passwd=six.text_type(self._mysql_passwd).encode('utf-8'),
+                                          passwd=self._mysql_passwd,
                                           db=self._mysql_dbname,
                                           ssl=self._mysql_ssl,
                                           use_unicode=True,
