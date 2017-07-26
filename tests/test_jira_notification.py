@@ -50,6 +50,7 @@ def issue(component=True, custom_config=False):
         issue['fields'].update({'components': [{'name': 'MyComponent'}]})
     if custom_config:
         alarm_value = alarm()
+        issue['fields'].update({'description': alarm_value.get('alarmName')})
         summary_format_string = 'Alarm created for {0} with severity {1} for {2}'
         summary = summary_format_string.format(alarm_value.get('alarmName'),
                                                alarm_value.get('newState'),

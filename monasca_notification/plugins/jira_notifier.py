@@ -134,6 +134,7 @@ class JiraNotifier(AbstractNotifier):
                                                               notification.state,
                                                               notification.alarm_id)
         jira_fields["comments"] = "{code}%s{code}" % (json.dumps(body, indent=3))
+        jira_fields["description"] = 'Monasca alarm'
 
         return jira_fields
 
@@ -183,7 +184,7 @@ class JiraNotifier(AbstractNotifier):
 
         issue_dict = {'project': {'key': jira_fields["project"]},
                       'summary': jira_fields["summary"],
-                      'description': 'Monasca alarm',
+                      'description': jira_fields["description"],
                       'issuetype': {'name': 'Bug'}, }
 
         # If the JIRA workflow is created with mandatory components
