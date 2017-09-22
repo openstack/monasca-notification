@@ -13,5 +13,6 @@ dist
 .*.sw*
 
 .testrepository/
+.stestr/
 .coverage.*
 cover/
