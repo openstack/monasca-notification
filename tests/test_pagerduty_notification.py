@@ -134,9 +134,9 @@ class TestPagerduty(base.PluginTestCase):
         self.assertEqual(details['message'], 'I am alarming!')
 
     def pagerduty_http_error(self, log_msg, http_response):
-        self.assertRegexpMatches(log_msg, "Error with pagerduty request.")
-        self.assertRegexpMatches(log_msg, "key=<ABCDEF>")
-        self.assertRegexpMatches(log_msg, "response=%s" % http_response)
+        self.assertRegex(log_msg, "Error with pagerduty request.")
+        self.assertRegex(log_msg, "key=<ABCDEF>")
+        self.assertRegex(log_msg, "response=%s" % http_response)
 
     @mock.patch('monasca_notification.plugins.pagerduty_notifier.requests')
     def notify(self, http_func, mock_requests):
@@ -277,8 +277,8 @@ class TestPagerduty(base.PluginTestCase):
 
         results = self.trap.get(timeout=1)
 
-        self.assertRegexpMatches(results, "Exception on pagerduty request")
-        self.assertRegexpMatches(results, "key=<ABCDEF>")
+        self.assertRegex(results, "Exception on pagerduty request")
+        self.assertRegex(results, "key=<ABCDEF>")
 
         return_value = self.trap.get()
         self.assertFalse(return_value)

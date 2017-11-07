@@ -126,8 +126,8 @@ class TestNotificationProcessor(base.BaseTestCase):
 
         for msg in self.trap:
             if "From: hpcs.mon@hp.com" in msg:
-                self.assertRegexpMatches(msg, "From: hpcs.mon@hp.com")
-                self.assertRegexpMatches(msg, "To: me@here.com")
-                self.assertRegexpMatches(msg, "Content-Type: text/plain")
-                self.assertRegexpMatches(msg, "Alarm .test Alarm.")
-                self.assertRegexpMatches(msg, "On host .foo1.")
+                self.assertRegex(msg, "From: hpcs.mon@hp.com")
+                self.assertRegex(msg, "To: me@here.com")
+                self.assertRegex(msg, "Content-Type: text/plain")
+                self.assertRegex(msg, "Alarm .test Alarm.")
+                self.assertRegex(msg, "On host .foo1.")

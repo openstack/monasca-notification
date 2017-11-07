@@ -128,11 +128,11 @@ class TestWebhook(base.PluginTestCase):
 
         error = self.trap.get()
 
-        self.assertNotRegexpMatches(error, "alarm_id.: .test Alarm")
-        self.assertNotRegexpMatches(error, "content-type.: .application/json")
+        self.assertNotRegex(error, "alarm_id.: .test Alarm")
+        self.assertNotRegex(error, "content-type.: .application/json")
 
-        self.assertRegexpMatches(error, "HTTP code 404")
-        self.assertRegexpMatches(error, "post on URL http://mock:3333/")
+        self.assertRegex(error, "HTTP code 404")
+        self.assertRegex(error, "post on URL http://mock:3333/")
 
         return_value = self.trap.get()
         self.assertFalse(return_value)
@@ -150,10 +150,10 @@ class TestWebhook(base.PluginTestCase):
 
         result = self.trap.get()
 
-        self.assertNotRegexpMatches(result, "alarm_id.: .test Alarm")
-        self.assertNotRegexpMatches(result, "content-type.: .application/json")
+        self.assertNotRegex(result, "alarm_id.: .test Alarm")
+        self.assertNotRegex(result, "content-type.: .application/json")
 
-        self.assertRegexpMatches(result, "Error trying to post on URL http://mock:3333/")
+        self.assertRegex(result, "Error trying to post on URL http://mock:3333/")
 
         return_value = self.trap.get()
         self.assertFalse(return_value)

@@ -161,18 +161,17 @@ class TestEmail(base.PluginTestCase):
 
         email = _parse_email(self.trap.pop(0))
 
-        self.assertRegexpMatches(email['from'], 'hpcs.mon@hp.com')
-        self.assertRegexpMatches(email['to'], 'me@here.com')
-        self.assertRegexpMatches(email['raw'], 'Content-Type: text/plain')
-        self.assertRegexpMatches(email['raw'],
-                                 'Content-Transfer-Encoding: base64')
-        self.assertRegexpMatches(email['subject'],
-                                 'ALARM LOW "test Alarm .*" for Host: foo1.*')
-        self.assertRegexpMatches(email['body'], 'Alarm .test Alarm.')
-        self.assertRegexpMatches(email['body'], 'On host .foo1.')
-        self.assertRegexpMatches(email['body'], UNICODE_CHAR)
-        self.assertRegexpMatches(email['body'], 'Link: some-link')
-        self.assertRegexpMatches(email['body'], 'Lifecycle state: OPEN')
+        self.assertRegex(email['from'], 'hpcs.mon@hp.com')
+        self.assertRegex(email['to'], 'me@here.com')
+        self.assertRegex(email['raw'], 'Content-Type: text/plain')
+        self.assertRegex(email['raw'], 'Content-Transfer-Encoding: base64')
+        self.assertRegex(email['subject'],
+                         'ALARM LOW "test Alarm .*" for Host: foo1.*')
+        self.assertRegex(email['body'], 'Alarm .test Alarm.')
+        self.assertRegex(email['body'], 'On host .foo1.')
+        self.assertRegex(email['body'], UNICODE_CHAR)
+        self.assertRegex(email['body'], 'Link: some-link')
+        self.assertRegex(email['body'], 'Lifecycle state: OPEN')
 
         return_value = self.trap.pop(0)
         self.assertTrue(return_value)
@@ -191,16 +190,15 @@ class TestEmail(base.PluginTestCase):
 
         email = _parse_email(self.trap.pop(0))
 
-        self.assertRegexpMatches(email['from'], 'hpcs.mon@hp.com')
-        self.assertRegexpMatches(email['to'], 'me@here.com')
-        self.assertRegexpMatches(email['raw'], 'Content-Type: text/plain')
-        self.assertRegexpMatches(email['raw'],
-                                 'Content-Transfer-Encoding: base64')
-        self.assertRegexpMatches(email['subject'],
-                                 'ALARM LOW .test Alarm.* Target: some_where')
-        self.assertRegexpMatches(email['body'], "Alarm .test Alarm.")
-        self.assertRegexpMatches(email['body'], "On host .foo1.")
-        self.assertRegexpMatches(email['body'], UNICODE_CHAR)
+        self.assertRegex(email['from'], 'hpcs.mon@hp.com')
+        self.assertRegex(email['to'], 'me@here.com')
+        self.assertRegex(email['raw'], 'Content-Type: text/plain')
+        self.assertRegex(email['raw'], 'Content-Transfer-Encoding: base64')
+        self.assertRegex(email['subject'],
+                         'ALARM LOW .test Alarm.* Target: some_where')
+        self.assertRegex(email['body'], "Alarm .test Alarm.")
+        self.assertRegex(email['body'], "On host .foo1.")
+        self.assertRegex(email['body'], UNICODE_CHAR)
 
         return_value = self.trap.pop(0)
         self.assertTrue(return_value)
@@ -219,15 +217,15 @@ class TestEmail(base.PluginTestCase):
 
         email = _parse_email(self.trap.pop(0))
 
-        self.assertRegexpMatches(email['from'], "From: hpcs.mon@hp.com")
-        self.assertRegexpMatches(email['to'], "To: me@here.com")
-        self.assertRegexpMatches(email['raw'], "Content-Type: text/plain")
-        self.assertRegexpMatches(email['subject'], "Subject: ALARM LOW .test Alarm.")
-        self.assertRegexpMatches(email['body'], "Alarm .test Alarm.")
-        self.assertRegexpMatches(email['body'], "foo1")
-        self.assertRegexpMatches(email['body'], "foo2")
-        self.assertRegexpMatches(email['body'], "bar1")
-        self.assertRegexpMatches(email['body'], "bar2")
+        self.assertRegex(email['from'], "From: hpcs.mon@hp.com")
+        self.assertRegex(email['to'], "To: me@here.com")
+        self.assertRegex(email['raw'], "Content-Type: text/plain")
+        self.assertRegex(email['subject'], "Subject: ALARM LOW .test Alarm.")
+        self.assertRegex(email['body'], "Alarm .test Alarm.")
+        self.assertRegex(email['body'], "foo1")
+        self.assertRegex(email['body'], "foo2")
+        self.assertRegex(email['body'], "bar1")
+        self.assertRegex(email['body'], "bar2")
 
         return_value = self.trap.pop(0)
         self.assertTrue(return_value)
