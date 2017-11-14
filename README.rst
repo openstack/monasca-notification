@@ -131,6 +131,94 @@ StatsD server launched by monasca-agent. Default host and port points to
    -  ConfigDBTime
    -  SendNotificationTime
 
+Plugins
+-------
+
+The following notification plugins are available:
+
+- Email
+- HipChat
+- Jira
+- Pagerduty
+- Slack
+- Webhook
+
+The plugins can be configured via the Monasca Notification config file. In
+general you will need to follow these steps to enable a plugin:
+
+- Make sure that the plugin is enabled in the config file
+- Make sure that the plugin is configured in the config file
+- Restart the Monasca Notification service
+
+Slack plugin
+~~~~~~~~~~~~
+
+To use the Slack plugin you must first configure an incoming `webhook`_
+for the Slack channel you wish to post notifications to. The notification can
+then be created as follows:
+
+::
+
+    monasca notification-create slack_notification slack https://hooks.slack.com/services/MY/SECRET/WEBHOOK/URL
+
+Note that whilst it is also possible to use a token instead of a webhook,
+this approach is now `deprecated`_.
+
+By default the Slack notification will dump all available information into
+the alert. For example, a notification may be posted to Slack which looks
+like this:
+
+::
+
+    {
+      "metrics":[
+         {
+            "dimensions":{
+               "hostname":"operator"
+            },
+            "id":null,
+            "name":"cpu.user_perc"
+         }
+      ],
+      "alarm_id":"20a54a65-44b8-4ac9-a398-1f2d888827d2",
+      "state":"ALARM",
+      "alarm_timestamp":1556703552,
+      "tenant_id":"62f7a7a314904aa3ab137d569d6b4fde",
+      "old_state":"OK",
+      "alarm_description":"Dummy alarm",
+      "message":"Thresholds were exceeded for the sub-alarms: count(cpu.user_perc, deterministic) >= 1.0 with the values: [1.0]",
+      "alarm_definition_id":"78ce7b53-f7e6-4b51-88d0-cb741e7dc906",
+      "alarm_name":"dummy_alarm"
+    }
+
+The format of the above message can be customised with a Jinja template. All fields
+from the raw Slack message are available in the template. For example, you may
+configure the plugin as follows:
+
+::
+
+    [notification_types]
+    enabled = slack
+
+    [slack_notifier]
+    message_template = /etc/monasca/slack_template.j2
+    timeout = 10
+    ca_certs = /etc/ssl/certs/ca-bundle.crt
+    insecure = False
+
+With the following contents of `/etc/monasca/slack_template.j2`:
+
+::
+
+    {{ alarm_name }} has triggered on {% for item in metrics %}host {{ item.dimensions.hostname }}{% if not loop.last %}, {% endif %}{% endfor %}.
+
+With this configuration, the raw Slack message above would be transformed
+into:
+
+::
+
+   dummy_alarm has triggered on host(s): operator.
+
 Future Considerations
 =====================
 
@@ -146,3 +234,7 @@ Future Considerations
      NotificationEngine instance using webhooks to a local http server. Is
      that fast enough?
    - Are we putting too much load on Kafka at ~200 commits per second?
+
+.. _webhook: https://api.slack.com/incoming-webhooks
+
+.. _deprecated: https://api.slack.com/custom-integrations/legacy-tokens
