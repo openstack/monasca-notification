@@ -14,14 +14,17 @@
 
 class BaseRepo(object):
     def __init__(self, config):
-        self._find_alarm_action_sql = """SELECT id, type, name, address, period
-                                         FROM alarm_action as aa
-                                         JOIN notification_method as nm ON aa.action_id = nm.id
-                                         WHERE aa.alarm_definition_id = %s and aa.alarm_state = %s"""
-        self._find_alarm_state_sql = """SELECT state
-                                         FROM alarm
-                                         WHERE alarm.id = %s"""
-        self._insert_notification_types_sql = """INSERT INTO notification_method_type (name) VALUES ( %s)"""
+        self._find_alarm_action_sql = \
+            """SELECT id, type, name, address, period
+               FROM alarm_action as aa
+               JOIN notification_method as nm ON aa.action_id = nm.id
+               WHERE aa.alarm_definition_id = %s and aa.alarm_state = %s"""
+        self._find_alarm_state_sql = \
+            """SELECT state
+               FROM alarm
+               WHERE alarm.id = %s"""
+        self._insert_notification_types_sql = \
+            """INSERT INTO notification_method_type (name) VALUES ( %s)"""
         self._find_all_notification_types_sql = """SELECT name from notification_method_type """
         self._get_notification_sql = """SELECT name, type, address, period
                                         FROM notification_method

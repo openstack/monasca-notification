@@ -115,7 +115,11 @@ class OrmRepo(object):
                 if notification is None:
                     return None
                 else:
-                    return [notification[0], notification[1].lower(), notification[2], notification[3]]
+                    return [
+                        notification[0],
+                        notification[1].lower(),
+                        notification[2],
+                        notification[3]]
         except DatabaseError as e:
             LOG.exception("Couldn't fetch the notification method %s", e)
             raise exc.DatabaseException(e)

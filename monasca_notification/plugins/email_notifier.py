@@ -179,9 +179,11 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
 
     def _create_msg(self, hostname, notification, targethost=None):
         """Create two kind of messages:
-        1. Notifications that include metrics with a hostname as a dimension. There may be more than one hostname.
+        1. Notifications that include metrics with a hostname as a dimension.
+        There may be more than one hostname.
            We will only report the hostname if there is only one.
-        2. Notifications that do not include metrics and therefore no hostname. Example: API initiated changes.
+        2. Notifications that do not include metrics and therefore no hostname.
+        Example: API initiated changes.
            * A third notification type which include metrics but do not include a hostname will
            be treated as type #2.
         """

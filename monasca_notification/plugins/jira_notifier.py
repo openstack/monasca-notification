@@ -147,7 +147,8 @@ class JiraNotifier(AbstractNotifier):
                 'metrics': notification.metrics}
 
         jira_fields = {}
-        summary_format_string = "Monasca alarm for alarm_defintion {0} status changed to {1} for the alarm_id {2}"
+        summary_format_string = ("Monasca alarm for alarm_defintion {0} status changed to {1} "
+                                 "for the alarm_id {2}")
         jira_fields["summary"] = summary_format_string.format(notification.alarm_name,
                                                               notification.state,
                                                               notification.alarm_id)
@@ -173,7 +174,10 @@ class JiraNotifier(AbstractNotifier):
         parsed_url = urllib.parse.urlsplit(notification.address)
         query_params = urllib.parse.parse_qs(parsed_url.query)
         # URL without query params
-        url = urllib.parse.urljoin(notification.address, urllib.parse.urlparse(notification.address).path)
+        url = urllib.parse.urljoin(
+            notification.address,
+            urllib.parse.urlparse(
+                notification.address).path)
 
         jira_fields["project"] = query_params["project"][0]
         if query_params.get("component"):
@@ -229,7 +233,8 @@ class JiraNotifier(AbstractNotifier):
             if current_state.lower() in ["resolved", "closed"]:
                 # Open the the issue
                 transitions = jira_obj.transitions(issue)
-                allowed_transistions = [(t['id'], t['name']) for t in transitions if "reopen" in t['name'].lower()]
+                allowed_transistions = [(t['id'], t['name'])
+                                        for t in transitions if "reopen" in t['name'].lower()]
                 if allowed_transistions:
                     # Reopen the issue
                     jira_obj.transition_issue(issue, allowed_transistions[0][0])

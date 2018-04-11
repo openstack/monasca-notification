@@ -26,19 +26,19 @@ from monasca_notification.plugins import abstract_notifier
 CONF = cfg.CONF
 
 """
-   notification.address = https://hipchat.hpcloud.net/v2/room/<room_id>/notification?auth_token=432432
+notification.address = https://hipchat.hpcloud.net/v2/room/<room_id>/notification?auth_token=432432
 
-   How to get access token?
-       1) Login to Hipchat with the user account which is used for notification
-       2) Go to this page. https://hipchat.hpcloud.net/account/api (Replace your hipchat server name)
-       3) You can see option to "Create token". Use the capability "SendNotification"
+How to get access token?
+    1) Login to Hipchat with the user account which is used for notification
+    2) Go to this page. https://hipchat.hpcloud.net/account/api (Replace your hipchat server name)
+    3) You can see option to "Create token". Use the capability "SendNotification"
 
-   How to get the Room ID?
-       1) Login to Hipchat with the user account which is used for notification
-       2) Go to this page. https://hipchat.hpcloud.net/account/api (Replace your hipchat server name)
-       3) Click on the Rooms tab
-       4) Click on any Room of your choice.
-       5) Room ID is the API ID field
+How to get the Room ID?
+    1) Login to Hipchat with the user account which is used for notification
+    2) Go to this page. https://hipchat.hpcloud.net/account/api (Replace your hipchat server name)
+    3) Click on the Rooms tab
+    4) Click on any Room of your choice.
+    5) Room ID is the API ID field
 
 """
 
@@ -115,7 +115,10 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
 
         query_params = urllib.parse.parse_qs(parsed_url.query)
         # URL without query params
-        url = urllib.parse.urljoin(notification.address, urllib.parse.urlparse(notification.address).path)
+        url = urllib.parse.urljoin(
+            notification.address,
+            urllib.parse.urlparse(
+                notification.address).path)
 
         # Default option is to do cert verification
         verify = not CONF.hipchat_notifier.insecure
@@ -143,7 +146,8 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
                 self._log.info("Notification successfully posted.")
                 return True
             else:
-                msg = "Received an HTTP code {} when trying to send to hipchat on URL {} with response {}."
+                msg = ("Received an HTTP code {} when trying to send to hipchat on URL {}"
+                       " with response {}.")
                 self._log.error(msg.format(result.status_code, url, result.text))
                 return False
         except Exception:

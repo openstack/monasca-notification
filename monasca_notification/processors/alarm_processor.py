@@ -113,7 +113,9 @@ class AlarmProcessor(object):
             alarm = self._parse_alarm(raw_alarm[1].message.value)
         except Exception as e:  # This is general because of a lack of json exception base class
             failed_parse_count += 1
-            log.exception("Invalid Alarm format skipping partition %d, offset %d\nError%s" % (partition, offset, e))
+            log.exception(
+                "Invalid Alarm format skipping partition %d, offset %d\nError%s" %
+                (partition, offset, e))
             return [], partition, offset
 
         log.debug("Read alarm from alarms sent_queue. Partition %d, Offset %d, alarm data %s"
@@ -131,8 +133,9 @@ class AlarmProcessor(object):
 
         if len(notifications) == 0:
             no_notification_count += 1
-            log.debug('No notifications found for this alarm, partition %d, offset %d, alarm data %s'
-                      % (partition, offset, alarm))
+            log.debug(
+                'No notifications found for this alarm, partition %d, offset %d, alarm data %s' %
+                (partition, offset, alarm))
             return [], partition, offset
         else:
             log.debug('Found %d notifications: [%s]', len(notifications), notifications)

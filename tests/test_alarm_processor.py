@@ -45,9 +45,11 @@ class TestAlarmProcessor(base.BaseTestCase):
     @mock.patch('pymysql.connect')
     @mock.patch('monasca_notification.processors.alarm_processor.log')
     def _run_alarm_processor(self, alarm, sql_response, mock_log, mock_mysql):
-        """Runs a mocked alarm processor reading from queue while running, returns (queue_message, log_message)
+        """Runs a mocked alarm processor reading from queue while running,
+        returns (queue_message, log_message)
         """
-        # Since the log runs in another thread I can mock it directly, instead change the methods to put to a queue
+        # Since the log runs in another thread I can mock it directly, instead
+        # change the methods to put to a queue
         mock_log.warn = self.trap.append
         mock_log.error = self.trap.append
         mock_log.exception = self.trap.append
@@ -84,10 +86,20 @@ class TestAlarmProcessor(base.BaseTestCase):
     def test_old_timestamp(self):
         """Should cause the alarm_ttl to fire log a warning and push to finished queue."""
         timestamp = 1375346830042
-        alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
-                      "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": timestamp, "actionsEnabled": 1, "metrics": "cpu_util",
-                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
+        alarm_dict = {
+            "tenantId": "0",
+            "alarmDefinitionId": "0",
+            "alarmId": "1",
+            "alarmName": "test Alarm",
+            "oldState": "OK",
+            "newState": "ALARM",
+            "stateChangeReason": "I am alarming!",
+            "timestamp": timestamp,
+            "actionsEnabled": 1,
+            "metrics": "cpu_util",
+            "severity": "LOW",
+            "link": "http://some-place.com",
+            "lifecycleState": "OPEN"}
         alarm = self._create_raw_alarm(0, 2, alarm_dict)
         expected_datetime = time.ctime(timestamp / 1000)
 
@@ -105,10 +117,20 @@ class TestAlarmProcessor(base.BaseTestCase):
     def test_no_notifications(self):
         """Test an alarm with no defined notifications
         """
-        alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
-                      "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util",
-                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
+        alarm_dict = {
+            "tenantId": "0",
+            "alarmDefinitionId": "0",
+            "alarmId": "1",
+            "alarmName": "test Alarm",
+            "oldState": "OK",
+            "newState": "ALARM",
+            "stateChangeReason": "I am alarming!",
+            "timestamp": time.time() * 1000,
+            "actionsEnabled": 1,
+            "metrics": "cpu_util",
+            "severity": "LOW",
+            "link": "http://some-place.com",
+            "lifecycleState": "OPEN"}
         alarm = self._create_raw_alarm(0, 3, alarm_dict)
 
         notifications, partition, offset = self._run_alarm_processor(alarm, None)
@@ -120,10 +142,20 @@ class TestAlarmProcessor(base.BaseTestCase):
     def test_valid_notification(self):
         """Test a valid notification, being put onto the notification_queue
         """
-        alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
-                      "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util",
-                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
+        alarm_dict = {
+            "tenantId": "0",
+            "alarmDefinitionId": "0",
+            "alarmId": "1",
+            "alarmName": "test Alarm",
+            "oldState": "OK",
+            "newState": "ALARM",
+            "stateChangeReason": "I am alarming!",
+            "timestamp": time.time() * 1000,
+            "actionsEnabled": 1,
+            "metrics": "cpu_util",
+            "severity": "LOW",
+            "link": "http://some-place.com",
+            "lifecycleState": "OPEN"}
         alarm = self._create_raw_alarm(0, 4, alarm_dict)
 
         sql_response = [[1, 'EMAIL', 'test notification', 'me@here.com', 0]]
@@ -137,10 +169,20 @@ class TestAlarmProcessor(base.BaseTestCase):
         self.assertEqual(offset, 4)
 
     def test_two_valid_notifications(self):
-        alarm_dict = {"tenantId": "0", "alarmDefinitionId": "0", "alarmId": "1", "alarmName": "test Alarm",
-                      "oldState": "OK", "newState": "ALARM", "stateChangeReason": "I am alarming!",
-                      "timestamp": time.time() * 1000, "actionsEnabled": 1, "metrics": "cpu_util",
-                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
+        alarm_dict = {
+            "tenantId": "0",
+            "alarmDefinitionId": "0",
+            "alarmId": "1",
+            "alarmName": "test Alarm",
+            "oldState": "OK",
+            "newState": "ALARM",
+            "stateChangeReason": "I am alarming!",
+            "timestamp": time.time() * 1000,
+            "actionsEnabled": 1,
+            "metrics": "cpu_util",
+            "severity": "LOW",
+            "link": "http://some-place.com",
+            "lifecycleState": "OPEN"}
 
         alarm = self._create_raw_alarm(0, 5, alarm_dict)
 

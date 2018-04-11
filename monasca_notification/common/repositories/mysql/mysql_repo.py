@@ -53,7 +53,10 @@ class MysqlRepo(base_repo.BaseRepo):
             if self._mysql is None:
                 self._connect_to_mysql()
             cur = self._mysql.cursor()
-            cur.execute(self._find_alarm_action_sql, (alarm['alarmDefinitionId'], alarm['newState']))
+            cur.execute(
+                self._find_alarm_action_sql,
+                (alarm['alarmDefinitionId'],
+                 alarm['newState']))
 
             for row in cur:
                 yield (row[0], row[1].lower(), row[2], row[3], row[4])

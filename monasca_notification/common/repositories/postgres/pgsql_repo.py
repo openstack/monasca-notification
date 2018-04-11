@@ -40,7 +40,10 @@ class PostgresqlRepo(base_repo.BaseRepo):
             if self._pgsql is None:
                 self._connect_to_pgsql()
             cur = self._pgsql.cursor()
-            cur.execute(self._find_alarm_action_sql, (alarm['alarmDefinitionId'], alarm['newState']))
+            cur.execute(
+                self._find_alarm_action_sql,
+                (alarm['alarmDefinitionId'],
+                 alarm['newState']))
             for row in cur:
                 yield (row[0], row[1].lower(), row[2], row[3], row[4])
         except psycopg2.Error as e:

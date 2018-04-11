@@ -93,7 +93,8 @@ class TestNotificationProcessor(base.BaseTestCase):
                       "timestamp": time.time(),
                       "metrics": metric}
 
-        notification = m_notification.Notification(0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
+        notification = m_notification.Notification(
+            0, 'email', 'email notification', 'me@here.com', 0, 0, alarm_dict)
 
         self._start_processor([notification])
 
@@ -104,9 +105,18 @@ class TestNotificationProcessor(base.BaseTestCase):
     def test_invalid_notification(self):
         """Verify invalid notification type is rejected.
         """
-        alarm_dict = {"tenantId": "0", "alarmId": "0", "alarmName": "test Alarm", "oldState": "OK", "newState": "ALARM",
-                      "stateChangeReason": "I am alarming!", "timestamp": time.time(), "metrics": "cpu_util",
-                      "severity": "LOW", "link": "http://some-place.com", "lifecycleState": "OPEN"}
+        alarm_dict = {
+            "tenantId": "0",
+            "alarmId": "0",
+            "alarmName": "test Alarm",
+            "oldState": "OK",
+            "newState": "ALARM",
+            "stateChangeReason": "I am alarming!",
+            "timestamp": time.time(),
+            "metrics": "cpu_util",
+            "severity": "LOW",
+            "link": "http://some-place.com",
+            "lifecycleState": "OPEN"}
         invalid_notification = m_notification.Notification(0, 'invalid', 'test notification',
                                                            'me@here.com', 0, 0, alarm_dict)
 

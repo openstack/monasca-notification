@@ -111,10 +111,17 @@ class TestWebhook(base.PluginTestCase):
         self.maxDiff = None
         # timestamp is in milliseconds while alarm_timestamp is in seconds
         self.assertEqual(json.loads(data),
-                         {"metrics": [{"dimensions": {"hostname": "foo1", "service": "bar1"}}], "alarm_id": "0",
-                          "state": "ALARM", "alarm_timestamp": 1429023453, "tenant_id": "0",
-                          "old_state": "OK", "alarm_description": "test Alarm description",
-                          "message": "I am alarming!", "alarm_definition_id": 0, "alarm_name": "test Alarm"})
+                         {"metrics": [{"dimensions": {"hostname": "foo1",
+                                                      "service": "bar1"}}],
+                          "alarm_id": "0",
+                          "state": "ALARM",
+                          "alarm_timestamp": 1429023453,
+                          "tenant_id": "0",
+                          "old_state": "OK",
+                          "alarm_description": "test Alarm description",
+                          "message": "I am alarming!",
+                          "alarm_definition_id": 0,
+                          "alarm_name": "test Alarm"})
         self.assertEqual(headers, {'content-type': 'application/json'})
 
         return_value = self.trap.get()

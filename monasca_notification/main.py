@@ -15,7 +15,8 @@
 # limitations under the License.
 
 """ Notification Engine
-    This engine reads alarms from Kafka and then notifies the customer using their configured notification method.
+    This engine reads alarms from Kafka and then notifies the customer using their configured
+    notification method.
 """
 
 import multiprocessing
@@ -58,7 +59,8 @@ def clean_exit(signum, frame=None):
     for process in processors:
         try:
             if process.is_alive():
-                process.terminate()  # Sends sigterm which any processes after a notification is sent attempt to handle
+                # Sends sigterm which any processes after a notification is sent attempt to handle
+                process.terminate()
                 wait_for_exit = True
         except Exception:  # nosec
             # There is really nothing to do if the kill fails, so just go on.
