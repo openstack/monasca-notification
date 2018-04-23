@@ -7,6 +7,7 @@ debtcollector==1.2.0
 extras==1.0.0
 fixtures==3.0.0
 flake8==2.5.5
+funcsigs==1.0.0
 future==0.16.0
 gevent==1.2.2
 gitdb==0.6.4
@@ -14,13 +15,15 @@ GitPython==1.0.1
 greenlet==0.4.10
 hacking==0.12.0
 iso8601==0.1.11
+Jinja2==2.10
+jira==1.0.3
 kazoo==2.2
 keystoneauth1==3.4.0
 linecache2==1.0.0
 mccabe==0.2.1
 mock==2.0.0
 monasca-common==2.7.0
-monasca-statsd==1.1.0
+monasca-statsd==1.4.0
 monotonic==0.6
 mox3==0.20.0
 msgpack-python==0.4.0
