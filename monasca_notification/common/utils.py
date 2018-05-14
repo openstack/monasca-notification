@@ -79,9 +79,57 @@ def grab_stored_notification_method(db_repo, notification_id):
 def get_statsd_client(dimensions=None):
     local_dims = dimensions.copy() if dimensions else {}
     local_dims.update(NOTIFICATION_DIMENSIONS)
-    client = monascastatsd.Client(name='monasca',
-                                  host=CONF.statsd.host,
-                                  port=CONF.statsd.port,
-                                  dimensions=local_dims)
-
+    if CONF.statsd.enable:
+        LOG.debug("Establishing connection with statsd on {0}:{1}"
+                  .format(CONF.statsd.host, CONF.statsd.port))
+        client = monascastatsd.Client(name='monasca',
+                                      host=CONF.statsd.host,
+                                      port=CONF.statsd.port,
+                                      dimensions=local_dims)
+    else:
+        LOG.warn("StatsD monitoring disabled. Overriding monascastatsd.Client to use it offline")
+        client = OfflineClient(name='monasca',
+                               host=CONF.statsd.host,
+                               port=CONF.statsd.port,
+                               dimensions=local_dims)
     return client
+
+
+class OfflineClient(monascastatsd.Client):
+
+    def _set_connection(self, connection, host, port):
+        if connection is None:
+            self.connection = OfflineConnection(host=host,
+                                                port=port,
+                                                max_buffer_size=self._max_buffer_size)
+        else:
+            self.connection = connection
+
+
+class OfflineConnection(monascastatsd.Connection):
+
+    def __init__(self, host='localhost', port=8125, max_buffer_size=50):
+        """Initialize an Offline Connection object.
+
+        >>> monascastatsd = MonascaStatsd()
+
+        :name: the name for this client.  Everything sent by this client
+            will be prefixed by name
+        :param host: the host of the MonascaStatsd server.
+        :param port: the port of the MonascaStatsd server.
+        :param max_buffer_size: Maximum number of metric to buffer before
+         sending to the server if sending metrics in batch
+        """
+        self.max_buffer_size = max_buffer_size
+        self._send = self._send_to_server
+        self.connect(host, port)
+        self.encoding = 'utf-8'
+
+    def connect(self, host, port):
+        """Avoid connecting to the monascastatsd server.
+
+        """
+        pass
+
+    def _send_to_server(self, packet):
+        pass
