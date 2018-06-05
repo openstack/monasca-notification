@@ -15,3 +15,4 @@ testrepository>=0.0.18 # Apache-2.0/BSD
 SQLAlchemy!=1.1.5,!=1.1.6,!=1.1.7,!=1.1.8,>=1.0.10 # MIT
 PyMySQL>=0.7.6 # MIT License
 psycopg2>=2.6.2 # LGPL/ZPL
+docutils>=0.11 # OSI-Approved Open Source, Public Domain
