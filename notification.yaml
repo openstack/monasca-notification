@@ -127,3 +127,13 @@ logging: # Used in logging.dictConfig
 statsd:
     host: 'localhost'
     port: 8125
+
+keystone:
+    auth_required: False
+    auth_url: 'http://127.0.0.1/identity/v3'
+    username: 'admin'
+    password: 'password'
+    project_name: 'admin'
+    user_domain_name: 'default'
+    project_domain_name: 'default'
+    auth_type: 'password'

@@ -22,6 +22,7 @@ from oslo_utils import importutils
 from monasca_notification.conf import cli
 from monasca_notification.conf import database
 from monasca_notification.conf import kafka
+from monasca_notification.conf import keystone
 from monasca_notification.conf import notifiers
 from monasca_notification.conf import processors
 from monasca_notification.conf import queues
@@ -36,6 +37,7 @@ CONF_OPTS = [
     cli,
     database,
     kafka,
+    keystone,
     notifiers,
     processors,
     queues,
@@ -144,6 +146,7 @@ def load_from_yaml(yaml_config, conf=None):
         ],
         'queues': [lambda d: _plain_override(g='queues', **d)],
         'kafka': [lambda d: _plain_override(g='kafka', **d)],
+        'keystone': [lambda d: _plain_override(g='keystone', **d)],
         'zookeeper': [lambda d: _plain_override(g='zookeeper', **d)],
         'notification_types': [lambda d: _load_plugin_settings(**d)],
         'logging': [_configure_and_warn_the_logging]
