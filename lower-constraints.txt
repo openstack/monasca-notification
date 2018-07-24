@@ -45,7 +45,6 @@ pep8==1.5.7
 psycopg2==2.6.2
 pyflakes==0.8.1
 pyinotify==0.9.6
-pykafka==2.5.0
 PyMySQL==0.7.6
 pyparsing==2.1.0
 python-dateutil==2.5.3
