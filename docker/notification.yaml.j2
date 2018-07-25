@@ -1,0 +1,154 @@
+# (C) Copyright 2017 Hewlett Packard Enterprise Development LP
+# Copyright 2018 Fujitsu LIMITED
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
+kafka:
+    url: {{ KAFKA_URI | default('kafka:9092') }}
+    group: "monasca-notification"
+    alarm_topic: "alarm-state-transitions"
+    notification_topic: "alarm-notifications"
+    notification_retry_topic: "retry-notifications"
+    periodic:
+        60: 60-seconds-notifications
+    max_offset_lag: 600  # In seconds, undefined for none
+
+mysql:
+    host: "{{ MYSQL_DB_HOST | default('mysql') }}"
+    port: {{ MYSQL_DB_PORT | default('3306') }}
+    user: "{{ MYSQL_DB_USERNAME | default('notification') }}"
+    passwd: "{{ MYSQL_DB_PASSWORD | default('password') }}"
+    db: "{{ MYSQL_DB_DATABASE | default('mon') }}"
+
+notification_types:
+{% if NF_PLUGINS %}
+    {% set plugins = NF_PLUGINS.split(',')|map('trim')|list %}
+    plugins:
+        {% if 'email' in plugins %}
+        - monasca_notification.plugins.email_notifier:EmailNotifier
+        {% endif %}
+        {% if 'webhook' in plugins %}
+        - monasca_notification.plugins.webhook_notifier:WebhookNotifier
+        {% endif %}
+        {% if 'pagerduty' in plugins %}
+        - monasca_notification.plugins.pagerduty_notifier:PagerdutyNotifier
+        {% endif %}
+        {% if 'hipchat' in plugins %}
+        - monasca_notification.plugins.hipchat_notifier:HipChatNotifier
+        {% endif %}
+        {% if 'slack' in plugins %}
+        - monasca_notification.plugins.slack_notifier:SlackNotifier
+        {% endif %}
+{% else %}
+    plugins: []
+    {% set plugins = [] %}
+{% endif %}
+
+{% if 'email' in plugins %}
+    email:
+        server: "{{ NF_EMAIL_SERVER }}"
+        port: {{ NF_EMAIL_PORT | default(25) }}
+        user: "{{ NF_EMAIL_USER }}"
+        password: "{{ NF_EMAIL_PASSWORD }}"
+        timeout: {{ NF_EMAIL_TIMEOUT | default(15) }}
+        from_addr: "{{ NF_EMAIL_FROM_ADDR }}"
+        grafana_url: "{{ NF_EMAIL_GRAFANA_URL }}"
+{% endif -%}
+
+{% if 'webhook' in plugins %}
+    webhook:
+        timeout: {{ NF_WEBHOOK_TIMEOUT | default(5) }}
+{% endif -%}
+
+{% if 'pagerduty' in plugins %}
+    pagerduty:
+        timeout: {{ NF_PAGERDUTY_TIMEOUT | default(5) }}
+        url: "{{ NF_PAGERDUTY_URL | default('https://events.pagerduty.com/generic/2010-04-15/create_event.json') }}"
+{% endif -%}
+
+{% if 'hipchat' in plugins %}
+    hipchat:
+        timeout: {{ NF_HIPCHAT_TIMEOUT | default(5) }}
+        ca_certs: "{{ NF_HIPCHAT_SSL_CERTS | default('/etc/ssl/certs/ca-certificates.crt') }}"
+        insecure: {{ NF_HIPCHAT_INSECURE | default('false') }}
+    {% if NF_HIPCHAT_PROXY %}
+        proxy: {{ NF_HIPCHAT_PROXY }}
+    {% endif %}
+    {% if NF_HIPCHAT_TEMPLATE %}
+        template: "{{ NF_HIPCHAT_TEMPLATE }}"
+    {% endif %}
+{% endif -%}
+
+{% if 'slack' in plugins %}
+    slack:
+        timeout: {{ NF_SLACK_TIMEOUT | default(5) }}
+        ca_certs: "{{ NF_SLACK_CA_CERTS | default('/etc/ssl/certs/ca-certificates.crt') }}"
+        insecure: {{ NF_SLACK_INSECURE | default('false') }}
+    {% if NF_SLACK_PROXY %}
+        proxy: {{ NF_SLACK_PROXY }}
+    {% endif %}
+{% endif %}
+
+processors:
+    alarm:
+        number: {{ ALARM_PROCESSORS | default(2) }}
+
+        # In seconds, undefined for none. Alarms older than this are not processed
+        ttl: 14400
+    notification:
+        number: {{ NOTIFICATION_PROCESSORS | default(2) }}
+
+retry:
+    interval: {{ RETRY_INTERVAL | default(30) }}
+    max_attempts: {{ RETRY_MAX_ATTEMPTS | default(5) }}
+
+queues:
+    alarms_size: 256
+    finished_size: 256
+    notifications_size: 256
+    sent_notifications_size: 50
+
+zookeeper:
+    url: "{{ ZOOKEEPER_URL | default('zookeeper:2181') }}"
+    notification_path: "/notification/alarms"
+    notification_retry_path: "/notification/retry"
+    periodic_path:
+        60: /notification/60_seconds
+
+logging: # Used in logging.dictConfig
+    version: 1
+    disable_existing_loggers: False
+    formatters:
+        default:
+            format: "%(asctime)s %(levelname)s %(name)s %(message)s"
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: default
+    loggers:
+        kazoo:
+            level: WARN
+        kafka:
+            level: WARN
+        statsd:
+            level: WARN
+    root:
+        handlers:
+            - console
+        level: {{ LOG_LEVEL | default('WARN') }}
+
+{% if STATSD_HOST and STATSD_PORT %}
+statsd:
+    host: "{{ STATSD_HOST }}"
+    port: {{ STATSD_PORT }}
+{% endif %}
