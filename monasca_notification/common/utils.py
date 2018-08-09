@@ -15,8 +15,11 @@
 # limitations under the License.
 import monascastatsd
 
+from keystoneauth1 import exceptions as kaexception
+from keystoneauth1 import loading as kaloading
 from oslo_config import cfg
 from oslo_log import log
+import six
 
 from monasca_notification.common.repositories import exceptions
 from monasca_notification.notification import Notification
@@ -133,3 +136,33 @@ class OfflineConnection(monascastatsd.Connection):
 
     def _send_to_server(self, packet):
         pass
+
+
+def get_keystone_session():
+
+    auth_details = {}
+    auth_details['auth_url'] = CONF.keystone.auth_url
+    auth_details['username'] = CONF.keystone.username
+    auth_details['password'] = CONF.keystone.password
+    auth_details['project_name'] = CONF.keystone.project_name
+    auth_details['user_domain_name'] = CONF.keystone.user_domain_name
+    auth_details['project_domain_name'] = CONF.keystone.project_domain_name
+    loader = kaloading.get_plugin_loader('password')
+    auth_plugin = loader.load_from_options(**auth_details)
+    session = kaloading.session.Session().load_from_options(
+        auth=auth_plugin)
+    return session
+
+
+def get_auth_token():
+    error_message = 'Keystone request failed: {}'
+    try:
+        session = get_keystone_session()
+        auth_token = session.get_token()
+        return auth_token
+    except (kaexception.Unauthorized, kaexception.DiscoveryFailure) as e:
+        LOG.exception(error_message.format(six.text_type(e)))
+        raise
+    except Exception as e:
+        LOG.exception(error_message.format(six.text_type(e)))
+        raise

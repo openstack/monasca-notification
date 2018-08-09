@@ -20,6 +20,7 @@ import ujson as json
 from debtcollector import removals
 from oslo_config import cfg
 
+from monasca_notification.common import utils
 from monasca_notification.plugins import abstract_notifier
 
 CONF = cfg.CONF
@@ -72,6 +73,13 @@ class WebhookNotifier(abstract_notifier.AbstractNotifier):
                 'metrics': notification.metrics}
 
         headers = {'content-type': 'application/json'}
+
+        # Checks if keystone authentication is enabled and adds authentication
+        # token to the request headers
+        if CONF.keystone.auth_required:
+            auth_token = utils.get_auth_token()
+            headers = {'content-type': 'application/json',
+                       'X-Auth-Token': auth_token}
 
         url = notification.address
 
