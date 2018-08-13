@@ -45,6 +45,9 @@ def parse_args(argv, no_yaml=False):
          monasca-notification is an engine responsible for
          transforming alarm transitions into proper notifications
          ''')
+
+    conf.register_enabled_plugin_opts(CONF)
+
     log.setup(CONF,
               product_name='monasca-notification',
               version=version.version_string)
