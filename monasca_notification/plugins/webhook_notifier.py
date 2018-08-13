@@ -26,16 +26,6 @@ from monasca_notification.plugins import abstract_notifier
 CONF = cfg.CONF
 
 
-def register_opts(conf):
-    gr = cfg.OptGroup(name='%s_notifier' % WebhookNotifier.type)
-    opts = [
-        cfg.IntOpt(name='timeout', default=5, min=1)
-    ]
-
-    conf.register_group(gr)
-    conf.register_opts(opts, group=gr)
-
-
 class WebhookNotifier(abstract_notifier.AbstractNotifier):
 
     type = 'webhook'
@@ -100,3 +90,19 @@ class WebhookNotifier(abstract_notifier.AbstractNotifier):
         except Exception:
             self._log.exception("Error trying to post on URL {}".format(url))
             return False
+
+webhook_notifier_group = cfg.OptGroup(name='%s_notifier' % WebhookNotifier.type)
+webhook_notifier_opts = [
+    cfg.IntOpt(name='timeout', default=5, min=1)
+]
+
+
+def register_opts(conf):
+    conf.register_group(webhook_notifier_group)
+    conf.register_opts(webhook_notifier_opts, group=webhook_notifier_group)
+
+
+def list_opts():
+    return {
+        webhook_notifier_group: webhook_notifier_opts
+    }

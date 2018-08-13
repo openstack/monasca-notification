@@ -65,22 +65,6 @@ With dimensions
 {metric_dimensions}'''
 
 
-def register_opts(conf):
-    gr = cfg.OptGroup(name='%s_notifier' % EmailNotifier.type)
-    opts = [
-        cfg.StrOpt(name='from_addr'),
-        cfg.HostAddressOpt(name='server'),
-        cfg.PortOpt(name='port', default=25),
-        cfg.IntOpt(name='timeout', default=5, min=1),
-        cfg.StrOpt(name='user', default=None),
-        cfg.StrOpt(name='password', default=None, secret=True),
-        cfg.StrOpt(name='grafana_url', default=None)
-    ]
-
-    conf.register_group(gr)
-    conf.register_opts(opts, group=gr)
-
-
 class EmailNotifier(abstract_notifier.AbstractNotifier):
 
     type = 'email'
@@ -306,3 +290,25 @@ def _format_dimensions(notification):
     dimensions = u'[\n' + u',\n'.join(dim_set_strings) + u' \n]'
 
     return dimensions
+
+email_notifier_group = cfg.OptGroup(name='%s_notifier' % EmailNotifier.type)
+email_notifier_opts = [
+    cfg.StrOpt(name='from_addr'),
+    cfg.HostAddressOpt(name='server'),
+    cfg.PortOpt(name='port', default=25),
+    cfg.IntOpt(name='timeout', default=5, min=1),
+    cfg.StrOpt(name='user', default=None),
+    cfg.StrOpt(name='password', default=None, secret=True),
+    cfg.StrOpt(name='grafana_url', default=None)
+]
+
+
+def register_opts(conf):
+    conf.register_group(email_notifier_group)
+    conf.register_opts(email_notifier_opts, group=email_notifier_group)
+
+
+def list_opts():
+    return {
+        email_notifier_group: email_notifier_opts
+    }

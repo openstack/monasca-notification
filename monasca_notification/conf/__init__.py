@@ -29,6 +29,12 @@ from monasca_notification.conf import queues
 from monasca_notification.conf import retry
 from monasca_notification.conf import statsd
 from monasca_notification.conf import zookeeper
+from monasca_notification.plugins import email_notifier
+from monasca_notification.plugins import hipchat_notifier
+from monasca_notification.plugins import jira_notifier
+from monasca_notification.plugins import pagerduty_notifier
+from monasca_notification.plugins import slack_notifier
+from monasca_notification.plugins import webhook_notifier
 
 LOG = log.getLogger(__name__)
 CONF = cfg.CONF
@@ -63,6 +69,10 @@ def register_enabled_plugin_opts(conf=None):
 
 
 def list_opts():
+    PLUGIN_CONF_OPTS = [slack_notifier, jira_notifier,
+                        hipchat_notifier, email_notifier,
+                        webhook_notifier, pagerduty_notifier]
+    CONF_OPTS.extend(PLUGIN_CONF_OPTS)
     opts = collections.defaultdict(list)
     for m in CONF_OPTS:
         configs = copy.deepcopy(m.list_opts())
