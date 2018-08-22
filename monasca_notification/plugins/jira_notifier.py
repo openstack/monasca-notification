@@ -231,7 +231,7 @@ class JiraNotifier(AbstractNotifier):
             self._log.debug("Found an existing issue {} for this notification".format(issue))
             current_state = issue.fields.status.name
             if current_state.lower() in ["resolved", "closed"]:
-                # Open the the issue
+                # Open the issue
                 transitions = jira_obj.transitions(issue)
                 allowed_transistions = [(t['id'], t['name'])
                                         for t in transitions if "reopen" in t['name'].lower()]
