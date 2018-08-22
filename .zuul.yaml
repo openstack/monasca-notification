@@ -1,0 +1,10 @@
+- project:
+    templates:
+      - openstack-python-jobs
+      - check-requirements
+    check:
+      jobs:
+        - openstack-tox-cover
+    gate:
+      jobs:
+        - openstack-tox-cover
