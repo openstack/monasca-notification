@@ -60,5 +60,6 @@ def parse_args(argv, no_yaml=False):
 def set_from_yaml():
     if CONF.yaml_config:
         LOG.info('Detected usage of deprecated YAML configuration')
-        yaml_cfg = yaml.safe_load(open(CONF.yaml_config, 'rb'))
+        with open(CONF.yaml_config, 'rb') as ycf:
+            yaml_cfg = yaml.safe_load(ycf.read())
         conf.load_from_yaml(yaml_cfg)
