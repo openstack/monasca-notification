@@ -1,11 +1,10 @@
 Team and repository tags
 ========================
 
-|Team and repository tags|
+.. image:: https://governance.openstack.org/tc/badges/monasca-notification.svg
+    :target: https://governance.openstack.org/tc/reference/tags/index.html
 
-.. raw:: html
-
-   <!-- Change things from this point on -->
+.. Change things from this point on
 
 Notification Engine
 ===================
@@ -134,6 +133,3 @@ Future Considerations
      NotificationEngine instance using webhooks to a local http server. Is
      that fast enough?
    - Are we putting too much load on Kafka at ~200 commits per second?
-
-.. |Team and repository tags| image:: https://governance.openstack.org/tc/badges/monasca-notification.svg
-   :target: https://governance.openstack.org/tc/reference/tags/index.html
