@@ -31,7 +31,7 @@ ENV \
     STATSD_PORT=8125 \
     STAY_ALIVE_ON_FAILURE="false"
 
-# Copy all neccessary files to proper locations.
+# Copy all necessary files to proper locations.
 COPY notification.yaml.j2 /etc/monasca/
 
 # Implement start script in `start.sh` file.

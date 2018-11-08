@@ -48,7 +48,7 @@ class Notification(object):
              type - The notification type
              name - Name used in sending
              address - where to send the notification
-             period - period of sending the notificationv
+             period - period of sending the notification
              retry_count - number of times we've tried to send
              alarm - info that caused the notification
              notifications that come after this one to remain uncommitted.

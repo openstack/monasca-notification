@@ -88,7 +88,7 @@ queues:
     sent_notifications_size: 50  # limiting this size reduces potential # of re-sent notifications after a failure
 
 zookeeper:
-    url: 127.0.0.1:2181  # or comma seperated list of multiple hosts
+    url: 127.0.0.1:2181  # or comma separated list of multiple hosts
     notification_path: /notification/alarms
     notification_retry_path: /notification/retry
     periodic_path:
