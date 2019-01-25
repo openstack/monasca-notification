@@ -36,7 +36,7 @@ kafka_opts = [
                 bounds=False,
                 default=_DEFAULT_URL, required=True,
                 help='List of addresses (with ports) pointing '
-                     'at zookeeper cluster.'),
+                     'at Kafka cluster.'),
     cfg.StrOpt(name='group', default=_DEFAULT_GROUP,
                required=True, advanced=True,
                help='Consumer\'s group for monasca-notification client.'),
