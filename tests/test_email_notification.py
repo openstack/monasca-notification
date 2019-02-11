@@ -16,25 +16,24 @@
 # limitations under the License.
 
 import base64
+import datetime
 import email.header
-import mock
 import smtplib
 import socket
 import time
 
+import mock
 import six
 
-import datetime
+from monasca_notification.notification import Notification
+from monasca_notification.plugins import email_notifier
+from tests import base
 
 if six.PY2:
     import urlparse
 else:
     from urllib import parse
     from urllib.parse import urlparse
-
-from monasca_notification.notification import Notification
-from monasca_notification.plugins import email_notifier
-from tests import base
 
 UNICODE_CHAR = six.unichr(2344)
 UNICODE_CHAR_ENCODED = UNICODE_CHAR.encode("utf-8")
