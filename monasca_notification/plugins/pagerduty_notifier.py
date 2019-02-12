@@ -27,19 +27,6 @@ CONF = cfg.CONF
 VALID_HTTP_CODES = [200, 201, 204]
 
 
-def register_opts(conf):
-    gr = cfg.OptGroup(name='%s_notifier' % PagerdutyNotifier.type)
-    opts = [
-        cfg.IntOpt(name='timeout', default=5, min=1),
-        cfg.StrOpt(name='url',
-                   default='https://events.pagerduty.com/'
-                           'generic/2010-04-15/create_event.json')
-    ]
-
-    conf.register_group(gr)
-    conf.register_opts(opts, group=gr)
-
-
 class PagerdutyNotifier(abstract_notifier.AbstractNotifier):
 
     type = 'pagerduty'
@@ -92,3 +79,23 @@ class PagerdutyNotifier(abstract_notifier.AbstractNotifier):
             self._log.exception("Exception on pagerduty request. key=<{}>"
                                 .format(notification.address))
             return False
+
+
+pagerduty_notifier_group = cfg.OptGroup(name='%s_notifier' % PagerdutyNotifier.type)
+pagerduty_notifier_opts = [
+    cfg.IntOpt(name='timeout', default=5, min=1),
+    cfg.StrOpt(name='url',
+               default='https://events.pagerduty.com/'
+                       'generic/2010-04-15/create_event.json')
+]
+
+
+def register_opts(conf):
+    conf.register_group(pagerduty_notifier_group)
+    conf.register_opts(pagerduty_notifier_opts, group=pagerduty_notifier_group)
+
+
+def list_opts():
+    return {
+        pagerduty_notifier_group: pagerduty_notifier_opts
+    }

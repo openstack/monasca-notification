@@ -58,20 +58,6 @@ from monasca_notification.plugins.abstract_notifier import AbstractNotifier
 CONF = cfg.CONF
 
 
-def register_opts(conf):
-    gr = cfg.OptGroup(name='%s_notifier' % JiraNotifier.type)
-    opts = [
-        cfg.IntOpt(name='timeout', default=5, min=1),
-        cfg.StrOpt(name='user', required=False),
-        cfg.StrOpt(name='password', required=False, secret=True),
-        cfg.StrOpt(name='custom_formatter', default=None),
-        cfg.StrOpt(name='proxy', default=None)
-    ]
-
-    conf.register_group(gr)
-    conf.register_opts(opts, group=gr)
-
-
 class JiraNotifier(AbstractNotifier):
 
     type = 'jira'
@@ -242,3 +228,23 @@ class JiraNotifier(AbstractNotifier):
         jira_comment_message = jira_fields.get("comments")
         if jira_comment_message:
             jira_obj.add_comment(issue, jira_comment_message)
+
+jira_notifier_group = cfg.OptGroup(name='%s_notifier' % JiraNotifier.type)
+jira_notifier_opts = [
+    cfg.IntOpt(name='timeout', default=5, min=1),
+    cfg.StrOpt(name='user', required=False),
+    cfg.StrOpt(name='password', required=False, secret=True),
+    cfg.StrOpt(name='custom_formatter', default=None),
+    cfg.StrOpt(name='proxy', default=None)
+]
+
+
+def register_opts(conf):
+    conf.register_group(jira_notifier_group)
+    conf.register_opts(jira_notifier_opts, group=jira_notifier_group)
+
+
+def list_opts():
+    return {
+        jira_notifier_group: jira_notifier_opts
+    }

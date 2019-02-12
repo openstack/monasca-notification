@@ -48,19 +48,6 @@ SEVERITY_COLORS = {"low": 'green',
                    'critical': 'red'}
 
 
-def register_opts(conf):
-    gr = cfg.OptGroup(name='%s_notifier' % HipChatNotifier.type)
-    opts = [
-        cfg.IntOpt(name='timeout', default=5, min=1),
-        cfg.BoolOpt(name='insecure', default=True),
-        cfg.StrOpt(name='ca_certs', default=None),
-        cfg.StrOpt(name='proxy', default=None)
-    ]
-
-    conf.register_group(gr)
-    conf.register_opts(opts, group=gr)
-
-
 class HipChatNotifier(abstract_notifier.AbstractNotifier):
 
     type = 'hipchat'
@@ -153,3 +140,22 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
         except Exception:
             self._log.exception("Error trying to send to hipchat on URL {}".format(url))
             return False
+
+hipchat_notifier_group = cfg.OptGroup(name='%s_notifier' % HipChatNotifier.type)
+hipchat_notifier_opts = [
+    cfg.IntOpt(name='timeout', default=5, min=1),
+    cfg.BoolOpt(name='insecure', default=True),
+    cfg.StrOpt(name='ca_certs', default=None),
+    cfg.StrOpt(name='proxy', default=None)
+]
+
+
+def register_opts(conf):
+    conf.register_group(hipchat_notifier_group)
+    conf.register_opts(hipchat_notifier_opts, group=hipchat_notifier_group)
+
+
+def list_opts():
+    return {
+        hipchat_notifier_group: hipchat_notifier_opts
+    }

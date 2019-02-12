@@ -26,19 +26,6 @@ from monasca_notification.plugins import abstract_notifier
 CONF = cfg.CONF
 
 
-def register_opts(conf):
-    gr = cfg.OptGroup(name='%s_notifier' % SlackNotifier.type)
-    opts = [
-        cfg.IntOpt(name='timeout', default=5, min=1),
-        cfg.BoolOpt(name='insecure', default=True),
-        cfg.StrOpt(name='ca_certs', default=None),
-        cfg.StrOpt(name='proxy', default=None)
-    ]
-
-    conf.register_group(gr)
-    conf.register_opts(opts, group=gr)
-
-
 class SlackNotifier(abstract_notifier.AbstractNotifier):
     """This module is a notification plugin to integrate with Slack.
 
@@ -199,3 +186,22 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
             self._log.info('Failed to send message to {} as {}'
                            .format(url, data_format))
         return False
+
+slack_notifier_group = cfg.OptGroup(name='%s_notifier' % SlackNotifier.type)
+slack_notifier_opts = [
+    cfg.IntOpt(name='timeout', default=5, min=1),
+    cfg.BoolOpt(name='insecure', default=True),
+    cfg.StrOpt(name='ca_certs', default=None),
+    cfg.StrOpt(name='proxy', default=None)
+]
+
+
+def register_opts(conf):
+    conf.register_group(slack_notifier_group)
+    conf.register_opts(slack_notifier_opts, group=slack_notifier_group)
+
+
+def list_opts():
+    return {
+        slack_notifier_group: slack_notifier_opts
+    }
