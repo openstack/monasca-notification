@@ -10,6 +10,7 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - docker-build-monasca-service
         - monasca-tempest-python2-influxdb:
             voting: false
         - monasca-tempest-python3-influxdb:
