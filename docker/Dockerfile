@@ -7,7 +7,7 @@ ARG CONSTRAINTS_BRANCH=master
 ARG COMMON_VERSION=master
 
 # Extra Python3 dependencies.
-ARG EXTRA_DEPS="netaddr gevent==1.3.5 greenlet"
+ARG EXTRA_DEPS="netaddr gevent==1.3.5 greenlet jira"
 
 # Always start from `monasca-base` image and use specific tag of it.
 ARG BASE_TAG=master
