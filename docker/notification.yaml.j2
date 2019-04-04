@@ -147,8 +147,7 @@ logging: # Used in logging.dictConfig
             - console
         level: {{ LOG_LEVEL | default('WARN') }}
 
-{% if STATSD_HOST and STATSD_PORT %}
 statsd:
+    enable: {{ STATSD_ENABLE }}
     host: "{{ STATSD_HOST }}"
     port: {{ STATSD_PORT }}
-{% endif %}

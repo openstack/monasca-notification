@@ -49,6 +49,7 @@ NOTIFICATION_PROCESSORS        2 	                                              
 RETRY_INTERVAL 	               30 	                                                                                    Retry interval in seconds
 RETRY_MAX_ATTEMPTS 	           5 	                                                                                    Max number of notification retries
 LOG_LEVEL 	                   WARN 	                                                                                Logging level
+STATSD_ENABLE                  true                                                                                     Monasca agent StatsD enable or disable
 STATSD_HOST                    monasca-statsd 	                                                                        Monasca agent StatsD host for self-monitoring
 STATSD_PORT                    8125     	                                                                            Monasca agent StatsD port for self-monitoring
 NF_PLUGINS 	                   <not set>  	                                                                            See below "Notification Plugins"
