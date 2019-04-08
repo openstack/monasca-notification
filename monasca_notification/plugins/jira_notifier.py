@@ -37,11 +37,6 @@ from monasca_notification.plugins.abstract_notifier import AbstractNotifier
 
    notification.address = https://<jira_url>/?project=<project_name>
 
-   Dependency for Jira
-       1) Jira plugin requires Jira library. Consumers need to install
-         JIRA via pip
-       2) (i.e) pip install jira
-
    Jira Configuration
        1) jira:
             user: username
