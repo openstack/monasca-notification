@@ -42,7 +42,7 @@ oslo.utils==3.33.0
 oslotest==3.2.0
 pbr==2.0.0
 pep8==1.5.7
-psycopg2==2.6.2
+psycopg2==2.7.1
 pyflakes==0.8.1
 pyinotify==0.9.6
 PyMySQL==0.7.6
