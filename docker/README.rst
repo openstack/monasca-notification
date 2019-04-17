@@ -13,14 +13,55 @@ Building Monasca notification image
 ===================================
 
 Example:
-  $ ./build_image.sh <repository_version> <upper_constains_branch> <common_version>
+  $ ./build_image.sh <repository_version> <upper_constrains_branch> <common_version>
 
-Requirements from monasca-base image
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-health_check.py
-  This file will be used for checking the status of the Monasca persister
-  application.
+Everything after ``./build_image.sh`` is optional and by default configured
+to get versions from ``Dockerfile``. ``./build_image.sh`` also contain more
+detailed build description.
 
+Environment variables
+~~~~~~~~~~~~~~~~~~~~~
+========================== ================= ================================================
+Variable                   Default           Description
+========================== ================= ================================================
+KAFKA_URI                  kafka:9092        The host and port for kafka
+ZOOKEEPER_URL              zookeeper:2181    URL to Zookeeper
+ALARM_PROCESSORS           2                 Number of alarm processing threads
+NOTIFICATION_PROCESSORS    2                 Number of notification processing threads
+RETRY_INTERVAL             30                Retry interval in seconds
+RETRY_MAX_ATTEMPTS         5                 Max number of notification retries
+LOG_LEVEL                  WARN              Logging level
+STATSD_HOST                monasca-statsd    Monasca agent StatsD host for self-monitoring
+STATSD_PORT                8125              Monasca agent StatsD port for self-monitoring
+NF_PLUGINS                 <not set>         See below "Notification Plugins"
+MYSQL_HOST                 mysql             The host for MySQL
+MYSQL_PORT                 3306              The port for MySQL
+MYSQL_USER                 notification      The MySQL username
+MYSQL_PASSWORD             password          The MySQL password
+MYSQL_DB                   mon               The MySQL database name
+STAY_ALIVE_ON_FAILURE      false             If true, container runs 2 hours even start fails
+========================== ================= ================================================
+
+Wait scripts environment variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+======================== ========================== ==========================================
+Variable                 Default                    Description
+======================== ========================== ==========================================
+KAFKA_URI                kafka:9092                 URI to Apache Kafka
+KAFKA_WAIT_FOR_TOPICS    retry-notifications,       The topics where metric-api streams
+                         alarm-state-transitions,   the metric messages and alarm-states
+                         alarm-notifications,
+                         60-seconds-notifications
+KAFKA_WAIT_RETRIES       24                         Number of kafka connect attempts
+KAFKA_WAIT_DELAY         5                          Seconds to wait between attempts
+MYSQL_HOST               mysql                      The host for MySQL
+MYSQL_PORT               3306                       The port for MySQL
+MYSQL_USER               notification               The MySQL username
+MYSQL_PASSWORD           password                   The MySQL password
+MYSQL_DB                 mon                        The MySQL database name
+MYSQL_WAIT_RETRIES       24                         Number of MySQL connection attempts
+MYSQL_WAIT_DELAY         5                          Seconds to wait between attempts
+======================== ========================== ==========================================
 
 Scripts
 ~~~~~~~
@@ -30,37 +71,8 @@ start.sh
   files. You also could provide the ability to allow running container after
   service died for easier debugging.
 
-build_image.sh
-  Please read detailed build description inside the script.
-
-
-Environment variables
-~~~~~~~~~~~~~~~~~~~~~
-============================== ======================================================================================== ================================================
-Variable                       Default                                                                                  Description
-============================== ======================================================================================== ================================================
-KAFKA_URI                      kafka:9092                                                                               The host and port for kafka
-KAFKA_WAIT_FOR_TOPICS          retry-notifications,alarm-state-transitions,alarm-notifications,60-seconds-notifications Topics to wait on at startup
-KAFKA_WAIT_RETRIES 	           24                                                                                       Number of kafka connect attempts
-KAFKA_WAIT_DELAY               5                                                                                        Seconds to wait between attempts
-ZOOKEEPER_URL 	               zookeeper:2181 	                                                                        URL to Zookeeper
-ALARM_PROCESSORS               2 	                                                                                    Number of alarm processing threads
-NOTIFICATION_PROCESSORS        2 	                                                                                    Number of notification processing threads
-RETRY_INTERVAL 	               30 	                                                                                    Retry interval in seconds
-RETRY_MAX_ATTEMPTS 	           5 	                                                                                    Max number of notification retries
-LOG_LEVEL 	                   WARN 	                                                                                Logging level
-STATSD_ENABLE                  true                                                                                     Monasca agent StatsD enable or disable
-STATSD_HOST                    monasca-statsd 	                                                                        Monasca agent StatsD host for self-monitoring
-STATSD_PORT                    8125     	                                                                            Monasca agent StatsD port for self-monitoring
-NF_PLUGINS 	                   <not set>  	                                                                            See below "Notification Plugins"
-MYSQL_DB_HOST                  mysql                                                                                    The host for MySQL
-MYSQL_DB_PORT                  3306                                                                                     The port for MySQL
-MYSQL_DB_USERNAME              notification                                                                             The MySQL username
-MYSQL_DB_PASSWORD              password                                                                                 The MySQL password
-MYSQL_DB_DATABASE              mon                                                                                      The MySQL database name
-STAY_ALIVE_ON_FAILURE          false                                                                                    If true, container runs 2 hours even start fails
-============================== ======================================================================================== ================================================
-
+health_check.py
+  This file will be used for checking the status of the application.
 
 Notification Plugins
 --------------------

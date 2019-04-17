@@ -24,11 +24,11 @@ kafka:
     max_offset_lag: 600  # In seconds, undefined for none
 
 mysql:
-    host: "{{ MYSQL_DB_HOST | default('mysql') }}"
-    port: {{ MYSQL_DB_PORT | default('3306') }}
-    user: "{{ MYSQL_DB_USERNAME | default('notification') }}"
-    passwd: "{{ MYSQL_DB_PASSWORD | default('password') }}"
-    db: "{{ MYSQL_DB_DATABASE | default('mon') }}"
+    host: "{{ MYSQL_HOST | default('mysql') }}"
+    port: {{ MYSQL_PORT | default('3306') }}
+    user: "{{ MYSQL_USER | default('notification') }}"
+    passwd: "{{ MYSQL_PASSWORD | default('password') }}"
+    db: "{{ MYSQL_DB | default('mon') }}"
 
 notification_types:
 {% if NF_PLUGINS %}

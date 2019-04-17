@@ -22,12 +22,11 @@ ENV \
     NOTIFICATION_PROCESSORS=2 \
     RETRY_INTERVAL=30 \
     RETRY_MAX_ATTEMPTS=5 \
-    MYSQL_DB_HOST=mysql \
-    MYSQL_DB_PORT=3306 \
-    MYSQL_DB_USERNAME=notification \
-    MYSQL_DB_PASSWORD=password \
-    MYSQL_DB_DATABASE=mon \
-    STATSD_ENABLE=true \
+    MYSQL_HOST=mysql \
+    MYSQL_PORT=3306 \
+    MYSQL_USER=notification \
+    MYSQL_PASSWORD=password \
+    MYSQL_DB=mon \
     STATSD_HOST=monasca-statsd \
     STATSD_PORT=8125 \
     STAY_ALIVE_ON_FAILURE="false"
