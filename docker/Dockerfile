@@ -27,6 +27,7 @@ ENV \
     MYSQL_USER=notification \
     MYSQL_PASSWORD=password \
     MYSQL_DB=mon \
+    STATSD_ENABLE=true \
     STATSD_HOST=monasca-statsd \
     STATSD_PORT=8125 \
     STAY_ALIVE_ON_FAILURE="false"
