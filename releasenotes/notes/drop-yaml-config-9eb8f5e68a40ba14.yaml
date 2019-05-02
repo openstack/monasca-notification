@@ -1,0 +1,6 @@
+---
+upgrade:
+  - |
+    Support for YAML configuration file has been removed. Last release of
+    monasca-notification to support YAML configuration is OpenStack Train.
+    Please use oslo.config configuration file instead.

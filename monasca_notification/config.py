@@ -15,7 +15,6 @@
 from oslo_config import cfg
 from oslo_log import log
 import sys
-import yaml
 
 from monasca_notification import conf
 from monasca_notification import version
@@ -25,7 +24,7 @@ CONF = conf.CONF
 _CONF_LOADED = False
 
 
-def parse_args(argv, no_yaml=False):
+def parse_args(argv):
     """Sets up configuration of monasca-notification."""
 
     global _CONF_LOADED
@@ -55,11 +54,6 @@ def parse_args(argv, no_yaml=False):
               product_name='monasca-notification',
               version=version.version_string)
 
-    if not no_yaml:
-        # note(trebskit) used only in test cases as the notification.yml
-        # will be dropped eventually
-        set_from_yaml()
-
     _CONF_LOADED = True
 
 
@@ -80,11 +74,3 @@ def _get_config_files():
                         'of main configuration file'.format(old_conf_files))
             conf_files += old_conf_files
     return conf_files
-
-
-def set_from_yaml():
-    if CONF.yaml_config:
-        LOG.info('Detected usage of deprecated YAML configuration')
-        with open(CONF.yaml_config, 'rb') as ycf:
-            yaml_cfg = yaml.safe_load(ycf.read())
-        conf.load_from_yaml(yaml_cfg)

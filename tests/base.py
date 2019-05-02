@@ -45,8 +45,7 @@ class ConfigFixture(oo_cfg.Config):
         self.addCleanup(self._clean_config_loaded_flag)
 
         conf.register_opts()
-        # prevent test from trying to load the yaml file
-        config.parse_args(argv=[], no_yaml=True)
+        config.parse_args(argv=[])
 
     @staticmethod
     def _clean_config_loaded_flag():
