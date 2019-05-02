@@ -19,9 +19,9 @@ _KEY_MAP = {
     'pagerduty': 'monasca_notification.plugins.'
                  'pagerduty_notifier:PagerdutyNotifier',
     'webhook': 'monasca_notification.plugins.webhook_notifier:WebhookNotifier',
-    'hipchat': 'monasca_notification.plugins.hipchat_notifier.HipChatNotifier',
-    'slack': 'monasca_notification.plugins.slack_notifier.SlackNotifier',
-    'jira': 'monasca_notification.plugins.jira_notifier.JiraNotifier'
+    'hipchat': 'monasca_notification.plugins.hipchat_notifier:HipChatNotifier',
+    'slack': 'monasca_notification.plugins.slack_notifier:SlackNotifier',
+    'jira': 'monasca_notification.plugins.jira_notifier:JiraNotifier'
 }
 
 notifier_group = cfg.OptGroup('notification_types',
