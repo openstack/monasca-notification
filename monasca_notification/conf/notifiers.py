@@ -20,9 +20,13 @@ from oslo_config import cfg
 # user has no possibility of enabling/disabling them
 
 _KEY_MAP = {
-    'hipchat': 'monasca_notification.plugins.hipchat_notifier.HipChatNotifier',
-    'slack': 'monasca_notification.plugins.slack_notifier.SlackNotifier',
-    'jira': 'monasca_notification.plugins.jira_notifier.JiraNotifier'
+    'email': 'monasca_notification.plugins.email_notifier:EmailNotifier',
+    'pagerduty': 'monasca_notification.plugins.'
+                 'pagerduty_notifier:PagerdutyNotifier',
+    'webhook': 'monasca_notification.plugins.webhook_notifier:WebhookNotifier',
+    'hipchat': 'monasca_notification.plugins.hipchat_notifier:HipChatNotifier',
+    'slack': 'monasca_notification.plugins.slack_notifier:SlackNotifier',
+    'jira': 'monasca_notification.plugins.jira_notifier:JiraNotifier'
 }
 
 notifier_group = cfg.OptGroup('notification_types',

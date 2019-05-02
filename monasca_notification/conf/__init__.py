@@ -58,7 +58,7 @@ def register_enabled_plugin_opts(conf=None):
     if conf is None:
         conf = CONF
     for enabled_plugin in conf.notification_types.enabled:
-        ep_module = importutils.import_module(".".join(enabled_plugin.split(".")[:-1]))
+        ep_module = importutils.import_module(enabled_plugin.split(":")[0])
         ep_module.register_opts(conf)
 
 
