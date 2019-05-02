@@ -139,7 +139,7 @@ The following notification plugins are available:
 - Email
 - HipChat
 - Jira
-- Pagerduty
+- PagerDuty
 - Slack
 - Webhook
 
@@ -149,6 +149,23 @@ general you will need to follow these steps to enable a plugin:
 - Make sure that the plugin is enabled in the config file
 - Make sure that the plugin is configured in the config file
 - Restart the Monasca Notification service
+
+PagerDuty plugin
+----------------
+
+The PagerDuty plugin supports the PagerDuty v1 Events API. The first step
+is to `configure`_ a service in PagerDuty which uses this API. Once
+configured, the service will be assigned an integration key. This key should be
+used as the `ADDRESS` field when creating the notification type, for example:
+
+::
+
+    monasca notification-create pd_notification pagerduty a30d5560c5ce4239a6f52a01a15850ca
+
+The default settings for the plugin, including the v1 Events API URL should
+be sufficient to get started, but it is worth checking that the PagerDuty
+Events v1 API URL matches that provided in the example Monasca Notification
+config file.
 
 Slack plugin
 ~~~~~~~~~~~~
@@ -238,3 +255,5 @@ Future Considerations
 .. _webhook: https://api.slack.com/incoming-webhooks
 
 .. _deprecated: https://api.slack.com/custom-integrations/legacy-tokens
+
+.. _configure: https://support.pagerduty.com/docs/services-and-integrations#section-events-api-v1
