@@ -93,6 +93,7 @@ Options:
  * NF_EMAIL_USER: SMTP username, optional, unset by default
  * NF_EMAIL_PASSWORD, SMTP password, required only if NF_EMAIL_USER is set
  * NF_EMAIL_FROM_ADDR: "from" field for emails sent, e.g. "Name" <name@example.com>
+ * NF_EMAIL_GRAFANA_URL: grafana url, required, unset by default
 
 
 Webhook
