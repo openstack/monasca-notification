@@ -30,7 +30,7 @@ notifier_group = cfg.OptGroup('notification_types',
                                    'notifiers inside notification engine.')
 
 notifier_opts = [
-    cfg.ListOpt(name='enabled', default=[],
+    cfg.ListOpt(name='enabled', default=['email', 'pagerduty', 'webhook'],
                 item_type=lambda x: _KEY_MAP.get(x, x), bounds=False,
                 advanced=True, sample_default=','.join(_KEY_MAP.keys()),
                 help='List of enabled notification types. You may specify '
