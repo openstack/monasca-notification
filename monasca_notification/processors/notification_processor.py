@@ -48,21 +48,27 @@ class NotificationProcessor(object):
         remaining_plugin_types = self._remaining_plugin_types()
 
         max_retry = len(remaining_plugin_types)
-        retry_count = 0
-        while remaining_plugin_types:
-            retry_count = retry_count + 1
+        for attempt in range(max_retry):
             try:
                 log.info("New plugins detected: Adding new notification types %s to database",
                          remaining_plugin_types)
                 self._db_repo.insert_notification_method_types(remaining_plugin_types)
+                remaining_plugin_types = self._remaining_plugin_types()
+                if not remaining_plugin_types:
+                    log.info("Notification type plugins installed")
+                    return
             except exc.DatabaseException as e:
                 # There is a possibility the other process has already registered the type.
                 remaining_plugin_types = self._remaining_plugin_types()
-                if remaining_plugin_types and (retry_count >= max_retry):
-                    log.exception("Couldn't insert notification types %s", e)
-                    raise e
-                else:
+                if not remaining_plugin_types:
                     log.debug("Plugin already exists. Ignore exception")
+                    log.info("Notification type plugins installed")
+                    return
+                else:
+                    log.exception("Couldn't insert notification types %s", e)
+                    if attempt == max_retry - 1:
+                        log.exception("Max retries exceeded installing notification types %s", e)
+                        raise e
 
     def send(self, notifications):
         """Send the notifications
