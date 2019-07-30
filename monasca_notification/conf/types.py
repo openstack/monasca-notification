@@ -16,6 +16,7 @@ from oslo_config import cfg
 from oslo_config import types
 from oslo_log import log
 from oslo_utils import importutils
+from oslo_utils import netutils
 
 LOG = log.getLogger(__name__)
 
@@ -77,10 +78,11 @@ class HostAddressPortType(types.HostAddress):
                                                   type_name=type_name)
 
     def __call__(self, value):
-        addr, port = value.split(':')
+        addr, port = netutils.parse_host_port(value)
 
         addr = self._validate_addr(addr)
         port = self._validate_port(port)
+        LOG.debug('addr: %s port: %s' % (addr, port))
 
         if addr and port:
             return '%s:%d' % (addr, port)
