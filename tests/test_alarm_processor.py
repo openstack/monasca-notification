@@ -21,13 +21,15 @@ import json
 import mock
 import time
 
+from monasca_common.kafka import legacy_kafka_message
+
 from monasca_notification import notification as m_notification
 from monasca_notification.processors import alarm_processor
 
 from tests import base
 
 alarm_tuple = collections.namedtuple('alarm_tuple', ['offset', 'message'])
-message_tuple = collections.namedtuple('message_tuple', ['value'])
+message_tuple = collections.namedtuple('message_tuple', ['key', 'value'])
 
 
 class TestAlarmProcessor(base.BaseTestCase):
@@ -35,12 +37,14 @@ class TestAlarmProcessor(base.BaseTestCase):
         super(TestAlarmProcessor, self).setUp()
         self.trap = []
 
-    def _create_raw_alarm(self, partition, offset, message):
+    def _create_raw_alarm(self, partition, offset, message, key=1):
         """Create a raw alarm, with the given message dictionary.
         """
         json_msg = json.dumps({'alarm-transitioned': message})
-        msg_tuple = message_tuple(json_msg)
-        return [partition, alarm_tuple(offset, msg_tuple)]
+        msg_tuple = message_tuple(key, json_msg)
+        return legacy_kafka_message.LegacyKafkaMessage([partition,
+                                                        alarm_tuple(offset,
+                                                                    msg_tuple)])
 
     @mock.patch('pymysql.connect')
     @mock.patch('monasca_notification.processors.alarm_processor.log')

@@ -19,8 +19,7 @@ import time
 from oslo_config import cfg
 from oslo_log import log as logging
 
-from monasca_common.kafka import consumer
-from monasca_common.kafka import producer
+from monasca_common.kafka import client_factory
 from monasca_notification.common.utils import get_statsd_client
 from monasca_notification.processors import alarm_processor as ap
 from monasca_notification.processors import notification_processor as np
@@ -32,13 +31,16 @@ CONF = cfg.CONF
 class NotificationEngine(object):
     def __init__(self):
         self._statsd = get_statsd_client()
-        self._consumer = consumer.KafkaConsumer(
+        self._consumer = client_factory.get_kafka_consumer(
             CONF.kafka.url,
-            ','.join(CONF.zookeeper.url),
-            CONF.zookeeper.notification_path,
             CONF.kafka.group,
-            CONF.kafka.alarm_topic)
-        self._producer = producer.KafkaProducer(CONF.kafka.url)
+            CONF.kafka.alarm_topic,
+            CONF.zookeeper.url,
+            CONF.zookeeper.notification_path,
+            CONF.kafka.legacy_kafka_client_enabled)
+        self._producer = client_factory.get_kafka_producer(
+            CONF.kafka.url,
+            CONF.kafka.legacy_kafka_client_enabled)
         self._alarms = ap.AlarmProcessor()
         self._notifier = np.NotificationProcessor()
 

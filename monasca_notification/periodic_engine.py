@@ -20,8 +20,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
-from monasca_common.kafka import consumer
-from monasca_common.kafka import producer
+from monasca_common.kafka import client_factory
 from monasca_notification.common.repositories import exceptions
 from monasca_notification.common.utils import construct_notification_object
 from monasca_notification.common.utils import get_db_repo
@@ -38,14 +37,16 @@ class PeriodicEngine(object):
 
         self._statsd = get_statsd_client()
 
-        zookeeper_path = CONF.zookeeper.periodic_path[period]
-        self._consumer = consumer.KafkaConsumer(CONF.kafka.url,
-                                                ','.join(CONF.zookeeper.url),
-                                                zookeeper_path,
-                                                CONF.kafka.group,
-                                                self._topic_name)
-
-        self._producer = producer.KafkaProducer(CONF.kafka.url)
+        self._consumer = client_factory.get_kafka_consumer(
+            CONF.kafka.url,
+            CONF.kafka.group,
+            self._topic_name,
+            CONF.zookeeper.url,
+            CONF.zookeeper.periodic_path[period],
+            CONF.kafka.legacy_kafka_client_enabled)
+        self._producer = client_factory.get_kafka_producer(
+            CONF.kafka.url,
+            CONF.kafka.legacy_kafka_client_enabled)
 
         self._notifier = notification_processor.NotificationProcessor()
         self._db_repo = get_db_repo()
@@ -74,7 +75,7 @@ class PeriodicEngine(object):
 
     def run(self):
         for raw_notification in self._consumer:
-            message = raw_notification[1].message.value
+            message = raw_notification.value()
             notification_data = jsonutils.loads(message)
 
             notification = construct_notification_object(self._db_repo, notification_data)

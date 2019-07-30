@@ -62,7 +62,13 @@ kafka_opts = [
                required=True, advanced=True,
                help='Maximum lag for topic that is acceptable by '
                     'the monasca-notification. Notifications that are older '
-                    'than this offset are skipped.')
+                    'than this offset are skipped.'),
+    cfg.BoolOpt(name='legacy_kafka_client_enabled', default=True,
+                required=True, advanced=True,
+                help='Enable legacy Kafka client. When set old version of '
+                     'kafka-python library is used. Message format version '
+                     'for the brokers should be set to 0.9.0.0 to avoid '
+                     'performance issues until all consumers are upgraded.')
 ]
 
 

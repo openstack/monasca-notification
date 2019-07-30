@@ -107,10 +107,10 @@ class AlarmProcessor(object):
         no_notification_count = self._statsd.get_counter(name='alarms_no_notification_count')
         notification_count = self._statsd.get_counter(name='created_count')
 
-        partition = raw_alarm[0]
-        offset = raw_alarm[1].offset
+        partition = raw_alarm.partition()
+        offset = raw_alarm.offset()
         try:
-            alarm = self._parse_alarm(raw_alarm[1].message.value)
+            alarm = self._parse_alarm(raw_alarm.value())
         except Exception as e:  # This is general because of a lack of json exception base class
             failed_parse_count += 1
             log.exception(

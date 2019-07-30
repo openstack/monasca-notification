@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Configuration option `legacy_kafka_client_enabled` added to allow working
+    with both legacy *kafka-python* and new *Confluent Kafka* client. Setting
+    this to *true* enables *kafka-python* client which is default. Please set
+    message format version for the Kafka brokers to 0.9.0.0 to avoid
+    performance issues until all consumers are upgraded.
