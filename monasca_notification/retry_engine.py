@@ -14,14 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import time
 
 from monasca_common.kafka import consumer
 from monasca_common.kafka import producer
 from oslo_config import cfg
 from oslo_log import log as logging
-from six import PY3
+from oslo_serialization import jsonutils
 
 from monasca_notification.common.utils import construct_notification_object
 from monasca_notification.common.utils import get_db_repo
@@ -51,9 +50,7 @@ class RetryEngine(object):
     def run(self):
         for raw_notification in self._consumer:
             message = raw_notification[1].message.value
-
-            message = message.decode('UTF-8') if PY3 else message
-            notification_data = json.loads(message)
+            notification_data = jsonutils.loads(message)
 
             notification = construct_notification_object(self._db_repo, notification_data)
 
