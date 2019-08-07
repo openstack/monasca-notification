@@ -1,0 +1,1 @@
+{{ alarm_name }} has triggered on {% for item in metrics %}host {{ metrics[0].dimensions.hostname }}, service {{ item.dimensions.service }}{% if not loop.last %}, {% endif %}{% endfor %}.

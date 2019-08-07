@@ -14,11 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import requests
 from six.moves import urllib
 import ujson as json
 
 from debtcollector import removals
+import jinja2
 from oslo_config import cfg
 
 from monasca_notification.plugins import abstract_notifier
@@ -86,9 +88,18 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
                 'metrics': notification.metrics}
 
         slack_request = {}
-        slack_request['text'] = json.dumps(body, indent=3)
+        if CONF.slack_notifier.message_template:
+            slack_request['text'] = self._render_message_template(body)
+        else:
+            slack_request['text'] = json.dumps(body, indent=3)
 
         return slack_request
+
+    def _render_message_template(self, params):
+        path, name = os.path.split(CONF.slack_notifier.message_template)
+        loader = jinja2.FileSystemLoader(path)
+        env = jinja2.Environment(loader=loader, autoescape=True)
+        return env.get_template(name).render(params)
 
     def _check_response(self, result):
         if 'application/json' in result.headers.get('Content-Type'):
@@ -192,7 +203,8 @@ slack_notifier_opts = [
     cfg.IntOpt(name='timeout', default=5, min=1),
     cfg.BoolOpt(name='insecure', default=True),
     cfg.StrOpt(name='ca_certs', default=None),
-    cfg.StrOpt(name='proxy', default=None)
+    cfg.StrOpt(name='proxy', default=None),
+    cfg.StrOpt(name='message_template', default=None)
 ]
 
 

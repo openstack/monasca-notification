@@ -110,6 +110,15 @@ class TestSlack(base.PluginTestCase):
     def _validate_post_args(self, post_args, data_format):
         self.assertEqual(slack_text(),
                          json.loads(post_args.get(data_format).get('text')))
+        self._validate_post_args_base(post_args)
+
+    def _validate_templated_post_args(self, post_args, data_format,
+                                      expected_slack_text):
+        self.assertEqual(expected_slack_text,
+                         post_args.get(data_format).get('text'))
+        self._validate_post_args_base(post_args)
+
+    def _validate_post_args_base(self, post_args):
         self.assertEqual({'https': 'http://yourid:password@proxyserver:8080'},
                          post_args.get('proxies'))
         self.assertEqual(50, post_args.get('timeout'))
@@ -126,6 +135,24 @@ class TestSlack(base.PluginTestCase):
         self.assertTrue(result)
         mock_method.assert_called_once()
         self._validate_post_args(mock_method.call_args_list[0][1], 'json')
+        self.assertEqual([], slack_notifier.SlackNotifier._raw_data_url_caches)
+
+    def test_templated_slack_webhook_success(self):
+        """A templated message is successfully sent as json
+        """
+        self.conf_override(
+            message_template='tests/resources/test_slackformat.template',
+            group='slack_notifier'
+        )
+        response_list = [RequestsResponse(200, 'ok',
+                                          {'Content-Type': 'application/text'})]
+        mock_method, result = self._notify(response_list)
+        self.assertTrue(result)
+        mock_method.assert_called_once()
+        expected_text = 'test Alarm has triggered on host foo1, service bar1.'
+        self._validate_templated_post_args(mock_method.call_args_list[0][1],
+                                           'json',
+                                           expected_text)
         self.assertEqual([], slack_notifier.SlackNotifier._raw_data_url_caches)
 
     def test_slack_webhook_fail(self):
