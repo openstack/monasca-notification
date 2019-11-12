@@ -1,0 +1,6 @@
+---
+features:
+  - Supports setting arbitrary notification periods.
+fixes:
+  - Issue with periodic notification processor failing to load when using Oslo
+    config.

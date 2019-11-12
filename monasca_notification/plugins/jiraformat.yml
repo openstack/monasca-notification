@@ -22,7 +22,6 @@ jira_format:
   # notification.retry_count
   # notification.raw_alarm
   # notification.period
-  # notification.periodic_topic
 
   # Please include alarm_id in summary as it is used for searching the issues
   summary: Alaram created for {{ notification.alarm_name }} with severity {{ notification.state }} for {{ notification.alarm_id }}
