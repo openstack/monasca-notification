@@ -108,10 +108,10 @@ def main(argv=None):
         args=(retry_engine.RetryEngine,))
     )
 
-    if 60 in CONF.kafka.periodic:
+    for notification_period in CONF.kafka.periodic.keys():
         processors.append(multiprocessing.Process(
             target=start_process,
-            args=(periodic_engine.PeriodicEngine, 60))
+            args=(periodic_engine.PeriodicEngine, int(notification_period)))
         )
 
     try:

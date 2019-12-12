@@ -51,7 +51,6 @@ def test_json():
                      u'address': u'address',
                      u'message': u'stateChangeReason',
                      u'period': 0,
-                     u'periodic_topic': 0,
                      u'retry_count': 0,
                      u'raw_alarm': {
                          u'alarmId': u'alarmId',
@@ -101,7 +100,6 @@ def test_json_non_zero_period():
                      u'address': u'address',
                      u'message': u'stateChangeReason',
                      u'period': 60,
-                     u'periodic_topic': 60,
                      u'retry_count': 0,
                      u'raw_alarm': {
                          u'alarmId': u'alarmId',

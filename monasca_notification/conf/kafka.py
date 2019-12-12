@@ -22,7 +22,7 @@ _DEFAULT_ALARM_TOPIC = 'alarm-state-transitions'
 _DEFAULT_NOTIFICATION_TOPIC = 'alarm-notifications'
 _DEFAULT_RETRY_TOPIC = 'retry-notifications'
 _DEFAULT_PERIODIC_TOPICS = {
-    60: '60-seconds-notifications'
+    '60': '60-seconds-notifications'
 }
 _DEFAULT_MAX_OFFSET_LAG = 600
 

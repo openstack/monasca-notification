@@ -33,7 +33,7 @@ CONF = cfg.CONF
 
 class PeriodicEngine(object):
     def __init__(self, period):
-        self._topic_name = CONF.kafka.periodic[period]
+        self._topic_name = CONF.kafka.periodic[str(period)]
 
         self._statsd = get_statsd_client()
 
@@ -42,7 +42,7 @@ class PeriodicEngine(object):
             CONF.kafka.group,
             self._topic_name,
             CONF.zookeeper.url,
-            CONF.zookeeper.periodic_path[period],
+            CONF.zookeeper.periodic_path[str(period)],
             CONF.kafka.legacy_kafka_client_enabled)
         self._producer = client_factory.get_kafka_producer(
             CONF.kafka.url,

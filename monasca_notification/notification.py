@@ -39,7 +39,6 @@ class Notification(object):
         'retry_count',
         'raw_alarm',
         'period',
-        'periodic_topic'
     )
 
     def __init__(self, id, type, name, address, period, retry_count, alarm):
@@ -77,8 +76,6 @@ class Notification(object):
         # to be updated on actual notification send time
         self.notification_timestamp = None
 
-        # set periodic topic
-        self.periodic_topic = period
         self.period = period
 
     def __eq__(self, other):
@@ -115,7 +112,6 @@ class Notification(object):
             'lifecycle_state',
             'tenant_id',
             'period',
-            'periodic_topic'
         ]
         notification_data = {name: getattr(self, name)
                              for name in notification_fields}
