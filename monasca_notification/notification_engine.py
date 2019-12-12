@@ -47,7 +47,7 @@ class NotificationEngine(object):
     def _add_periodic_notifications(self, notifications):
         for notification in notifications:
             period = str(notification.period)
-            if period in CONF.kafka.periodic.keys() and notification.type == "webhook":
+            if period in CONF.kafka.periodic.keys():
                 notification.notification_timestamp = time.time()
                 self._producer.publish(CONF.kafka.periodic[period],
                                        [notification.to_json()])
