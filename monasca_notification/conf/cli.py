@@ -25,7 +25,8 @@ cli_opts = [
                deprecated_reason='monasca-notification has moved to '
                                  'oslo.conf henceusing YAML based '
                                  'configuration will be removed '
-                                 'after PIKE release.')
+                                 'after PIKE release.',
+               required=False)
 ]
 
 
