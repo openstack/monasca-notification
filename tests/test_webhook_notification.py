@@ -17,8 +17,8 @@
 import mock
 import requests
 
+import simplejson as json
 import six
-import ujson as json
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import webhook_notifier

@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import requests
-import ujson as json
+import simplejson as json
 
 from debtcollector import removals
 from oslo_config import cfg

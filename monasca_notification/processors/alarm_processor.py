@@ -17,8 +17,8 @@ import time
 
 from oslo_config import cfg
 from oslo_log import log as logging
+import simplejson as json
 import six
-import ujson as json
 
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.utils import get_db_repo

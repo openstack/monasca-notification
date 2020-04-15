@@ -14,14 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from debtcollector import removals
 from jinja2 import Template
 import jira
-from six.moves import urllib
-import ujson as json
-import yaml
-
-from debtcollector import removals
 from oslo_config import cfg
+import simplejson as json
+from six.moves import urllib
+import yaml
 
 from monasca_notification.plugins.abstract_notifier import AbstractNotifier
 
