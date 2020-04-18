@@ -10,7 +10,7 @@
 # or implied. See the License for the specific language governing permissions and limitations under
 # the License.
 
-import mock
+from unittest import mock
 
 from monasca_notification.common.repositories.orm import orm_repo
 from tests import base

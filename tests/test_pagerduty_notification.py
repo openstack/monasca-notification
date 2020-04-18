@@ -15,9 +15,9 @@
 # limitations under the License.
 
 import json
-import mock
 import requests
 import time
+from unittest import mock
 
 import six
 

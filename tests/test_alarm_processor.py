@@ -18,8 +18,8 @@
 
 import collections
 import json
-import mock
 import time
+from unittest import mock
 
 from monasca_common.kafka import legacy_kafka_message
 

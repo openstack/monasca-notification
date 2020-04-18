@@ -21,8 +21,8 @@ import email.header
 import smtplib
 import socket
 import time
+from unittest import mock
 
-import mock
 import six
 
 from monasca_notification.notification import Notification

@@ -15,8 +15,8 @@
 # limitations under the License.
 
 import contextlib
-import mock
 import time
+from unittest import mock
 
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import email_notifier
