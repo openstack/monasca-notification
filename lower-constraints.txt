@@ -67,6 +67,5 @@ tabulate==0.8.1
 testrepository==0.0.18
 testtools==2.2.0
 traceback2==1.4.0
-ujson==1.35
 unittest2==1.1.0
 wrapt==1.7.0
