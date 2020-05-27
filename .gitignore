@@ -14,7 +14,7 @@ dist
 
 .testrepository/
 .stestr/
-.coverage.*
+.coverage
 cover/
 
 *.sample
