@@ -12,7 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from mock import patch
+from unittest.mock import patch
 
 from monasca_notification.common import utils
 from tests import base
