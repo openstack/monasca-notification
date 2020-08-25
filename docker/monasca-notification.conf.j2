@@ -1,0 +1,584 @@
+[DEFAULT]
+
+#
+# From oslo.log
+#
+
+# If set to true, the logging level will be set to DEBUG instead of the default
+# INFO level. (boolean value)
+# Note: This option can be changed without restarting.
+#debug = false
+
+# The name of a logging configuration file. This file is appended to any
+# existing logging configuration files. For details about logging configuration
+# files, see the Python logging module documentation. Note that when logging
+# configuration files are used then all logging configuration is set in the
+# configuration file and other logging configuration options are ignored (for
+# example, log-date-format). (string value)
+# Note: This option can be changed without restarting.
+# Deprecated group/name - [DEFAULT]/log_config
+#log_config_append = <None>
+
+# Defines the format string for %%(asctime)s in log records. Default:
+# %(default)s . This option is ignored if log_config_append is set. (string
+# value)
+#log_date_format = %Y-%m-%d %H:%M:%S
+
+# (Optional) Name of log file to send logging output to. If no default is set,
+# logging will go to stderr as defined by use_stderr. This option is ignored if
+# log_config_append is set. (string value)
+# Deprecated group/name - [DEFAULT]/logfile
+#log_file = <None>
+
+# (Optional) The base directory used for relative log_file  paths. This option
+# is ignored if log_config_append is set. (string value)
+# Deprecated group/name - [DEFAULT]/logdir
+#log_dir = <None>
+
+# Uses logging handler designed to watch file system. When log file is moved or
+# removed this handler will open a new log file with specified path
+# instantaneously. It makes sense only if log_file option is specified and Linux
+# platform is used. This option is ignored if log_config_append is set. (boolean
+# value)
+#watch_log_file = false
+
+# Use syslog for logging. Existing syslog format is DEPRECATED and will be
+# changed later to honor RFC5424. This option is ignored if log_config_append is
+# set. (boolean value)
+#use_syslog = false
+
+# Enable journald for logging. If running in a systemd environment you may wish
+# to enable journal support. Doing so will use the journal native protocol which
+# includes structured metadata in addition to log messages.This option is
+# ignored if log_config_append is set. (boolean value)
+#use_journal = false
+
+# Syslog facility to receive log lines. This option is ignored if
+# log_config_append is set. (string value)
+#syslog_log_facility = LOG_USER
+
+# Use JSON formatting for logging. This option is ignored if log_config_append
+# is set. (boolean value)
+#use_json = false
+
+# Log output to standard error. This option is ignored if log_config_append is
+# set. (boolean value)
+#use_stderr = false
+
+# Log output to Windows Event Log. (boolean value)
+#use_eventlog = false
+
+# The amount of time before the log files are rotated. This option is ignored
+# unless log_rotation_type is setto "interval". (integer value)
+#log_rotate_interval = 1
+
+# Rotation interval type. The time of the last file change (or the time when the
+# service was started) is used when scheduling the next rotation. (string value)
+# Possible values:
+# Seconds - <No description provided>
+# Minutes - <No description provided>
+# Hours - <No description provided>
+# Days - <No description provided>
+# Weekday - <No description provided>
+# Midnight - <No description provided>
+#log_rotate_interval_type = days
+
+# Maximum number of rotated log files. (integer value)
+#max_logfile_count = 30
+
+# Log file maximum size in MB. This option is ignored if "log_rotation_type" is
+# not set to "size". (integer value)
+#max_logfile_size_mb = 200
+
+# Log rotation type. (string value)
+# Possible values:
+# interval - Rotate logs at predefined time intervals.
+# size - Rotate logs once they reach a predefined size.
+# none - Do not rotate log files.
+#log_rotation_type = none
+
+# Format string to use for log messages with context. Used by
+# oslo_log.formatters.ContextFormatter (string value)
+#logging_context_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s %(user_identity)s] %(instance)s%(message)s
+
+# Format string to use for log messages when context is undefined. Used by
+# oslo_log.formatters.ContextFormatter (string value)
+#logging_default_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
+
+# Additional data to append to log message when logging level for the message is
+# DEBUG. Used by oslo_log.formatters.ContextFormatter (string value)
+#logging_debug_format_suffix = %(funcName)s %(pathname)s:%(lineno)d
+
+# Prefix each line of exception output with this format. Used by
+# oslo_log.formatters.ContextFormatter (string value)
+#logging_exception_prefix = %(asctime)s.%(msecs)03d %(process)d ERROR %(name)s %(instance)s
+
+# Defines the format string for %(user_identity)s that is used in
+# logging_context_format_string. Used by oslo_log.formatters.ContextFormatter
+# (string value)
+#logging_user_identity_format = %(user)s %(tenant)s %(domain)s %(user_domain)s %(project_domain)s
+
+# List of package logging levels in logger=LEVEL pairs. This option is ignored
+# if log_config_append is set. (list value)
+#default_log_levels = amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,oslo_messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=WARN,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=WARN,oslo.cache=INFO,oslo_policy=INFO,dogpile.core.dogpile=INFO
+
+# Enables or disables publication of error events. (boolean value)
+#publish_errors = false
+
+# The format for an instance that is passed with the log message. (string value)
+#instance_format = "[instance: %(uuid)s] "
+
+# The format for an instance UUID that is passed with the log message. (string
+# value)
+#instance_uuid_format = "[instance: %(uuid)s] "
+
+# Interval, number of seconds, of log rate limiting. (integer value)
+#rate_limit_interval = 0
+
+# Maximum number of logged messages per rate_limit_interval. (integer value)
+#rate_limit_burst = 0
+
+# Log level name used by rate limiting: CRITICAL, ERROR, INFO, WARNING, DEBUG or
+# empty string. Logs with level greater or equal to rate_limit_except_level are
+# not filtered. An empty string means that all levels are filtered. (string
+# value)
+#rate_limit_except_level = CRITICAL
+
+# Enables or disables fatal status of deprecations. (boolean value)
+#fatal_deprecations = false
+
+
+[alarm_processor]
+# Options to configure alarm processor.
+
+#
+# From monasca_notification
+#
+
+# DEPRECATED: Number of alarm processors to spawn (integer value)
+# Minimum value: 1
+# This option is deprecated for removal since 1.8.0.
+# Its value may be silently ignored in the future.
+# Reason: Options is not used in the current code and will be removed in future
+# releases.
+number = {{ ALARM_PROCESSORS | default(2) }}
+
+# Alarms older than TTL are not processed by notification engine. (integer
+# value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+#ttl = 14400
+
+
+[database]
+# Driver configuration for database connectivity.
+
+#
+# From monasca_notification
+#
+
+# Driver name (or full class path) that should be used to handle RDB
+# connections. Accepts either short labels dict_keys(['postgresql', 'mysql',
+# 'orm']) or full class names
+# dict_values(['monasca_notification.common.repositories.postgres.pgsql_repo:PostgresqlRepo',
+# 'monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo',
+# 'monasca_notification.common.repositories.orm.orm_repo:OrmRepo']). Configuring
+# either of them will require presence of one of following sections
+# dict_keys(['postgresql', 'mysql', 'orm']) inside configuration file. (plugin
+# value)
+# Possible values:
+# postgresql - <No description provided>
+# monasca_notification.common.repositories.orm.orm_repo:OrmRepo - <No
+# description provided>
+# mysql - <No description provided>
+# monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo - <No
+# description provided>
+# orm - <No description providedww
+
+[notification_types]
+# Group allows to configure available notifiers inside notification engine.
+
+#
+# From monasca_notification
+#
+
+# List of enabled notification types. You may specify full class name
+# monasca_notification.plugins.hipchat_notifier:HipChatNotifier or shorter label
+# hipchat. (list value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+#
+# This option has a sample default set, which means that
+# its actual default value may vary from the one documented
+# below.
+# enabled = email,pagerduty,webhook,hipchat,slack,jira
+{% if NF_PLUGINS %}
+    {% set enabled = NF_PLUGINS.split(',')|map('trim')|list %}
+{% endif %}
+
+#
+# From monasca_notification
+#
+{% if 'email' in enabled %}
+    {% set from_addr = NF_EMAIL_FROM_ADDR %}
+    {% set server = NF_EMAIL_SERVER %}
+    {% set port = NF_EMAIL_PORT | default(25) %}
+    {% set timeout = NF_EMAIL_TIMEOUT | default(15) %}
+    {% set user = NF_EMAIL_USER %}
+    {% set password = NF_EMAIL_PASSWORD %}
+    {% set grafana_url = NF_EMAIL_GRAFANA_URL %}
+{% endif %}
+
+
+[hipchat_notifier]
+#
+# From monasca_notification
+#
+
+{% if 'hipchat' in enabled %}
+    {% set timeout = NF_HIPCHAT_TIMEOUT | default(5) %}
+    {% set insecure = NF_HIPCHAT_INSECURE | default('false') %}
+    {% set ca_certs = NF_HIPCHAT_SSL_CERTS | default('/etc/ssl/certs/ca-certificates.crt') %}
+    {% set proxy = NF_HIPCHAT_PROXY %}
+    {% set template = NF_HIPCHAT_TEMPLATE %}
+{% endif %}
+
+[pagerduty_notifier]
+
+#
+# From monasca_notification
+#
+
+{% if 'pagerduty' in enabled %}
+    {% set timeout = NF_PAGERDUTY_TIMEOUT | default(5) %}
+    {% set url = NF_PAGERDUTY_URL | default('https://events.pagerduty.com/generic/2010-04-15/create_event.json') %}
+{% endif %}
+
+
+[webhook_notifier]
+
+#
+# From monasca_notification
+#
+{% if 'webhook' in enabled %}
+    {% set timeout = NF_WEBHOOK_TIMEOUT|default(5) %}
+{% endif %}
+
+
+[jira_notifier]
+
+#
+# From monasca_notification
+#
+
+# (integer value)
+# Minimum value: 1
+#timeout = 5
+
+# (string value)
+#user = <None>
+
+# (string value)
+#password = <None>
+
+# (string value)
+#custom_formatter = <None>
+
+# (string value)
+#proxy = <None>
+
+
+[kafka]
+# Options under this group allow to configure valid connection or Kafka queue.
+
+#
+# From monasca_notification
+#
+
+#
+# Comma separated list of Kafka broker host:port
+#  (list value)
+#uri = {{ KAFKA_URI }}
+
+
+# List of addresses (with ports) pointing at Kafka cluster. (list value)
+url = {{ KAFKA_URI }}
+
+# Consumer's group for monasca-notification client. (string value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+group = monasca-notification
+
+# Topic name in kafka where alarm transitions are stored. (string value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+alarm_topic = alarm-state-transitions
+
+# Topic name in kafka where alarm notifications are stored. (string value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+notification_topic = alarm-notifications
+
+# Topic name in kafka where notifications, that have failed to be sent and are
+# waiting for retry operations, are stored. (string value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+notification_retry_topic = retry-notifications
+
+# Dict of periodic topics. Keys are the period and values the actual topic names
+# in kafka where notifications are stored. (dict value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+periodic = 60:60-seconds-notifications
+
+# Maximum lag for topic that is acceptable by the monasca-notification.
+# Notifications that are older than this offset are skipped. (integer value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+max_offset_lag = 600
+
+# Enable legacy Kafka client. When set old version of kafka-python library is
+# used. Message format version for the brokers should be set to 0.9.0.0 to avoid
+# performance issues until all consumers are upgraded. (boolean value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+#legacy_kafka_client_enabled = true
+
+
+[keystone]
+# Options under this group allow to configure valid connection via
+# Keystoneauthentication.
+
+#
+# From monasca_notification
+#
+
+# This option enable or disable authentication using keystone (boolean value)
+#auth_required = false
+
+# URL of identity service (string value)
+#auth_url = http://127.0.0.1/identity/v3
+
+# Username (string value)
+#username = admin
+
+# Password of identity service (string value)
+#password = password
+
+# Name of project (string value)
+#project_name = admin
+
+# User domain name (string value)
+#user_domain_name = default
+
+# Project domain name (string value)
+#project_domain_name = default
+
+# Type of authentication (string value)
+#auth_type = password
+
+
+[mysql]
+# Configuration options to configure plain MySQL RBD driver.
+
+#
+# From monasca_notification
+#
+
+# IP address of MySQL instance. (host address value)
+host = {{ MYSQL_HOST }}
+
+# Port number of MySQL instance. (port value)
+# Minimum value: 0
+# Maximum value: 65535
+port = {{ MYSQL_PORT }}
+
+# Username to connect to MySQL instance and given database. (string value)
+user = {{ MYSQL_USER }}
+
+# Password to connect to MySQL instance and given database. (string value)
+passwd = {{ MYSQL_PASSWORD }}
+
+# A dict of arguments similar to mysql_ssl_set parameters. (dict value)
+#ssl =
+
+# Database name available in given MySQL instance. (string value)
+db = {{ MYSQL_DB }}
+
+
+[notification_processor]
+# Options to configure notification processor.
+
+#
+# From monasca_notification
+#
+
+# Number of notification processors to spawn. (integer value)
+# Minimum value: 1
+number =  {{ NOTIFICATION_PROCESSORS | default(2) }}
+
+
+[orm]
+# Configuration options to configure ORM RBD driver.
+
+#
+# From monasca_notification
+#
+
+# Connection string for sqlalchemy. (string value)
+# url = <None>
+
+
+[postgresql]
+# Configuration options to configure plain PostgreSQL RBD driver.
+
+#
+# From monasca_notification
+#
+
+# IP address of PostgreSQL instance. (host address value)
+#host = 127.0.0.1
+
+# Port number of PostgreSQL instance. (port value)
+# Minimum value: 0
+# Maximum value: 65535
+#port = 5432
+
+# Username to connect to PostgreSQL instance and given database. (string value)
+#user = notification
+
+# Password to connect to PostgreSQL instance and given database (string value)
+#password = password
+
+# Database name available in given PostgreSQL instance. (string value)
+#database = mon
+
+
+[queues]
+# Options under this group allow to configure valid connection sizes of all
+# queues.
+
+#
+# From monasca_notification
+#
+
+# Size of the alarms queue. (integer value)
+# Minimum value: 1
+alarms_size = 256
+
+# Size of the finished alarms queue. (integer value)
+# Minimum value: 1
+finished_size = 256
+
+# Size of notifications queue. (integer value)
+# Minimum value: 1
+notifications_size = 256
+
+# Size of sent notifications queue. Limiting this size reduces potential or re-
+# sent notifications after a failure. (integer value)
+# Minimum value: 1
+sent_notifications_size = 50
+
+
+[retry_engine]
+# Options under this group allow to configure valid connection for retry engine.
+
+#
+# From monasca_notification
+#
+
+# How often should retry happen. (integer value)
+# Minimum value: 30
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+# interval = {{ RETRY_INTERVAL | default(30) }}
+
+# How many times should retrying be tried. (integer value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+# max_attempts = {{ RETRY_MAX_ATTEMPTS | default(5) }}
+
+
+[slack_notifier]
+
+#
+# From monasca_notification
+#
+
+# (integer value)
+# Minimum value: 1
+#timeout = 5
+
+# (boolean value)
+#insecure = true
+
+# (string value)
+#ca_certs = <None>
+
+# (string value)
+#proxy = <None>
+
+# (string value)
+#message_template = <None>
+
+
+[statsd]
+# Options under this group allow to configure valid connection to statsd server
+# launched by monasca-agent.
+
+#
+# From monasca_notification
+#
+
+# Enable or disable self monitoring. (boolean value)
+#enable = true
+
+# IP address of statsd server. (host address value)
+#host = 127.0.0.1
+
+# Port of statsd server. (port value)
+# Minimum value: 0
+# Maximum value: 65535
+#port = 8125
+
+
+[zookeeper]
+# Options under this group allow to configure settings for zookeeper handling.
+
+#
+# From monasca_notification
+#
+
+# List of addresses (with ports) pointing at zookeeper cluster. (list value)
+url = {{ ZOOKEEPER_URL }}
+
+# Path in zookeeper tree to track notification offsets. (string value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+notification_path = /notification/alarms
+
+# Path in zookeeper tree to track notification retries offsets. (string value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+notification_retry_path = /notification/retry
+
+# Paths in zookeeper tree to track periodic offsets. Keys must be integers
+# describing the interval of periodic notification. Values are actual paths
+# inside zookeeper tree. (dict value)
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+periodic_path = 60:/notification/60_seconds

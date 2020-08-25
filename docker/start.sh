@@ -26,11 +26,17 @@ python3 /mysql_check.py
 # Template all config files before start, it will use env variables.
 # Read usage examples: https://pypi.org/project/Templer/
 echo "Start script: creating config files from templates"
-templer -v -f /etc/monasca/notification.yaml.j2 /etc/monasca/notification.yaml
+templer -v -f /etc/monasca/monasca-notification.conf.j2 /etc/monasca/monasca-notification.conf
+
+
+echo "Checking files"
+cd /etc/monasca/
+ls -l
+echo "Checked already"
 
 # Start our service.
 echo "Start script: starting container"
-monasca-notification /etc/monasca/notification.yaml
+monasca-notification --config-file /etc/monasca/monasca-notification.conf
 
 # Allow server to stay alive in case of failure for 2 hours for debugging.
 EXIT_CODE=$?

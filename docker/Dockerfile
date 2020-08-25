@@ -1,18 +1,14 @@
 ARG DOCKER_IMAGE=monasca/notification
 ARG APP_REPO=https://review.opendev.org/openstack/monasca-notification
-
 # Branch, tag or git hash to build from.
 ARG REPO_VERSION=master
 ARG CONSTRAINTS_BRANCH=master
 ARG COMMON_VERSION=master
-
 # Extra Python3 dependencies.
 ARG EXTRA_DEPS="netaddr gevent==1.3.5 greenlet"
-
 # Always start from `monasca-base` image and use specific tag of it.
 ARG BASE_TAG=master
 FROM monasca/base:$BASE_TAG
-
 # Environment variables used for our service or wait scripts.
 ENV \
     KAFKA_URI=kafka:9092 \
@@ -31,9 +27,7 @@ ENV \
     STATSD_HOST=monasca-statsd \
     STATSD_PORT=8125 \
     STAY_ALIVE_ON_FAILURE="false"
-
 # Copy all necessary files to proper locations.
-COPY notification.yaml.j2 /etc/monasca/
-
+COPY monasca-notification.conf.j2 /etc/monasca/
 # Implement start script in `start.sh` file.
 CMD ["/start.sh"]
