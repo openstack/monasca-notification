@@ -189,12 +189,10 @@ number = {{ ALARM_PROCESSORS | default(2) }}
 # value)
 # Possible values:
 # postgresql - <No description provided>
-# monasca_notification.common.repositories.orm.orm_repo:OrmRepo - <No
-# description provided>
+# monasca_notification.common.repositories.orm.orm_repo:OrmRepo - <No description provided>
 # mysql - <No description provided>
-# monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo - <No
-# description provided>
-# orm - <No description providedww
+# monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo - <No description provided>
+# orm - <No description provided>
 
 [notification_types]
 # Group allows to configure available notifiers inside notification engine.
@@ -351,7 +349,7 @@ max_offset_lag = 600
 # Advanced Option: intended for advanced users and not used
 # by the majority of users, and might have a significant
 # effect on stability and/or performance.
-#legacy_kafka_client_enabled = true
+legacy_kafka_client_enabled = {{ KAFKA_LEGACY_CLIENT_ENABLED | default(false) }}
 
 
 [keystone]
