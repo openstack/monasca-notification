@@ -21,27 +21,28 @@ detailed build description.
 
 Environment variables
 ~~~~~~~~~~~~~~~~~~~~~
-========================== ================= ================================================
-Variable                   Default           Description
-========================== ================= ================================================
-KAFKA_URI                  kafka:9092        The host and port for kafka
-ZOOKEEPER_URL              zookeeper:2181    URL to Zookeeper
-ALARM_PROCESSORS           2                 Number of alarm processing threads
-NOTIFICATION_PROCESSORS    2                 Number of notification processing threads
-RETRY_INTERVAL             30                Retry interval in seconds
-RETRY_MAX_ATTEMPTS         5                 Max number of notification retries
-LOG_LEVEL                  WARN              Logging level
-STATSD_ENABLE              true              Monasca agent StatsD enable or disable
-STATSD_HOST                monasca-statsd    Monasca agent StatsD host for self-monitoring
-STATSD_PORT                8125              Monasca agent StatsD port for self-monitoring
-NF_PLUGINS                 <not set>         See below "Notification Plugins"
-MYSQL_HOST                 mysql             The host for MySQL
-MYSQL_PORT                 3306              The port for MySQL
-MYSQL_USER                 notification      The MySQL username
-MYSQL_PASSWORD             password          The MySQL password
-MYSQL_DB                   mon               The MySQL database name
-STAY_ALIVE_ON_FAILURE      false             If true, container runs 2 hours even start fails
-========================== ================= ================================================
+============================== ================= ================================================
+Variable                       Default           Description
+============================== ================= ================================================
+KAFKA_URI                      kafka:9092        The host and port for kafka
+KAFKA_LEGACY_CLIENT_ENABLED    false             Enable legacy Kafka client
+ZOOKEEPER_URL                  zookeeper:2181    URL to Zookeeper
+ALARM_PROCESSORS               2                 Number of alarm processing threads
+NOTIFICATION_PROCESSORS        2                 Number of notification processing threads
+RETRY_INTERVAL                 30                Retry interval in seconds
+RETRY_MAX_ATTEMPTS             5                 Max number of notification retries
+LOG_LEVEL                      WARN              Logging level
+STATSD_ENABLE                  true              Monasca agent StatsD enable or disable
+STATSD_HOST                    monasca-statsd    Monasca agent StatsD host for self-monitoring
+STATSD_PORT                    8125              Monasca agent StatsD port for self-monitoring
+NF_PLUGINS                     <not set>         See below "Notification Plugins"
+MYSQL_HOST                     mysql             The host for MySQL
+MYSQL_PORT                     3306              The port for MySQL
+MYSQL_USER                     notification      The MySQL username
+MYSQL_PASSWORD                 password          The MySQL password
+MYSQL_DB                       mon               The MySQL database name
+STAY_ALIVE_ON_FAILURE          false             If true, container runs 2 hours even start fails
+============================== ================= ================================================
 
 Wait scripts environment variables
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
