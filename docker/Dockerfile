@@ -11,11 +11,13 @@ ARG BASE_TAG=master
 FROM monasca/base:$BASE_TAG
 # Environment variables used for our service or wait scripts.
 ENV \
+    LOG_LEVEL=WARNING \
+    LOG_LEVEL_KAFKA=WARNING \
+    LOG_LEVEL_PLUGINS=WARNING \
     KAFKA_URI=kafka:9092 \
     KAFKA_LEGACY_CLIENT_ENABLED=false \
     KAFKA_WAIT_FOR_TOPICS=retry-notifications,alarm-state-transitions,alarm-notifications,60-seconds-notifications \
     ZOOKEEPER_URL=zookeeper:2181 \
-    ALARM_PROCESSORS=2 \
     NOTIFICATION_PROCESSORS=2 \
     RETRY_INTERVAL=30 \
     RETRY_MAX_ATTEMPTS=5 \
@@ -24,11 +26,11 @@ ENV \
     MYSQL_USER=notification \
     MYSQL_PASSWORD=password \
     MYSQL_DB=mon \
-    STATSD_ENABLE=true \
+    STATSD_ENABLED=true \
     STATSD_HOST=monasca-statsd \
     STATSD_PORT=8125 \
     STAY_ALIVE_ON_FAILURE="false"
 # Copy all necessary files to proper locations.
-COPY monasca-notification.conf.j2 /etc/monasca/
+COPY monasca-notification.conf.j2 notification-logging.conf.j2 /etc/monasca/
 # Implement start script in `start.sh` file.
 CMD ["/start.sh"]
