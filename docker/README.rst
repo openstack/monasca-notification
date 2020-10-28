@@ -6,7 +6,7 @@ The Monasca notification image is based on the monasca-base image.
 
 Building monasca-base image
 ===========================
-See https://github.com/openstack/monasca-common/tree/master/docker/README.rst
+See https://opendev.org/openstack/monasca-common/src/branch/master/docker/README.rst
 
 
 Building Monasca notification image
@@ -24,15 +24,16 @@ Environment variables
 ============================== ================= ================================================
 Variable                       Default           Description
 ============================== ================= ================================================
+LOG_LEVEL                      WARNING           Log level for main logging
+LOG_LEVEL_KAFKA                WARNING           Log level for Kafka
+LOG_LEVEL_PLUGINS              WARNING           Log level for plugins (email, webhook, etc)
 KAFKA_URI                      kafka:9092        The host and port for kafka
 KAFKA_LEGACY_CLIENT_ENABLED    false             Enable legacy Kafka client
 ZOOKEEPER_URL                  zookeeper:2181    URL to Zookeeper
-ALARM_PROCESSORS               2                 Number of alarm processing threads
 NOTIFICATION_PROCESSORS        2                 Number of notification processing threads
 RETRY_INTERVAL                 30                Retry interval in seconds
 RETRY_MAX_ATTEMPTS             5                 Max number of notification retries
-LOG_LEVEL                      WARN              Logging level
-STATSD_ENABLE                  true              Monasca agent StatsD enable or disable
+STATSD_ENABLED                 true              Monasca agent StatsD enable or disable
 STATSD_HOST                    monasca-statsd    Monasca agent StatsD host for self-monitoring
 STATSD_PORT                    8125              Monasca agent StatsD port for self-monitoring
 NF_PLUGINS                     <not set>         See below "Notification Plugins"
@@ -118,19 +119,6 @@ Options:
  * NF_PAGERDUTY_URL: PagerDuty Event API endpoint, defaults to official URL
 
 
-HipChat
--------
-Name: hipchat
-
-Notifies via a HipChat message to some room. Authentication and destination details are configured with the notification.
-
-Options:
- * NF_HIPCHAT_TIMEOUT: timeout in seconds, default: 5
- * NF_HIPCHAT_SSL_CERTS: path to SSL certs, default: system certs
- * NF_HIPCHAT_INSECURE: if true, don't verify SSL
- * NF_HIPCHAT_PROXY: if set, use the given HTTP(S) proxy server to send notifications
-
-
 Slack
 -----
 Name: slack
@@ -146,9 +134,9 @@ Options:
 
 Provide Configuration templates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* notification.yaml.j2
-
+* monasca-notification.conf.j2
+* notification-logging.conf.j2
 
 Links
 ~~~~~
-https://github.com/openstack/monasca-notification/blob/master/README.rst
+https://opendev.org/openstack/monasca-notification/src/branch/master/README.rst
