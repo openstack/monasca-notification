@@ -4,11 +4,6 @@
 # From oslo.log
 #
 
-# If set to true, the logging level will be set to DEBUG instead of the default
-# INFO level. (boolean value)
-# Note: This option can be changed without restarting.
-#debug = false
-
 # The name of a logging configuration file. This file is appended to any
 # existing logging configuration files. For details about logging configuration
 # files, see the Python logging module documentation. Note that when logging
@@ -17,135 +12,7 @@
 # example, log-date-format). (string value)
 # Note: This option can be changed without restarting.
 # Deprecated group/name - [DEFAULT]/log_config
-#log_config_append = <None>
-
-# Defines the format string for %%(asctime)s in log records. Default:
-# %(default)s . This option is ignored if log_config_append is set. (string
-# value)
-#log_date_format = %Y-%m-%d %H:%M:%S
-
-# (Optional) Name of log file to send logging output to. If no default is set,
-# logging will go to stderr as defined by use_stderr. This option is ignored if
-# log_config_append is set. (string value)
-# Deprecated group/name - [DEFAULT]/logfile
-#log_file = <None>
-
-# (Optional) The base directory used for relative log_file  paths. This option
-# is ignored if log_config_append is set. (string value)
-# Deprecated group/name - [DEFAULT]/logdir
-#log_dir = <None>
-
-# Uses logging handler designed to watch file system. When log file is moved or
-# removed this handler will open a new log file with specified path
-# instantaneously. It makes sense only if log_file option is specified and Linux
-# platform is used. This option is ignored if log_config_append is set. (boolean
-# value)
-#watch_log_file = false
-
-# Use syslog for logging. Existing syslog format is DEPRECATED and will be
-# changed later to honor RFC5424. This option is ignored if log_config_append is
-# set. (boolean value)
-#use_syslog = false
-
-# Enable journald for logging. If running in a systemd environment you may wish
-# to enable journal support. Doing so will use the journal native protocol which
-# includes structured metadata in addition to log messages.This option is
-# ignored if log_config_append is set. (boolean value)
-#use_journal = false
-
-# Syslog facility to receive log lines. This option is ignored if
-# log_config_append is set. (string value)
-#syslog_log_facility = LOG_USER
-
-# Use JSON formatting for logging. This option is ignored if log_config_append
-# is set. (boolean value)
-#use_json = false
-
-# Log output to standard error. This option is ignored if log_config_append is
-# set. (boolean value)
-#use_stderr = false
-
-# Log output to Windows Event Log. (boolean value)
-#use_eventlog = false
-
-# The amount of time before the log files are rotated. This option is ignored
-# unless log_rotation_type is setto "interval". (integer value)
-#log_rotate_interval = 1
-
-# Rotation interval type. The time of the last file change (or the time when the
-# service was started) is used when scheduling the next rotation. (string value)
-# Possible values:
-# Seconds - <No description provided>
-# Minutes - <No description provided>
-# Hours - <No description provided>
-# Days - <No description provided>
-# Weekday - <No description provided>
-# Midnight - <No description provided>
-#log_rotate_interval_type = days
-
-# Maximum number of rotated log files. (integer value)
-#max_logfile_count = 30
-
-# Log file maximum size in MB. This option is ignored if "log_rotation_type" is
-# not set to "size". (integer value)
-#max_logfile_size_mb = 200
-
-# Log rotation type. (string value)
-# Possible values:
-# interval - Rotate logs at predefined time intervals.
-# size - Rotate logs once they reach a predefined size.
-# none - Do not rotate log files.
-#log_rotation_type = none
-
-# Format string to use for log messages with context. Used by
-# oslo_log.formatters.ContextFormatter (string value)
-#logging_context_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [%(request_id)s %(user_identity)s] %(instance)s%(message)s
-
-# Format string to use for log messages when context is undefined. Used by
-# oslo_log.formatters.ContextFormatter (string value)
-#logging_default_format_string = %(asctime)s.%(msecs)03d %(process)d %(levelname)s %(name)s [-] %(instance)s%(message)s
-
-# Additional data to append to log message when logging level for the message is
-# DEBUG. Used by oslo_log.formatters.ContextFormatter (string value)
-#logging_debug_format_suffix = %(funcName)s %(pathname)s:%(lineno)d
-
-# Prefix each line of exception output with this format. Used by
-# oslo_log.formatters.ContextFormatter (string value)
-#logging_exception_prefix = %(asctime)s.%(msecs)03d %(process)d ERROR %(name)s %(instance)s
-
-# Defines the format string for %(user_identity)s that is used in
-# logging_context_format_string. Used by oslo_log.formatters.ContextFormatter
-# (string value)
-#logging_user_identity_format = %(user)s %(tenant)s %(domain)s %(user_domain)s %(project_domain)s
-
-# List of package logging levels in logger=LEVEL pairs. This option is ignored
-# if log_config_append is set. (list value)
-#default_log_levels = amqp=WARN,amqplib=WARN,boto=WARN,qpid=WARN,sqlalchemy=WARN,suds=INFO,oslo.messaging=INFO,oslo_messaging=INFO,iso8601=WARN,requests.packages.urllib3.connectionpool=WARN,urllib3.connectionpool=WARN,websocket=WARN,requests.packages.urllib3.util.retry=WARN,urllib3.util.retry=WARN,keystonemiddleware=WARN,routes.middleware=WARN,stevedore=WARN,taskflow=WARN,keystoneauth=WARN,oslo.cache=INFO,oslo_policy=INFO,dogpile.core.dogpile=INFO
-
-# Enables or disables publication of error events. (boolean value)
-#publish_errors = false
-
-# The format for an instance that is passed with the log message. (string value)
-#instance_format = "[instance: %(uuid)s] "
-
-# The format for an instance UUID that is passed with the log message. (string
-# value)
-#instance_uuid_format = "[instance: %(uuid)s] "
-
-# Interval, number of seconds, of log rate limiting. (integer value)
-#rate_limit_interval = 0
-
-# Maximum number of logged messages per rate_limit_interval. (integer value)
-#rate_limit_burst = 0
-
-# Log level name used by rate limiting: CRITICAL, ERROR, INFO, WARNING, DEBUG or
-# empty string. Logs with level greater or equal to rate_limit_except_level are
-# not filtered. An empty string means that all levels are filtered. (string
-# value)
-#rate_limit_except_level = CRITICAL
-
-# Enables or disables fatal status of deprecations. (boolean value)
-#fatal_deprecations = false
+log_config_append = /etc/monasca/notification-logging.conf
 
 
 [alarm_processor]
@@ -161,7 +28,7 @@
 # Its value may be silently ignored in the future.
 # Reason: Options is not used in the current code and will be removed in future
 # releases.
-number = {{ ALARM_PROCESSORS | default(2) }}
+#number = 2
 
 # Alarms older than TTL are not processed by notification engine. (integer
 # value)
@@ -185,14 +52,19 @@ number = {{ ALARM_PROCESSORS | default(2) }}
 # 'monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo',
 # 'monasca_notification.common.repositories.orm.orm_repo:OrmRepo']). Configuring
 # either of them will require presence of one of following sections
-# dict_keys(['postgresql', 'mysql', 'orm']) inside configuration file. (plugin
-# value)
+# dict_keys(['postgresql', 'mysql', 'orm']) inside configuration file. (plugin value)
 # Possible values:
-# postgresql - <No description provided>
-# monasca_notification.common.repositories.orm.orm_repo:OrmRepo - <No description provided>
-# mysql - <No description provided>
-# monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo - <No description provided>
 # orm - <No description provided>
+# mysql - <No description provided>
+# monasca_notification.common.repositories.postgres.pgsql_repo:PostgresqlRepo - <No description provided>
+# monasca_notification.common.repositories.orm.orm_repo:OrmRepo - <No description provided>
+# monasca_notification.common.repositories.mysql.mysql_repo:MysqlRepo - <No description provided>
+# postgresql - <No description provided>
+# Advanced Option: intended for advanced users and not used
+# by the majority of users, and might have a significant
+# effect on stability and/or performance.
+#repo_driver = mysql
+
 
 [notification_types]
 # Group allows to configure available notifiers inside notification engine.
@@ -200,10 +72,8 @@ number = {{ ALARM_PROCESSORS | default(2) }}
 #
 # From monasca_notification
 #
-
 # List of enabled notification types. You may specify full class name
-# monasca_notification.plugins.hipchat_notifier:HipChatNotifier or shorter label
-# hipchat. (list value)
+# monasca_notification.plugins.email_notifier:EmailNotifier or shorter label email. (list value)
 # Advanced Option: intended for advanced users and not used
 # by the majority of users, and might have a significant
 # effect on stability and/or performance.
@@ -211,66 +81,91 @@ number = {{ ALARM_PROCESSORS | default(2) }}
 # This option has a sample default set, which means that
 # its actual default value may vary from the one documented
 # below.
-# enabled = email,pagerduty,webhook,hipchat,slack,jira
 {% if NF_PLUGINS %}
     {% set enabled = NF_PLUGINS.split(',')|map('trim')|list %}
+enabled = {{ NF_PLUGINS }}
+{% else %}
+    {% set enabled = [] %}
+#enabled = email,jira,pagerduty,slack,webhook
 {% endif %}
 
-#
-# From monasca_notification
-#
+
+### EMAIL
 {% if 'email' in enabled %}
-    {% set from_addr = NF_EMAIL_FROM_ADDR %}
-    {% set server = NF_EMAIL_SERVER %}
-    {% set port = NF_EMAIL_PORT | default(25) %}
-    {% set timeout = NF_EMAIL_TIMEOUT | default(15) %}
-    {% set user = NF_EMAIL_USER %}
-    {% set password = NF_EMAIL_PASSWORD %}
-    {% set grafana_url = NF_EMAIL_GRAFANA_URL %}
-{% endif %}
-
-
-[hipchat_notifier]
-#
-# From monasca_notification
-#
-
-{% if 'hipchat' in enabled %}
-    {% set timeout = NF_HIPCHAT_TIMEOUT | default(5) %}
-    {% set insecure = NF_HIPCHAT_INSECURE | default('false') %}
-    {% set ca_certs = NF_HIPCHAT_SSL_CERTS | default('/etc/ssl/certs/ca-certificates.crt') %}
-    {% set proxy = NF_HIPCHAT_PROXY %}
-    {% set template = NF_HIPCHAT_TEMPLATE %}
-{% endif %}
-
-[pagerduty_notifier]
+[email_notifier]
 
 #
 # From monasca_notification
 #
+# (string value)
+from_addr = {{ NF_EMAIL_FROM_ADDR }}
 
-{% if 'pagerduty' in enabled %}
-    {% set timeout = NF_PAGERDUTY_TIMEOUT | default(5) %}
-    {% set url = NF_PAGERDUTY_URL | default('https://events.pagerduty.com/generic/2010-04-15/create_event.json') %}
-{% endif %}
+# (host address value)
+server = {{ NF_EMAIL_SERVER }}
 
+# (port value)
+# Minimum value: 0
+# Maximum value: 65535
+port = {{ NF_EMAIL_PORT | default(25) }}
 
-[webhook_notifier]
+# (integer value)
+# Minimum value: 1
+timeout = {{ NF_EMAIL_TIMEOUT | default(15) }}
+
+# (string value)
+user = {{ NF_EMAIL_USER }}
+
+# (string value)
+password = {{ NF_EMAIL_PASSWORD }}
+
+# (string value)
+grafana_url = {{ NF_EMAIL_GRAFANA_URL }}
+{% else %}
+#[email_notifier]
 
 #
 # From monasca_notification
 #
-{% if 'webhook' in enabled %}
-    {% set timeout = NF_WEBHOOK_TIMEOUT|default(5) %}
+# (string value)
+#from_addr = <None>
+
+# (host address value)
+#server = <None>
+
+# (port value)
+# Minimum value: 0
+# Maximum value: 65535
+#port = 25
+
+# (integer value)
+# Minimum value: 1
+#timeout = 5
+
+# (string value)
+#user = <None>
+
+# (string value)
+#password = <None>
+
+# (string value)
+#grafana_url = <None>
 {% endif %}
 
 
+### JIRA
+{% if 'jira' in enabled %}
 [jira_notifier]
 
 #
 # From monasca_notification
 #
 
+{% else %}
+#[jira_notifier]
+
+#
+# From monasca_notification
+#
 # (integer value)
 # Minimum value: 1
 #timeout = 5
@@ -286,6 +181,108 @@ number = {{ ALARM_PROCESSORS | default(2) }}
 
 # (string value)
 #proxy = <None>
+{% endif %}
+
+
+### PAGERDUTY
+{% if 'pagerduty' in enabled %}
+[pagerduty_notifier]
+
+#
+# From monasca_notification
+#
+
+# (integer value)
+# Minimum value: 1
+timeout = {{ NF_PAGERDUTY_TIMEOUT | default(5) }}
+
+# (string value)
+url = {{ NF_PAGERDUTY_URL | default('https://events.pagerduty.com/generic/2010-04-15/create_event.json') }}
+{% else %}
+#[pagerduty_notifier]
+
+#
+# From monasca_notification
+#
+
+# (integer value)
+# Minimum value: 1
+#timeout = 5
+
+# (string value)
+#url = https://events.pagerduty.com/generic/2010-04-15/create_event.json
+{% endif %}
+
+
+### SLACK
+{% if 'slack' in enabled %}
+[slack_notifier]
+
+#
+# From monasca_notification
+#
+
+# (integer value)
+# Minimum value: 1
+timeout = {{ NF_SLACK_TIMEOUT | default(5) }}
+
+# (boolean value)
+insecure = {{ NF_SLACK_INSECURE | default('false') }}
+
+# (string value)
+ca_certs = {{ NF_SLACK_CA_CERTS | default('/etc/ssl/certs/ca-certificates.crt') }}
+
+{% if NF_SLACK_PROXY %}
+# (string value)
+proxy = {{ NF_SLACK_PROXY }}
+{% endif %}
+{% else %}
+#[slack_notifier]
+
+#
+# From monasca_notification
+#
+
+# (integer value)
+# Minimum value: 1
+#timeout = 5
+
+# (boolean value)
+#insecure = true
+
+# (string value)
+#ca_certs = <None>
+
+# (string value)
+#proxy = <None>
+
+# (string value)
+#message_template = <None>
+{% endif %}
+
+
+### WEBHOOK
+{% if 'webhook' in enabled %}
+[webhook_notifier]
+
+#
+# From monasca_notification
+#
+
+# (integer value)
+# Minimum value: 1
+timeout = {{ NF_WEBHOOK_TIMEOUT | default(5) }}
+{% else %}
+#[webhook_notifier]
+
+#
+# From monasca_notification
+#
+
+# (integer value)
+# Minimum value: 1
+#timeout = 5
+{% endif %}
 
 
 [kafka]
@@ -294,12 +291,6 @@ number = {{ ALARM_PROCESSORS | default(2) }}
 #
 # From monasca_notification
 #
-
-#
-# Comma separated list of Kafka broker host:port
-#  (list value)
-#uri = {{ KAFKA_URI }}
-
 
 # List of addresses (with ports) pointing at Kafka cluster. (list value)
 url = {{ KAFKA_URI }}
@@ -349,7 +340,7 @@ max_offset_lag = 600
 # Advanced Option: intended for advanced users and not used
 # by the majority of users, and might have a significant
 # effect on stability and/or performance.
-legacy_kafka_client_enabled = {{ KAFKA_LEGACY_CLIENT_ENABLED | default(false) }}
+legacy_kafka_client_enabled = {{ KAFKA_LEGACY_CLIENT_ENABLED }}
 
 
 [keystone]
@@ -422,7 +413,7 @@ db = {{ MYSQL_DB }}
 
 # Number of notification processors to spawn. (integer value)
 # Minimum value: 1
-number =  {{ NOTIFICATION_PROCESSORS | default(2) }}
+number =  {{ NOTIFICATION_PROCESSORS }}
 
 
 [orm]
@@ -433,7 +424,7 @@ number =  {{ NOTIFICATION_PROCESSORS | default(2) }}
 #
 
 # Connection string for sqlalchemy. (string value)
-# url = <None>
+#url = <None>
 
 
 [postgresql]
@@ -499,36 +490,13 @@ sent_notifications_size = 50
 # Advanced Option: intended for advanced users and not used
 # by the majority of users, and might have a significant
 # effect on stability and/or performance.
-# interval = {{ RETRY_INTERVAL | default(30) }}
+interval = {{ RETRY_INTERVAL }}
 
 # How many times should retrying be tried. (integer value)
 # Advanced Option: intended for advanced users and not used
 # by the majority of users, and might have a significant
 # effect on stability and/or performance.
-# max_attempts = {{ RETRY_MAX_ATTEMPTS | default(5) }}
-
-
-[slack_notifier]
-
-#
-# From monasca_notification
-#
-
-# (integer value)
-# Minimum value: 1
-#timeout = 5
-
-# (boolean value)
-#insecure = true
-
-# (string value)
-#ca_certs = <None>
-
-# (string value)
-#proxy = <None>
-
-# (string value)
-#message_template = <None>
+max_attempts = {{ RETRY_MAX_ATTEMPTS }}
 
 
 [statsd]
@@ -540,15 +508,15 @@ sent_notifications_size = 50
 #
 
 # Enable or disable self monitoring. (boolean value)
-#enable = true
+enable = {{ STATSD_ENABLED }}
 
 # IP address of statsd server. (host address value)
-#host = 127.0.0.1
+host = {{ STATSD_HOST }}
 
 # Port of statsd server. (port value)
 # Minimum value: 0
 # Maximum value: 65535
-#port = 8125
+port = {{ STATSD_PORT }}
 
 
 [zookeeper]

@@ -27,7 +27,7 @@ python3 /mysql_check.py
 # Read usage examples: https://pypi.org/project/Templer/
 echo "Start script: creating config files from templates"
 templer -v -f /etc/monasca/monasca-notification.conf.j2 /etc/monasca/monasca-notification.conf
-
+templer -v -f /etc/monasca/notification-logging.conf.j2 /etc/monasca/notification-logging.conf
 
 echo "Checking files"
 cd /etc/monasca/
