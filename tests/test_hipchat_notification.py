@@ -14,16 +14,10 @@
 import json
 from unittest import mock
 
-import six
-
 from monasca_notification import notification as m_notification
 from monasca_notification.plugins import hipchat_notifier
+import queue
 from tests import base
-
-if six.PY2:
-    import Queue as queue
-else:
-    import queue
 
 
 def alarm(metrics):

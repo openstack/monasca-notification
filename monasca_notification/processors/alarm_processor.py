@@ -18,7 +18,6 @@ import time
 from oslo_config import cfg
 from oslo_log import log as logging
 import simplejson as json
-import six
 
 from monasca_notification.common.repositories import exceptions as exc
 from monasca_notification.common.utils import get_db_repo
@@ -57,7 +56,7 @@ class AlarmProcessor(object):
         ]
         # check if alarm_data is <class 'bytes'>
         # if yes convert it to standard string
-        if isinstance(alarm_data, six.binary_type):
+        if isinstance(alarm_data, bytes):
             alarm_data = alarm_data.decode("utf-8")
         json_alarm = json.loads(alarm_data)
         alarm = json_alarm['alarm-transitioned']

@@ -15,13 +15,13 @@
 # limitations under the License.
 
 import os
+import urllib
 
 from debtcollector import removals
 import jinja2
 from oslo_config import cfg
 import requests
 import simplejson as json
-from six.moves import urllib
 
 from monasca_notification.plugins import abstract_notifier
 

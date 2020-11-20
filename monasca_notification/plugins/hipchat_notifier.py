@@ -16,10 +16,10 @@
 
 import requests
 import simplejson as json
+import urllib
 
 from debtcollector import removals
 from oslo_config import cfg
-from six.moves import urllib
 
 from monasca_notification.plugins import abstract_notifier
 

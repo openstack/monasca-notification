@@ -17,7 +17,6 @@
 import email.header
 import email.mime.text
 import email.utils
-import six
 import smtplib
 import time
 
@@ -259,7 +258,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
         metric_query = "?metric=%s" % metric['name']
 
         dimensions = metric['dimensions']
-        for key, value in six.iteritems(dimensions):
+        for key, value in dimensions.items():
             metric_query += "&dim_%s=%s" % (key, value)
 
         # Show the graph within a range of ten minutes before and after the alarm occurred.

@@ -19,7 +19,6 @@ from keystoneauth1 import exceptions as kaexception
 from keystoneauth1 import loading as kaloading
 from oslo_config import cfg
 from oslo_log import log
-import six
 
 from monasca_notification.common.repositories import exceptions
 from monasca_notification.notification import Notification
@@ -161,8 +160,8 @@ def get_auth_token():
         auth_token = session.get_token()
         return auth_token
     except (kaexception.Unauthorized, kaexception.DiscoveryFailure) as e:
-        LOG.exception(error_message.format(six.text_type(e)))
+        LOG.exception(error_message.format(str(e)))
         raise
     except Exception as e:
-        LOG.exception(error_message.format(six.text_type(e)))
+        LOG.exception(error_message.format(str(e)))
         raise
