@@ -19,7 +19,7 @@ from jinja2 import Template
 import jira
 from oslo_config import cfg
 import simplejson as json
-from six.moves import urllib
+import urllib
 import yaml
 
 from monasca_notification.plugins.abstract_notifier import AbstractNotifier

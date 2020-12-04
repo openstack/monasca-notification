@@ -22,20 +22,15 @@ import smtplib
 import socket
 import time
 from unittest import mock
-
-import six
+from urllib import parse
+from urllib.parse import urlparse
 
 from monasca_notification.notification import Notification
 from monasca_notification.plugins import email_notifier
 from tests import base
 
-if six.PY2:
-    import urlparse
-else:
-    from urllib import parse
-    from urllib.parse import urlparse
 
-UNICODE_CHAR = six.unichr(2344)
+UNICODE_CHAR = chr(2344)
 UNICODE_CHAR_ENCODED = UNICODE_CHAR.encode("utf-8")
 
 
@@ -498,24 +493,16 @@ class TestEmail(base.PluginTestCase):
         return alarm_ms, expected_from_ms, expected_to_ms
 
     def _assert_equal_urls(self, expected_url, result_url):
-        if six.PY2:
-            expected_parsed = urlparse.urlparse(expected_url)
-            result_parsed = urlparse.urlparse(result_url)
-        else:
-            expected_parsed = urlparse(expected_url)
-            result_parsed = urlparse(result_url)
+        expected_parsed = urlparse(expected_url)
+        result_parsed = urlparse(result_url)
 
         self.assertEqual(expected_parsed.netloc, result_parsed.netloc)
         self.assertEqual(expected_parsed.path, result_parsed.path)
 
-        if six.PY2:
-            expected_parsed_query = urlparse.parse_qs(expected_parsed.query)
-            result_parsed_query = urlparse.parse_qs(result_parsed.query)
-        else:
-            expected_parsed_query = parse.parse_qs(expected_parsed.query)
-            result_parsed_query = parse.parse_qs(result_parsed.query)
+        expected_parsed_query = parse.parse_qs(expected_parsed.query)
+        result_parsed_query = parse.parse_qs(result_parsed.query)
 
         self.assertEqual(len(expected_parsed_query), len(result_parsed_query))
 
-        for key in six.iterkeys(result_parsed_query):
+        for key in result_parsed_query.keys():
             self.assertEqual(expected_parsed_query[key], result_parsed_query[key])
