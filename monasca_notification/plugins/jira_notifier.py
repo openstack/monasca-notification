@@ -223,6 +223,7 @@ class JiraNotifier(AbstractNotifier):
         if jira_comment_message:
             jira_obj.add_comment(issue, jira_comment_message)
 
+
 jira_notifier_group = cfg.OptGroup(name='%s_notifier' % JiraNotifier.type)
 jira_notifier_opts = [
     cfg.IntOpt(name='timeout', default=5, min=1),

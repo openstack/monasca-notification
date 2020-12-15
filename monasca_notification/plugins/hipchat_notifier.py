@@ -141,6 +141,7 @@ class HipChatNotifier(abstract_notifier.AbstractNotifier):
             self._log.exception("Error trying to send to hipchat on URL {}".format(url))
             return False
 
+
 hipchat_notifier_group = cfg.OptGroup(name='%s_notifier' % HipChatNotifier.type)
 hipchat_notifier_opts = [
     cfg.IntOpt(name='timeout', default=5, min=1),
