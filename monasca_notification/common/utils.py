@@ -70,13 +70,13 @@ def construct_notification_object(db_repo, notification_json):
 
 
 def grab_stored_notification_method(db_repo, notification_id):
-        try:
-            stored_notification = db_repo.get_notification(notification_id)
-        except exceptions.DatabaseException:
-            LOG.debug('Database Error.  Attempting reconnect')
-            stored_notification = db_repo.get_notification(notification_id)
+    try:
+        stored_notification = db_repo.get_notification(notification_id)
+    except exceptions.DatabaseException:
+        LOG.debug('Database Error.  Attempting reconnect')
+        stored_notification = db_repo.get_notification(notification_id)
 
-        return stored_notification
+    return stored_notification
 
 
 def get_statsd_client(dimensions=None):
