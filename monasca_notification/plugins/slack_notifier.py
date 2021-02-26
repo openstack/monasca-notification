@@ -198,6 +198,7 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
                            .format(url, data_format))
         return False
 
+
 slack_notifier_group = cfg.OptGroup(name='%s_notifier' % SlackNotifier.type)
 slack_notifier_opts = [
     cfg.IntOpt(name='timeout', default=5, min=1),

@@ -291,6 +291,7 @@ def _format_dimensions(notification):
 
     return dimensions
 
+
 email_notifier_group = cfg.OptGroup(name='%s_notifier' % EmailNotifier.type)
 email_notifier_opts = [
     cfg.StrOpt(name='from_addr'),

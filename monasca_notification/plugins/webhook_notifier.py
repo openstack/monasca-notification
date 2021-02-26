@@ -91,6 +91,7 @@ class WebhookNotifier(abstract_notifier.AbstractNotifier):
             self._log.exception("Error trying to post on URL {}".format(url))
             return False
 
+
 webhook_notifier_group = cfg.OptGroup(name='%s_notifier' % WebhookNotifier.type)
 webhook_notifier_opts = [
     cfg.IntOpt(name='timeout', default=5, min=1)
