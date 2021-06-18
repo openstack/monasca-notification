@@ -475,7 +475,7 @@ class TestEmail(base.PluginTestCase):
 
         # Then the following link to Grafana (including the metric info and timestamp) is expected.
         expected_url = "http://127.0.0.1:3000/dashboard/script/drilldown.js" \
-                       "?metric=cpu.percent&dim_hostname=foo1&dim_service=bar1" \
+                       "?metric=cpu.percent&hostname=foo1&service=bar1" \
                        "&from=%s&to=%s" % (expected_from_ms, expected_to_ms)
         self._assert_equal_urls(expected_url, result_url)
 
