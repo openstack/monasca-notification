@@ -260,7 +260,7 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
 
         dimensions = metric['dimensions']
         for key, value in six.iteritems(dimensions):
-            metric_query += "&dim_%s=%s" % (key, value)
+            metric_query += "&%s=%s" % (key, value)
 
         # Show the graph within a range of ten minutes before and after the alarm occurred.
         offset = 600000
