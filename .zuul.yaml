@@ -16,9 +16,6 @@
     post:
       jobs:
         - publish-monasca-notification-docker-image
-    periodic:
-      jobs:
-        - publish-monasca-notification-docker-image
     release:
       jobs:
         - publish-monasca-notification-docker-image
