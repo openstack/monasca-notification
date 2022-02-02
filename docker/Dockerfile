@@ -7,7 +7,7 @@ ARG COMMON_VERSION=master
 # Extra Python3 dependencies.
 ARG EXTRA_DEPS="netaddr gevent==1.3.5 greenlet"
 # Always start from `monasca-base` image and use specific tag of it.
-ARG BASE_TAG=master
+ARG BASE_TAG=xena
 FROM monasca/base:$BASE_TAG
 # Environment variables used for our service or wait scripts.
 ENV \
