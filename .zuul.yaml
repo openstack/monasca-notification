@@ -7,8 +7,18 @@
       - release-notes-jobs-python3
     check:
       jobs:
+        - build-monasca-docker-image
         - monasca-tempest-python3-influxdb:
             voting: false
+    post:
+      jobs:
+        - publish-monasca-notification-docker-image
+    periodic:
+      jobs:
+        - publish-monasca-notification-docker-image
+    release:
+      jobs:
+        - publish-monasca-notification-docker-image
 
 - job:
     name: publish-monasca-notification-docker-image

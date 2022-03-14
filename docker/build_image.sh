@@ -64,7 +64,7 @@ GITHUB_REPO=$(echo "$APP_REPO" | sed 's/review.opendev.org/github.com/' | \
 
 if [ -z "$CONSTRAINTS_FILE" ]; then
     CONSTRAINTS_FILE=$(\grep CONSTRAINTS_FILE Dockerfile | cut -f2 -d"=") || true
-    : "${CONSTRAINTS_FILE:=https://opendev.org/openstack/requirements/raw/branch/master/upper-constraints.txt}"
+    : "${CONSTRAINTS_FILE:=https://releases.openstack.org/constraints/upper/master}"
 fi
 
 : "${CONSTRAINTS_BRANCH:=$2}"
@@ -74,7 +74,7 @@ fi
 # When using stable version of repository use same stable constraints file.
 case "$REPO_VERSION" in
     *stable*)
-        CONSTRAINTS_BRANCH_CLEAN="$REPO_VERSION"
+        CONSTRAINTS_BRANCH_CLEAN=$(echo "$REPO_VERSION" | sed 's|stable/||g')
         CONSTRAINTS_FILE=${CONSTRAINTS_FILE/master/$CONSTRAINTS_BRANCH_CLEAN}
         # Get monasca-common version from stable upper constraints file.
         CONSTRAINTS_TMP_FILE=$(mktemp)
