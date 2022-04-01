@@ -5,7 +5,21 @@
       - check-requirements
     check:
       jobs:
-        - openstack-tox-cover
+        - openstack-tox-pep8:
+            voting: false
+        - openstack-tox-py27:
+            voting: false
+        - openstack-tox-py35:
+            voting: false
+        - openstack-tox-cover:
+            voting: false
     gate:
       jobs:
-        - openstack-tox-cover
+        - openstack-tox-pep8:
+            voting: false
+        - openstack-tox-py27:
+            voting: false
+        - openstack-tox-py35:
+            voting: false
+        - openstack-tox-cover:
+            voting: false

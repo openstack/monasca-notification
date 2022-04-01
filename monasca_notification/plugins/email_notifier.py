@@ -134,8 +134,10 @@ class EmailNotifier(abstract_notifier.AbstractNotifier):
                                 self._config['port'],
                                 timeout=self._config['timeout'])
 
-            if ('user', 'password') in self._config.keys():
-                smtp.login(self._config['user'], self._config['password'])
+            user = self._config.get('user')
+            password = self._config.get('password')
+            if user and password:
+                smtp.login(user, password)
 
             self._smtp = smtp
             return True
