@@ -120,7 +120,7 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
     def _send_message(self, request_options):
         try:
             url = request_options.get('url')
-            result = requests.post(**request_options)
+            result = requests.post(**request_options, timeout=CONF.slack_notifier.timeout)
             if result.status_code not in range(200, 300):
                 self._log.error('Received an HTTP code {} when trying to post on URL {}.'
                                 .format(result.status_code, url))
@@ -176,7 +176,6 @@ class SlackNotifier(abstract_notifier.AbstractNotifier):
                 'verify': verify,
                 'params': query_params,
                 'proxies': proxy_dict,
-                'timeout': CONF.slack_notifier.timeout,
                 data_format: slack_message
             }
             if self._send_message(request_options):
