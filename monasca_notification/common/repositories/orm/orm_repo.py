@@ -38,17 +38,17 @@ class OrmRepo(object):
         nmt = nmt_insert.alias('nmt')
         a = models.create_alarm_model(metadata).alias('a')
 
-        self._orm_query = select([nm.c.id, nm.c.type, nm.c.name, nm.c.address, nm.c.period])\
+        self._orm_query = select(nm.c.id, nm.c.type, nm.c.name, nm.c.address, nm.c.period)\
             .select_from(aa.join(nm, aa.c.action_id == nm.c.id))\
             .where(
                 and_(aa.c.alarm_definition_id == bindparam('alarm_definition_id'),
                      aa.c.alarm_state == bindparam('alarm_state')))
 
-        self._orm_get_alarm_state = select([a.c.state]).where(a.c.id == bindparam('alarm_id'))
+        self._orm_get_alarm_state = select(a.c.state).where(a.c.id == bindparam('alarm_id'))
 
-        self._orm_nmt_query = select([nmt.c.name])
+        self._orm_nmt_query = select(nmt.c.name)
 
-        self._orm_get_notification = select([nm.c.name, nm.c.type, nm.c.address, nm.c.period])\
+        self._orm_get_notification = select(nm.c.name, nm.c.type, nm.c.address, nm.c.period)\
             .where(nm.c.id == bindparam('notification_id'))
 
         self._orm_add_notification_type = insert(nmt_insert).values(name=bindparam('b_name'))
